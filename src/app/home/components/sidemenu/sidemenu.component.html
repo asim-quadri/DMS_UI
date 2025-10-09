@@ -1,0 +1,55 @@
+<div class="sidemenu">
+    <ul>
+      <li routerLinkActive="active">
+        <a routerLink="/home" (click)="navigatetoPage('fileupload')">
+          <i class="bi bi-house"></i> <br>
+          Home
+        </a>
+      </li>
+      <li routerLinkActive="active">
+        <a routerLink="/home/fileupload">
+          <i class="bi bi-speedometer"></i>
+          <br />Dashboard</a
+        >
+      </li>
+      <!-- <li routerLinkActive="active">
+        <a routerLink="/product-setup/country">
+          <i class="bi bi-gear"></i> <br />
+          Product Setup</a
+        >
+      </li>
+      <li routerLinkActive="active">
+        <a routerLink="/home/organization-setup/organization">
+          <i class="bi bi-file-text-fill"></i> <br />
+          Organization
+          <br />
+          Details</a
+        >
+      </li> -->
+      <!-- <li routerLinkActive="active">
+        <a routerLink="/home/fileupload">
+          <i class="bi bi-megaphone"></i>
+          <br />Announcements
+        </a>
+      </li> -->
+      <li routerLinkActive="active">
+        <a routerLink="" (click)="navigatetoPage('organization-setup/organization')">
+          <i class="bi bi-file-text-fill"></i> <br />
+          Organization
+          <br />
+          Details</a
+        >
+      </li>
+      <li routerLinkActive="active">
+        <a routerLink="/home/users" (click)="navigatetoPage('users')"
+          ><i class="bi bi-person-fill-gear"></i> <br />User
+          Management</a
+        >
+      </li>
+      <li routerLinkActive="active">
+        <a routerLink="/login"
+          ><i class="bi bi-person-fill-gear"></i> <br />Logout</a
+        >
+      </li>
+    </ul>
+  </div>

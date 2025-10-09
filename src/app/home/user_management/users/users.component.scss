@@ -1,0 +1,148 @@
+.user-table thead tr th {
+    background-color: #325A9C !important;
+    border: 1px solid #325A9C !important;
+    font-size: 14px !important;
+    color: #fff !important;
+    font-weight: normal !important;
+    text-align: center !important;
+    padding: 15px 0px 15px !important;
+}
+
+.user-table tbody tr td {
+    background-color: #ECF8FF !important;
+    border: none !important;
+    font-size: 14px !important;
+    color: #325A9C;
+    font-weight: 500 !important;
+    text-align: center !important;
+    padding: 15px 0px !important;
+    margin-bottom: 2px !important;
+}
+
+.user-table tbody tr {
+    border: 0.5px solid #CCCCCC !important;
+    margin-top: 2px !important;
+}
+
+.table>:not(:first-child) {
+    border-top: none !important;
+}
+
+.user-table tbody tr td a {
+    font-weight: 600 !important;
+    color: #DE5926 !important;
+}
+
+.form-control {
+    height: 40px !important;
+}
+
+.btn-secondary {
+    background-color: #DE5926 !important;
+    color: #fff !important;
+    border: none !important;
+    height: 45px !important;
+}
+
+.stauts-list {
+    margin-top: 5px !important;
+    background-color: red !important;
+}
+
+.stauts-list ul {
+    list-style: none !important;
+    padding: 0px !important;
+    margin: 0px !important;
+}
+
+.stauts-list ul li {
+    float: left !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+}
+
+li.status-text {
+    font-size: 13px !important;
+    padding-top: 3px !important;
+    padding-right: 20px !important;
+}
+
+.status-circle {
+    width: 18px !important;
+    height: 18px !important;
+    margin: 3.5px 4px !important;
+    border-radius: 50% !important;
+}
+
+.red-status {
+    background-color: #DF2F2F !important;
+}
+
+.oragne-status {
+    background-color: #DF8D2F !important;
+}
+
+.green-status {
+    background-color: #3AD12F !important;
+}
+
+.bg-white {
+    background-color: #fff !important;
+}
+
+.status-pending {
+    background-color: #DE5926 !important;
+    width: 60px !important;
+    text-align: center !important;
+    margin-right: 20px !important;
+    color: #fff !important;
+}
+
+.user-status {
+    color: #3AD12F !important;
+}
+
+/* tabs */
+.nav-tabs .nav-link {
+    background-color: #fff;
+    border: 1px solid #ddd ;
+    font-size: 14px ;
+    border-radius: 2px ;
+    color: #707070 ;
+}
+
+.nav-pills .nav-link.active {
+    background-color: #325A9C ;
+    color: #fff ;
+}
+
+.modal-header ul li {
+    float: left !important;
+    font-size: 14px !important;
+    color: #fff !important;
+    margin: 0px 10px !important;
+    list-style-type: none !important;
+}
+
+.user-info ul {
+    list-style: none !important;
+    margin: 0px !important;
+    padding: 0px !important;
+}
+
+.user-info ul li {
+    float: left !important;
+    font-size: 14px !important;
+    margin: 10px 20px !important;
+}
+
+.user-info ul li span {
+    color: #325A9C !important;
+}
+
+.user-info label {
+    font-size: 13px !important;
+}
+.access-control{
+    color: #DE5926 !important;
+}

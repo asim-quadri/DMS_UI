@@ -1,0 +1,48 @@
+
+<div *ngIf="params.value == 'edit'">
+
+    <i class="fa-regular fa-edit" (click)="btnClickedHandler()" style="cursor: pointer; font-size: 25;"></i>
+</div>
+
+<div *ngIf="params.value == 'control'">
+
+    <span class="control"  (click)="btnClickedHandler()" 
+    >Access Control</span>
+    
+</div>
+
+<div *ngIf="params.value == 'Active'" >
+    <span class="control active" 
+    >Active</span>
+</div>
+
+<div *ngIf="params.value == 'InActive'" >
+    <span class="control inactive" 
+    >In Active</span>
+</div>
+
+<div *ngIf="params.value == 'Pending'" >
+    <span class="control inactive"  (click)="btnClickedHandler()" 
+    >Pending</span>
+</div>
+<div *ngIf="params.value == 'Approved'" >
+    <span class="control inactive"  
+    >Approved</span>
+</div>
+<div *ngIf="params.value == 'Rejected'" >
+    <span class="control inactive"  
+    >Rejected</span>
+</div>
+<div *ngIf="params.value == 'Reviewed'" >
+    <span class="control inactive"  (click)="btnClickedHandler()" 
+    >Reviewed</span>
+</div>
+<div *ngIf="params.value == 'Forward'" >
+    <span class="control forward"  (click)="btnClickedHandler()" 
+    >Forward</span>
+</div>
+
+
+
+
+

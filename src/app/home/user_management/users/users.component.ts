@@ -1,0 +1,231 @@
+import { Component, OnInit, ViewChild } from '@angular/core';
+import {
+  ModalDismissReasons,
+  NgbDatepickerModule,
+  NgbModal,
+} from '@ng-bootstrap/ng-bootstrap';
+import { users } from './users';
+import { AgbuttonComponent } from '../../../Components/ag-grid/agbutton/agbutton.component';
+import { ApiService } from '../../../Services/api.service';
+import { UsersModel } from '../../../models/Users';
+import { AgDeleteButtonComponent } from '../../../Components/ag-grid/ag-delete-button/ag-delete-button.component';
+import { NotifierService } from 'angular-notifier';
+// import { ColDef, GridApi,GridOptions } from 'ag-grid-community';
+import { pendingApproval } from '../../../models/pendingapproval';
+
+const defaultColumnDef = {
+  editable: false,
+  resizable: true,
+  wrapText: true,
+  autoHeight: true,
+  sortable: true,
+  angularCompileHeaders: true,
+  pagination:true
+};
+@Component({
+  selector: 'app-users',
+  templateUrl: './users.component.html',
+  styleUrls: ['./users.component.scss'],
+  providers: [users],
+})
+export class UsersComponent implements OnInit {
+  public rowSelection: 'single' | 'multiple' = 'multiple';
+  @ViewChild('accessControl') accessControl: any;
+  @ViewChild('adduserApporoval') adduserApporoval: any;
+  pendingApproval: pendingApproval | undefined;
+
+  @ViewChild('agGrid') agGrid: any;
+
+  selectedUser: UsersModel = {};
+  defaultColumnDef = defaultColumnDef;
+  // private api: GridApi | undefined;
+  columnDefs = [
+    // {
+    // 	field: 'RowSelect',
+    // 	headerName: ' ',
+    // 	checkboxSelection: true,
+    // 	headerCheckboxSelection: true,
+    // 	suppressMenu: true,
+    // 	suppressSorting: true,
+    // 	width: 100,
+
+    // },
+    { headerName: 'id', field: 'id', hide: true },
+    { headerName: 'uid', field: 'uid', hide: true },
+    { headerName: 'Full Name', field: 'fullName', width: 150 },
+    { headerName: 'Email', field: 'email', width: 210 },
+    { headerName: 'Role', field: 'roleDisplayName', width: 150 },
+    { headerName: 'RoleId', field: 'roleId', hide: true },
+    {
+      headerName: 'Start Date',
+      field: 'startDate',
+      width: 110,
+      valueFormatter: function (param: any) {
+        return param.value.split('T')[0];
+      },
+    },
+    {
+      headerName: 'End Date',
+      field: 'endDate',
+      width: 110,
+      valueFormatter: function (param: any) {
+        if(param.value)
+        return param.value.split('T')[0];
+      },
+    },
+    {
+      headerName: 'Status',
+      field: 'dummystatus',
+      width: 100,
+      cellRenderer: AgbuttonComponent,
+    },
+    {
+      headerName: 'Control',
+      field: 'Control',
+      width: 150,
+      cellRenderer: AgbuttonComponent,
+      cellRendererParams: {
+        clicked: (field: any) => {
+          if (field.data.status == 1) {
+            this.selectedUser = { ...field.data };
+            this.pendingApproval = { userUID: this.selectedUser.uid! };
+            this.openXl(this.accessControl);
+          }
+        },
+      },
+    },
+    {
+      field: 'Edit',
+      width: 60,
+      cellRenderer: AgbuttonComponent,
+      cellRendererParams: {
+        clicked: (field: any) => {
+          this.selectedUser = { ...field.data };
+          this.binddata(field.data);
+        },
+      },
+    },
+    {
+      field: 'Delete',
+      width: 80,
+      wrapText: true,
+      cellRenderer: AgDeleteButtonComponent,
+      cellRendererParams: {
+        clicked: (field: any) => {
+          this.deleteUser(field.data.uid);
+        },
+      },
+    },
+  ];
+
+  onGridReady(params: any): void {
+    // this.api = params.api;
+  }
+
+  onFilterTextBoxChanged(event: any) {
+
+    //this.api!.setQuickFilter(event.target.value);
+  }
+
+  rowData: any[] = [];
+  getTabledata() {
+    let selectedRows;
+    selectedRows = this.agGrid.getSelectedRows();
+    ///than you can map your selectedRows
+    selectedRows.map((row: any) => { });
+  }
+
+  reload(event: any) {
+    this.getAllUser();
+  }
+
+  binddata(user: any) {
+    this.selectedUser = { ...user };
+  }
+
+  deleteUser(uid: any) {
+    this.apiService.delteUserByUID(uid).subscribe((result: UsersModel) => {
+      if (result.responseCode == 1) {
+        this.reload(result);
+        this.notifier.notify('error', 'Deleted Successfully');
+      } else {
+        this.notifier.notify('error', result.responseMessage);
+      }
+    });
+  }
+
+  // Create a function to handle form submission
+  onSubmit() {
+    // Handle form submission logic here
+  }
+
+  closeResult = '';
+  active = 1;
+
+  constructor(
+    private modalService: NgbModal,
+    public model: users,
+    public apiService: ApiService,
+    private notifier: NotifierService
+  ) { }
+
+  ngOnInit(): void {
+    this.getAllUser();
+  }
+
+  openAccessControl() {
+    this.openXl(this.accessControl);
+  }
+
+  openUserReview(event: pendingApproval) {
+    this.pendingApproval = event;
+    this.openXl(this.adduserApporoval);
+  }
+
+  openUserAccessReview(event: pendingApproval) {
+    this.pendingApproval = event;
+    this.pendingApproval.review = true;
+    this.openXl(this.accessControl);
+  }
+
+  getAllUser() {
+    this.rowData = [];
+    this.apiService.getAllUsers().subscribe((result: any) => {
+      result.forEach((element: any) => {
+        element.dummystatus = element.status == 1 ? 'Active' : 'InActive';
+        element.Control = 'control';
+        element.Edit = 'edit';
+      });
+      this.rowData = result;
+    });
+  }
+
+  reloadPage(event: any) {
+    this.getAllUser();
+    this.modalService.dismissAll(1);
+  }
+
+
+  open(content: any) {
+    this.modalService.open(content, { ariaLabelledBy: 'modal-basic-title' }).result.then(
+      (result) => {
+        this.closeResult = `Closed with: ${result}`;
+      },
+      (reason) => {
+        this.closeResult = `Dismissed ${this.getDismissReason(reason)}`;
+      },
+    );
+  }
+  openXl(content: any) {
+    this.modalService.open(content, { size: 'xl', centered: true });
+  }
+  private getDismissReason(reason: any): string {
+    if (reason === ModalDismissReasons.ESC) {
+      return 'by pressing ESC';
+    } else if (reason === ModalDismissReasons.BACKDROP_CLICK) {
+      return 'by clicking on a backdrop';
+    } else {
+      return `with: ${reason}`;
+    }
+  }
+}

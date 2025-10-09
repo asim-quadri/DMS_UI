@@ -1,0 +1,16 @@
+<!-- <app-headernav *ngIf="showMenus"></app-headernav>
+<app-sidenav *ngIf="showMenus"></app-sidenav>
+<router-outlet></router-outlet> -->
+<!-- homepage.component.html -->
+
+<div class="homepage-container">
+  <!-- Navigation Bar -->
+  <app-headernav *ngIf="showMenus"></app-headernav>
+  <app-sidenav *ngIf="showMenus"></app-sidenav>
+
+  <!-- Main Content Area -->
+  <div class="content-wrapper">
+    <!-- Router Outlet to load child components -->
+    <router-outlet></router-outlet>
+  </div>
+</div>

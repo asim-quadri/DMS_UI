@@ -1,0 +1,18 @@
+<form novalidate autocomplete='off' [formGroup]='this.formGroup'>
+    <select #select class="form-select width-100" name="{{name}}" formControlName="{{name}}" (change)="onchange(select.value)">
+        <option value="" selected>Please Select</option>
+        <option value="{{item[value]}}" *ngFor="let item of object; index as i;">{{item[key]}}</option>
+    </select>
+    <small class="form-text text-danger"
+        *ngIf="formGroup.controls[name].invalid && (formGroup.controls[name].dirty || formGroup.controls[name].touched)"
+        class="alert">
+        <small class="form-text text-danger" *ngIf="formGroup.controls[name].errors?.['required']">
+            {{formGroup.controls[name].errors?.['required'].message}}
+        </small>
+        <small class="form-text text-danger" *ngIf="formGroup.controls[name].errors?.['maxDate']">
+            {{formGroup.controls[name].errors?.['maxDate'].message}}
+        </small>
+       
+        
+    </small>
+</form>

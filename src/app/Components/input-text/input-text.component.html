@@ -1,0 +1,32 @@
+<form
+  novalidate
+  autocomplete='off'
+  [formGroup]='this.formGroup'
+>
+<input type="text" id="name" name="{{name}}" class="form-control"
+       formControlName="{{name}}" placeholder="{{placeholder}}">
+
+<small class="form-text text-danger"  *ngIf="formGroup.controls[name].invalid && (formGroup.controls[name].dirty || formGroup.controls[name].touched)"
+    class="alert">
+  <small class="form-text text-danger"  *ngIf="formGroup.controls[name].errors?.['required']">
+    {{formGroup.controls[name].errors?.['required'].message}} 
+  </small>
+  <small class="form-text text-danger"  *ngIf="formGroup.controls[name].errors?.['minLength']">
+    {{formGroup.controls[name].errors?.['minLength'].message}} 
+  </small>
+  <small class="form-text text-danger"  *ngIf="formGroup.controls[name].errors?.['maxLength']">
+    {{formGroup.controls[name].errors?.['maxLength'].message}} 
+  </small>
+  <small class="form-text text-danger"  *ngIf="formGroup.controls[name].errors?.['email']">
+    {{formGroup.controls[name].errors?.['email'].message}} 
+  </small>
+  <small class="form-text text-danger"  *ngIf="formGroup.controls[name].errors?.['numeric']">
+    {{formGroup.controls[name].errors?.['numeric'].message}} 
+  </small>
+  <small class="form-text text-danger" *ngIf="formGroup.controls[name].errors?.['onlyNumeric']">
+    {{formGroup.controls[name].errors?.['onlyNumeric'].message}}
+</small>
+</small>
+
+
+</form>

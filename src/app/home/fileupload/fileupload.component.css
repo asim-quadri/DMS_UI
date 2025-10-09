@@ -1,0 +1,89 @@
+.container-fluid {
+  padding: 0;
+}
+
+.card-header {
+  font-size: 1.2rem;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.accordion-button {
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+.accordion-button:not(.collapsed) {
+  color: #333;
+  background-color: #e9ecef;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #f1f1f1;
+}
+
+.btn-outline-success {
+  border: 1px solid #28a745;
+  color: #28a745;
+}
+
+.treeview .fa-caret-right, .treeview .fa-caret-down {
+  margin-left: auto;
+}
+
+.treeview .list-group-item {
+  cursor: pointer;
+}
+.treeview ul li{
+  margin-bottom: 1px;
+  border: 1px solid green;
+}
+
+.treeview .nested {
+  margin-left: 15px;
+}
+
+.treeview .selected {
+  background-color: #d4edda;
+}
+
+.treeview .fa-caret-right,
+.treeview .fa-caret-down {
+  margin-left: auto;
+}
+
+.btn-padding-top {
+  padding-top: 10px;
+}
+.selected {
+  background-color: #007bff;
+  color: white;
+}
+
+.treeview .list-group-item {
+  cursor: pointer;
+}
+
+.treeview .nested {
+  padding-left: 20px;
+}
+
+.btn-view i {
+  color: grey;
+}
+
+.btn-download i {
+  color: grey;
+}
+
+.btn-view:hover i {
+  color: white; 
+}
+
+
+
+

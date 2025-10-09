@@ -1,0 +1,20 @@
+<form
+  novalidate
+  autocomplete='off'
+  [formGroup]='this.formGroup'
+  
+>
+<input type="date" id="name" name="{{name}}" class="form-control"
+       formControlName="{{name}}" (change)="onchange($event)" placeholder="{{placeholder}}">
+<small class="form-text text-danger"  *ngIf="formGroup.controls[name].invalid && (formGroup.controls[name].dirty || formGroup.controls[name].touched)"
+    class="alert">
+  <small class="form-text text-danger"  *ngIf="formGroup.controls[name].errors?.['required']">
+    {{formGroup.controls[name].errors?.['required'].message}} 
+  </small>
+  <small class="form-text text-danger"  *ngIf="formGroup.controls[name].errors?.['maxDate']">
+    {{formGroup.controls[name].errors?.['maxDate'].message}} 
+  </small>
+</small>
+
+
+</form>

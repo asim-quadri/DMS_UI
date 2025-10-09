@@ -1,0 +1,63 @@
+<div class="row g-3 align-items-center">
+  <form [formGroup]="formgroup" (ngSubmit)="onSubmit()" class="long-form">
+    <div class="form-group">
+      <label class="col-form-label">Full Name:</label>
+      <app-input-text [formGroup]="formgroup" [name]="'fullName'" [placeholder]="'Full Name'"></app-input-text>
+    </div>
+    <div class="form-group">
+      <label class="col-form-label">Employee ID:</label>
+      <app-input-text [formGroup]="formgroup" [name]="'empId'" [placeholder]="'Enter Employee ID'"></app-input-text>
+    </div>
+    <div class="form-group">
+      <label class="col-form-label">Mobile Number :</label>
+      <app-input-text [formGroup]="formgroup" [name]="'mobile'" [placeholder]="'+9198765423210'"></app-input-text>
+    </div>
+    <div class="form-group">
+      <label class="col-form-label">Email:</label>
+      <app-input-text [formGroup]="formgroup" [name]="'email'"
+        [placeholder]="'Email: name@domain.com'"></app-input-text>
+    </div>
+    <div class="form-group">
+      <label class="col-form-label">Role:</label>
+
+      <app-input-dropdown [formGroup]="formgroup" [name]="'roleId'" [object]="rolesData" [key]="'roleDisplayName'"
+        [value]="'id'">
+      </app-input-dropdown>
+    </div>
+    <div class="form-group">
+      <div class="row">
+        <div class="col-md-6">
+          <div class="form-group">
+            <label class="col-form-label">Start Date:</label>
+            <app-input-date [formGroup]="formgroup" [name]="'startDate'"
+              (change)="validateCurrentDates($event)"></app-input-date>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group">
+            <label class="col-form-label">End Date</label>
+            <app-input-date [formGroup]="formgroup" [name]="'endDate'"
+              (change)="validateCurrentDates($event)"></app-input-date>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-form-label">Reporting To:</label>
+
+      <app-input-dropdown [formGroup]="formgroup" [name]="'managerId'" [object]="getActiveUsers()" [key]="'fullName'"
+        [value]="'id'">
+      </app-input-dropdown>
+     
+
+    </div>
+    <div class="form-group">
+      <div class="mt-4">
+        <button class="btn btn-secondary width-100" [disabled]="!formgroup.valid"
+        >Save User</button>
+        
+      </div>
+    </div>
+  </form>
+</div>
+

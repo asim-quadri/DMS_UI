@@ -1,0 +1,98 @@
+<div class="modal-header text-center">
+    <h4 class="modal-title">
+        <span class="font-light">Approvals</span>
+    </h4>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+</div>
+<div class="modal-body">
+    <div class="row">
+        <div class="col-md-3">
+            <button class="btn btn-status">Approval Pending</button>
+        </div>
+        <div class="col-md-6 text-center user-info">
+            <ul>
+                <li>Employee <span>{{pendingUserApproval?.empId}}</span></li>
+                <li>Role: <span>{{pendingUserApproval?.roleDisplayName}}</span></li>
+                <li>Point of Contact: <span>{{pendingUserApproval?.pointofContact}}</span></li>
+            </ul>
+        </div>
+    </div>
+    <div class="row mt-100">
+        <div class="col-md-4"></div>
+        <div class="col-md-4">
+            <form [formGroup]="formgroup" class="long-form">
+                <div class="form-group">
+                    <label class="col-form-label">Full Name:</label>
+                    <app-input-text [formGroup]="formgroup" [name]="'fullName'"
+                        [placeholder]="'Full Name'"></app-input-text>
+                </div>
+                <div class="form-group">
+                    <label class="col-form-label">Employee ID:</label>
+                    <app-input-text [formGroup]="formgroup" [name]="'empId'"
+                        [placeholder]="'Enter Employee ID'"></app-input-text>
+                </div>
+                <div class="form-group">
+                    <label class="col-form-label">Mobile Number :</label>
+                    <app-input-text [formGroup]="formgroup" [name]="'mobile'"
+                        [placeholder]="'+9198765423210'"></app-input-text>
+                </div>
+                <div class="form-group">
+                    <label class="col-form-label">Email:</label>
+                    <app-input-text [formGroup]="formgroup" [name]="'email'"
+                        [placeholder]="'Email: name@domain.com'"></app-input-text>
+                </div>
+            
+                <div class="form-group">
+                    <label class="col-form-label">Role:</label>
+                    <app-input-dropdown [formGroup]="formgroup" [name]="'roleId'" [object]="rolesData"
+                        [key]="'roleDisplayName'" [value]="'id'">
+                    </app-input-dropdown>
+                </div>
+                <div class="form-group">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="col-form-label">Start Date:</label>
+
+                                <app-input-date [formGroup]="formgroup" [name]="'startDate'"></app-input-date>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="col-form-label">End Date</label>
+
+                                <app-input-date [formGroup]="formgroup" [name]="'endDate'"></app-input-date>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-form-label">Reporting To:</label>
+                    <app-input-dropdown [formGroup]="formgroup" [name]="'managerId'" [object]="usersList" [key]="'fullName'"
+                        [value]="'id'">
+                    </app-input-dropdown>
+
+                </div>
+
+            </form>
+            <div class="form-group">
+                <div class="mt-4" *ngIf="!enable">
+                    <button class="btn btn-approved width-50" (click)="submitApproved()">APPROVE</button>
+                    <button class="btn btn-reject width-50" (click)="submitReject()">REJECT</button>
+                </div>
+                <!-- <div class="mt-4">
+                    <button class="btn btn-reject width-50" *ngIf="!enable" (click)="enablefields()">Enable</button>
+                    <button class="btn btn-reject width-50" *ngIf="enable" (click)="disablefields()">Disable</button>
+
+                </div> -->
+                <!-- <div class="mt-4" *ngIf="enable">
+                    <button class="btn btn-reject width-50" (click)="onSubmit()">Save</button>
+                </div>
+                <div class="mt-4" *ngIf="!enable">
+                    <button class="btn btn-reject width-50" *ngIf="managerid > 0"
+                        (click)="submitForward()">Forward</button>
+                </div> -->
+            </div>
+        </div>
+    </div>
+</div>

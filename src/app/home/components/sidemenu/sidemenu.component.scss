@@ -1,0 +1,46 @@
+.sidemenu {
+	background-color: #325A9C;
+	height: 100%;
+	min-height: 90vh;
+	padding-top: 20px;
+	width: 9%;
+	float: left;
+	ul {
+		list-style: none;
+		margin: 0px;
+		padding: 0px;
+		li {
+			margin-bottom: 25px;
+			padding: 5px 0px;
+			text-align: center;
+			i {
+				font-size: 20px;
+			}
+			a {
+				color: #fff;
+				font-size: 14.5px;
+				text-decoration: none;
+				font-weight: 400;
+				line-height: 1.4;
+				cursor: pointer;
+				img {
+					width: 17px;
+					margin-bottom: 5px;
+				}
+			}
+		}
+	}
+	li {
+		&.active {
+			position: relative;
+			&::before {
+				content: "";
+				position: absolute;
+				top: 0;
+				left: 0px;
+				width: 8px;
+				height: 100%;
+			}
+		}
+	}
+}

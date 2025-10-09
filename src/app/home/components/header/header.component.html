@@ -1,0 +1,386 @@
+<div class="header">
+  <div class="row">
+      <div class="col-md-1 text-center">
+          <h1 style="color: white;">DMS</h1>
+      </div>
+      <div class="col-md-8">
+        <div class="dropdown">
+          <button
+            class="btn btn-light dropdown-toggle"
+            type="button"
+            id="dropdownMenuButton"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            Select Entity
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <li *ngFor="let entity of entities">
+              <a class="dropdown-item" href="#">{{ entity.entityName }}</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+          <div class="d-grid d-md-flex justify-content-md-end">
+              <ul class="header-list">
+                  <li class="header-notification">
+                      <div class="notification-count">10</div>
+                      <button type="button" class="btn btn-profile-dropdown">
+                          <i class="fa-solid fa-bell"></i>
+                      </button>
+                  </li>
+                  <li class="header-list-divider"></li>
+                  <li class="wid-170">
+                      <div class="user-profile">
+                          {{name}}
+                      </div>
+                  </li>
+              </ul>
+          </div>
+      </div>
+  </div>
+</div>
+
+  <!-- Notification-->
+  <!-- <ng-template #Approvals let-modal>
+    <div class="modal-header">
+      <h4 class="modal-title" id="modal-basic-title">Notifications</h4>
+      <button
+        type="button"
+        class="btn-close"
+        aria-label="Close"
+        (click)="modal.dismiss('Cross click')"
+      ></button>
+    </div>
+    <div class="modal-body">
+      <div class="row">
+        <div class="col-6">
+          <div class="single-notification">
+            <div class="notificatoin-avatar">
+              <img
+                src="../../../../assets/images/icons/avstsr.svg"
+                class="img-fluid"
+                alt=""
+              />
+            </div>
+            <div class="notificatoin-content">
+              <p class="notification">
+                <span>Hari Babu</span> added <span>New Country</span>
+              </p>
+              <p class="noti-date">10:25 AM, Today</p>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+          <div class="single-notification">
+            <div class="notificatoin-avatar">
+              <img
+                src="../../../../assets/images/icons/avstsr.svg"
+                class="img-fluid"
+                alt=""
+              />
+            </div>
+            <div class="notificatoin-content">
+              <p class="notification">
+                <span>Hari Babu</span> added <span>New Country</span>
+              </p>
+              <p class="noti-date">10:25 AM, Today</p>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+          <div class="single-notification">
+            <div class="notificatoin-avatar">
+              <img
+                src="../../../../assets/images/icons/avstsr.svg"
+                class="img-fluid"
+                alt=""
+              />
+            </div>
+            <div class="notificatoin-content">
+              <p class="notification">
+                <span>Hari Babu</span> added <span>New Country</span>
+              </p>
+              <p class="noti-date">10:25 AM, Today</p>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+          <div class="single-notification">
+            <div class="notificatoin-avatar">
+              <img
+                src="../../../../assets/images/icons/avstsr.svg"
+                class="img-fluid"
+                alt=""
+              />
+            </div>
+            <div class="notificatoin-content">
+              <p class="notification">
+                <span>Hari Babu</span> added <span>New Country</span>
+              </p>
+              <p class="noti-date">10:25 AM, Today</p>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+          <div class="single-notification">
+            <div class="notificatoin-avatar">
+              <img
+                src="../../../../assets/images/icons/avstsr.svg"
+                class="img-fluid"
+                alt=""
+              />
+            </div>
+            <div class="notificatoin-content">
+              <p class="notification">
+                <span>Hari Babu</span> added <span>New Country</span>
+              </p>
+              <p class="noti-date">10:25 AM, Today</p>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+          <div class="single-notification">
+            <div class="notificatoin-avatar">
+              <img
+                src="../../../../assets/images/icons/avstsr.svg"
+                class="img-fluid"
+                alt=""
+              />
+            </div>
+            <div class="notificatoin-content">
+              <p class="notification">
+                <span>Hari Babu</span> added <span>New Country</span>
+              </p>
+              <p class="noti-date">10:25 AM, Today</p>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+          <div class="single-notification">
+            <div class="notificatoin-avatar">
+              <img
+                src="../../../../assets/images/icons/avstsr.svg"
+                class="img-fluid"
+                alt=""
+              />
+            </div>
+            <div class="notificatoin-content">
+              <p class="notification">
+                <span>Hari Babu</span> added <span>New Country</span>
+              </p>
+              <p class="noti-date">10:25 AM, Today</p>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+          <div class="single-notification">
+            <div class="notificatoin-avatar">
+              <img
+                src="../../../../assets/images/icons/avstsr.svg"
+                class="img-fluid"
+                alt=""
+              />
+            </div>
+            <div class="notificatoin-content">
+              <p class="notification">
+                <span>Hari Babu</span> added <span>New Country</span>
+              </p>
+              <p class="noti-date">10:25 AM, Today</p>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+          <div class="single-notification">
+            <div class="notificatoin-avatar">
+              <img
+                src="../../../../assets/images/icons/avstsr.svg"
+                class="img-fluid"
+                alt=""
+              />
+            </div>
+            <div class="notificatoin-content">
+              <p class="notification">
+                <span>Hari Babu</span> added <span>New Country</span>
+              </p>
+              <p class="noti-date">10:25 AM, Today</p>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+          <div class="single-notification">
+            <div class="notificatoin-avatar">
+              <img
+                src="../../../../assets/images/icons/avstsr.svg"
+                class="img-fluid"
+                alt=""
+              />
+            </div>
+            <div class="notificatoin-content">
+              <p class="notification">
+                <span>Hari Babu</span> added <span>New Country</span>
+              </p>
+              <p class="noti-date">10:25 AM, Today</p>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="single-notification">
+            <div class="notificatoin-avatar">
+              <img
+                src="../../../../assets/images/icons/avstsr.svg"
+                class="img-fluid"
+                alt=""
+              />
+            </div>
+            <div class="notificatoin-content">
+              <p class="notification">
+                <span>Hari Babu</span> added <span>New Country</span>
+              </p>
+              <p class="noti-date">10:25 AM, Today</p>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+          <div class="single-notification">
+            <div class="notificatoin-avatar">
+              <img
+                src="../../../../assets/images/icons/avstsr.svg"
+                class="img-fluid"
+                alt=""
+              />
+            </div>
+            <div class="notificatoin-content">
+              <p class="notification">
+                <span>Hari Babu</span> added <span>New Country</span>
+              </p>
+              <p class="noti-date">10:25 AM, Today</p>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+          <div class="single-notification">
+            <div class="notificatoin-avatar">
+              <img
+                src="../../../../assets/images/icons/avstsr.svg"
+                class="img-fluid"
+                alt=""
+              />
+            </div>
+            <div class="notificatoin-content">
+              <p class="notification">
+                <span>Hari Babu</span> added <span>New Country</span>
+              </p>
+              <p class="noti-date">10:25 AM, Today</p>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+          <div class="single-notification">
+            <div class="notificatoin-avatar">
+              <img
+                src="../../../../assets/images/icons/avstsr.svg"
+                class="img-fluid"
+                alt=""
+              />
+            </div>
+            <div class="notificatoin-content">
+              <p class="notification">
+                <span>Hari Babu</span> added <span>New Country</span>
+              </p>
+              <p class="noti-date">10:25 AM, Today</p>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+          <div class="single-notification">
+            <div class="notificatoin-avatar">
+              <img
+                src="../../../../assets/images/icons/avstsr.svg"
+                class="img-fluid"
+                alt=""
+              />
+            </div>
+            <div class="notificatoin-content">
+              <p class="notification">
+                <span>Hari Babu</span> added <span>New Country</span>
+              </p>
+              <p class="noti-date">10:25 AM, Today</p>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+          <div class="single-notification">
+            <div class="notificatoin-avatar">
+              <img
+                src="../../../../assets/images/icons/avstsr.svg"
+                class="img-fluid"
+                alt=""
+              />
+            </div>
+            <div class="notificatoin-content">
+              <p class="notification">
+                <span>Hari Babu</span> added <span>New Country</span>
+              </p>
+              <p class="noti-date">10:25 AM, Today</p>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+          <div class="single-notification">
+            <div class="notificatoin-avatar">
+              <img
+                src="../../../../assets/images/icons/avstsr.svg"
+                class="img-fluid"
+                alt=""
+              />
+            </div>
+            <div class="notificatoin-content">
+              <p class="notification">
+                <span>Hari Babu</span> added <span>New Country</span>
+              </p>
+              <p class="noti-date">10:25 AM, Today</p>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+          <div class="single-notification">
+            <div class="notificatoin-avatar">
+              <img
+                src="../../../../assets/images/icons/avstsr.svg"
+                class="img-fluid"
+                alt=""
+              />
+            </div>
+            <div class="notificatoin-content">
+              <p class="notification">
+                <span>Hari Babu</span> added <span>New Country</span>
+              </p>
+              <p class="noti-date">10:25 AM, Today</p>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+          <div class="single-notification">
+            <div class="notificatoin-avatar">
+              <img
+                src="../../../../assets/images/icons/avstsr.svg"
+                class="img-fluid"
+                alt=""
+              />
+            </div>
+            <div class="notificatoin-content">
+              <p class="notification">
+                <span>Hari Babu</span> added <span>New Country</span>
+              </p>
+              <p class="noti-date">10:25 AM, Today</p>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+          <div class="single-notification">
+            <div class="notificatoin-avatar">
+              <img
+                src="../../../../assets/images/icons/avstsr.svg"
+                class="img-fluid"
+                alt=""
+              />
+            </div>
+            <div class="notificatoin-content">
+              <p class="notification">
+                <span>Hari Babu</span> added <span>New Country</span>
+              </p>
+              <p class="noti-date">10:25 AM, Today</p>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-template> -->
+  <!-- Notification End -->

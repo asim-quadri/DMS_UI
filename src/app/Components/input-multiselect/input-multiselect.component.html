@@ -1,0 +1,19 @@
+<form novalidate autocomplete='off' [formGroup]='this.formGroup'>
+    <ng-multiselect-dropdown #multiSelect formControlName="{{name}}"   [placeholder]="'Select City'" [data]="object" 
+        [settings]="dropdownSettings" [disabled]="false" (onSelect)="onItemSelect($event)" 
+        (onSelectAll)="onSelectAll($event)"
+        (onDeSelect)="onItemDeSelect($event)" (onDeSelectAll)="onItemsDeSelect($event)">
+    </ng-multiselect-dropdown>
+
+   
+    <small class="form-text text-danger"
+        *ngIf="formGroup.controls[name].invalid && (formGroup.controls[name].dirty || formGroup.controls[name].touched)"
+        class="alert">
+        <small class="form-text text-danger" *ngIf="formGroup.controls[name].errors?.['required']">
+            {{formGroup.controls[name].errors?.['required'].message}}
+        </small>
+        <small class="form-text text-danger" *ngIf="formGroup.controls[name].errors?.['maxDate']">
+            {{formGroup.controls[name].errors?.['maxDate'].message}}
+        </small>
+    </small>
+</form>

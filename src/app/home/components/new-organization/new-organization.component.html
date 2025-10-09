@@ -1,0 +1,78 @@
+<div class="row" style="padding: 0 20%;">
+  <div class="organization-panel">
+    <div class="product-panel-header text-center mb-4">
+      <h4>Add Organization</h4>
+    </div>
+    <div class="organization-panel-body new-organisationregulation">
+      <form [formGroup]="formgroup">
+        <div class="row">
+        <div class="col-md-6">
+          <label for="emailAddress">User Name</label>
+          <app-input-text [formGroup]="formgroup" [name]="'emailAddress'" [placeholder]="'abc@example.com'"></app-input-text>
+          <div class="invalid-feedback" *ngIf="formgroup.get('emailAddress')?.invalid && formgroup.get('emailAddress')?.touched">
+            <small class="form-text text-danger">Email address is required</small>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label for="password">Password</label>
+          <app-input-text [formGroup]="formgroup" [name]="'password'" [placeholder]="'xxxxx'"></app-input-text>
+
+          <!-- <input type="password" [formGroup]="formgroup" class="form-control" type="password" [name]="'password'" [placeholder]="'xxxxx'"> -->
+          <div class="invalid-feedback" *ngIf="formgroup.get('password')?.invalid && formgroup.get('password')?.touched">
+            <small class="form-text text-danger">Email address is required</small>
+          </div>
+        </div>
+      </div>
+        <div class="row">
+          <div class="col-md-6">
+            <label for="organizationName">Organization Name</label>
+            <app-input-text [formGroup]="formgroup" [name]="'organizationName'" [placeholder]="'Organization Name'"></app-input-text>
+            <div class="invalid-feedback" *ngIf="formgroup.get('organizationName')?.invalid && formgroup.get('organizationName')?.touched">
+              <small class="form-text text-danger">Organization name is required</small>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label for="countryDDId">Select Country</label>
+            <app-input-dropdown [formGroup]="formgroup" [name]="'countryDDId'" [object]="this.countries" [key]="'countryName'" [value]="'id'" (change)="onCountryChange($event)">
+            </app-input-dropdown>
+            <div class="invalid-feedback" *ngIf="formgroup.get('country')?.invalid && formgroup.get('country')?.touched">
+              <small class="form-text text-danger">Country is required</small>
+            </div>
+        </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <label for="stateId">Select State</label>
+            <app-input-dropdown [formGroup]="formgroup" [name]="'stateId'" [object]="this.stateList" [key]="'stateName'" [value]="'id'" (change)="onStateChange($event)">
+            </app-input-dropdown>
+            <div class="invalid-feedback" *ngIf="formgroup.get('stateId')?.invalid && formgroup.get('stateId')?.touched">
+              <small class="form-text text-danger">State is required</small>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label for="city">City</label>
+            <app-input-text [formGroup]="formgroup" [name]="'city'" [placeholder]="'City'"></app-input-text>
+            <div class="invalid-feedback" *ngIf="formgroup.get('city')?.invalid && formgroup.get('city')?.touched">
+              <small class="form-text text-danger">City is required</small>
+            </div>
+          </div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="address">Address</label>
+            <textarea class="form-control" placeholder="Add Address Here" formControlName="address" required></textarea>
+            <div class="invalid-feedback" *ngIf="formgroup.get('address')?.invalid && formgroup.get('address')?.touched">
+              <small class="form-text text-danger">Address is required</small>
+            </div>
+          </div>
+        </div>
+        <div class="row mb-4">
+          <div class="col-md-5">
+            <button type="button" class="btn btn-primary btn-block" (click)="onSubmit()">Register Organization</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,856 @@
+<div class="modal-header text-center">
+  <h4 class="modal-title">User Access Control</h4>
+  <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+</div>
+<div class="modal-body">
+  <div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 text-center user-info">
+      <form action="">
+        <div class="row">
+          <div class="col-6">
+            <div class="row">
+              <div class="col-4 mt-10">
+                <label for="">Employee ID:</label>
+              </div>
+              <div class="col-8">
+                {{user.empId}}
+                <!-- <select name="" id="" class="form-select form-control">
+                    <option value="">EMP1234</option>
+                    <option value="">EMP1234</option>
+                    <option value="">EMP1234</option>
+                  </select> -->
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="row">
+              <div class="col-6 mt-10">
+                <label for="">Employee Name:</label>
+              </div>
+              <div class="col-6">
+                {{user.fullName}}
+                <!-- <select name="" id="" class="form-select form-control">
+                    <option value="">Haribabu</option>
+                    <option value="">Haribabu</option>
+                  </select> -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="row mt-20">
+    <div class="col-md-1"></div>
+    <div class="col-md-10">
+      <ul ngbNav #nav="ngbNav" [(activeId)]="active" class="nav-tabs nav-pills nav-fill">
+        <li [ngbNavItem]="1">
+          <a ngbNavLink>Product Configuration</a>
+
+          <ng-template ngbNavContent>
+            <div class="icheck-primary mt-20">
+              <input type="checkbox" id="someCheckboxId" />
+              <label for="someCheckboxId">Parameter Setup Screen</label>
+            </div>
+            <div class="row mt-20 modal-form">
+              <div class="col-4">
+                <div class="row">
+                  <div class="col-5 mt-10 pr-0">
+                    <label for="">Select Country :</label>
+                  </div>
+                  <div class="col-7 pl-5">
+                    <select name="" id="" class="form-select form-control">
+                      <option value="IN">USA</option>
+                      <option value="IN">India</option>
+                      <option value="IN">India</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="icheck-primary">
+                  <input type="checkbox" id="a" />
+                  <label for="a">Select All</label>
+                </div>
+                <div class="icheck-primary mt-20">
+                  <input type="checkbox" id="b" />
+                  <label for="b">Country Setup Screen</label>
+                </div>
+                <div class="icheck-primary mt-20">
+                  <input type="checkbox" id="d" />
+                  <label for="d">Industry Setup Screen</label>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="icheck-primary">
+                  <input type="checkbox" id="a" />
+                  <label for="a">Entity Type Setup Screen</label>
+                </div>
+                <div class="icheck-primary mt-20">
+                  <input type="checkbox" id="a" />
+                  <label for="a">Regulation Grouping Setup Screen</label>
+                </div>
+              </div>
+            </div>
+            <div class="row mt-30 modal-form">
+              <div class="col-4">
+                <div class="row">
+                  <div class="col-5 mt-10 pr-0">
+                    <label for="">Select Country :</label>
+                  </div>
+                  <div class="col-7 pl-5">
+                    <select name="" id="" class="form-control form-select">
+                      <option value="IN">USA</option>
+                      <option value="IN">India</option>
+                      <option value="IN">India</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="row">
+                  <div class="col-5 mt-10 pr-0">
+                    <label for="">Select State :</label>
+                  </div>
+                  <div class="col-7 pl-5">
+                    <select name="" id="" class="form-control form-select">
+                      <option value="IN">Telangana, Gujarath….</option>
+                      <option value="IN">Telangana, Gujarath….</option>
+                      <option value="IN">Telangana, Gujarath….</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="icheck-primary">
+                  <input type="checkbox" id="z" />
+                  <label for="z">Add Regulation Screen</label>
+                </div>
+              </div>
+            </div>
+            <div class="row mt-30 modal-form nasted-tabs">
+              <ul ngbNav #nav="ngbNav" class="nav-tabs nav-pills nav-fill mt-20">
+                <li [ngbNavItem]="4">
+                  <a ngbNavLink>Access for Regulation</a>
+                  <ng-template ngbNavContent>
+                    <div class="row mt-30">
+                      <div class="col-8">
+                        <div class="row">
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 mt-10 pr-0">
+                                <label for="">Select Country :</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <select name="" id="" class="form-control form-select">
+                                  <option value="IN">India, Malaysia.</option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 mt-10 pr-0">
+                                <label for="">Select State : :</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <select name="" id="" class="form-control form-select">
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row mt-30">
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 mt-10 pr-0">
+                                <label for="">Select Regulation :</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <select name="" id="" class="form-control form-select">
+                                  <option value="IN">Employee Law</option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 pr-0">
+                                <label for="">Select Regulation Group :</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <select name="" id="" class="form-control form-select">
+                                  <option value="IN">Employee Law</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-4">
+                        <div class="icheck-primary">
+                          <input type="checkbox" id="addcompliancescreen" />
+                          <label for="addcompliancescreen">Add Compliance Screen</label>
+                        </div>
+                        <div class="icheck-primary">
+                          <input type="checkbox" id="dashboard" />
+                          <label for="dashboard">Dash Board</label>
+                        </div>
+                        <div class="icheck-primary">
+                          <input type="checkbox" id="list" />
+                          <label for="list">List</label>
+                        </div>
+                        <div class="icheck-primary">
+                          <input type="checkbox" id="overview" />
+                          <label for="overview">Overview</label>
+                        </div>
+                      </div>
+                    </div>
+                  </ng-template>
+                </li>
+                <li [ngbNavItem]="5">
+                  <a ngbNavLink>Access for Compliance</a>
+                  <ng-template ngbNavContent>
+                    <div class="row mt-30">
+                      <div class="col-8">
+                        <div class="row">
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 mt-10 pr-0">
+                                <label for="">Select Country :</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <select name="" id="" class="form-control form-select">
+                                  <option value="IN">India, Malaysia.</option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 mt-10 pr-0">
+                                <label for="">Select State : :</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <select name="" id="" class="form-control form-select">
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row mt-30">
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 mt-10 pr-0">
+                                <label for="">Select Regulation :</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <select name="" id="" class="form-control form-select">
+                                  <option value="IN">Employee Law</option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 pr-0">
+                                <label for="">Select Regulation Group :</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <select name="" id="" class="form-control form-select">
+                                  <option value="IN">Employee Law</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-4">
+                        <div class="icheck-primary">
+                          <input type="checkbox" id="addcompliancescreen" />
+                          <label for="addcompliancescreen">Add Compliance Screen</label>
+                        </div>
+                        <div class="icheck-primary">
+                          <input type="checkbox" id="dashboard" />
+                          <label for="dashboard">Dash Board</label>
+                        </div>
+                        <div class="icheck-primary">
+                          <input type="checkbox" id="list" />
+                          <label for="list">List</label>
+                        </div>
+                        <div class="icheck-primary">
+                          <input type="checkbox" id="overview" />
+                          <label for="overview">Overview</label>
+                        </div>
+                      </div>
+                    </div>
+                  </ng-template>
+                </li>
+                <li [ngbNavItem]="6">
+                  <a ngbNavLink>Access for Type of Compliance</a>
+                  <ng-template ngbNavContent>
+                    <div class="row mt-30">
+                      <div class="col-8">
+                        <div class="row">
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 mt-10 pr-0">
+                                <label for="">Select Country :</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <select name="" id="" class="form-control form-select">
+                                  <option value="IN">India, Malaysia.</option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 mt-10 pr-0">
+                                <label for="">Select State : :</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <select name="" id="" class="form-control form-select">
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row mt-30">
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 mt-10 pr-0">
+                                <label for="">Select Regulation :</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <select name="" id="" class="form-control form-select">
+                                  <option value="IN">Employee Law</option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 pr-0">
+                                <label for="">Select Regulation Group :</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <select name="" id="" class="form-control form-select">
+                                  <option value="IN">Employee Law</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row mt-30">
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 mt-10 pr-0">
+                                <label for="">Select Compliance :</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <select name="" id="" class="form-control form-select">
+                                  <option value="IN">94D, 94E</option>
+                                  <option value="IN">94D, 94E</option>
+                                  <option value="IN">94D, 94E</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 pr-0">
+                                <label for="">Select Type of Compliance:</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <select name="" id="" class="form-control form-select">
+                                  <option value="IN">
+                                    94D Payment, Reg....
+                                  </option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-4">
+                        <div class="icheck-primary">
+                          <input type="checkbox" id="dashboard" />
+                          <label for="dashboard">Dash Board</label>
+                        </div>
+                        <div class="icheck-primary">
+                          <input type="checkbox" id="list" />
+                          <label for="list">List</label>
+                        </div>
+                        <div class="icheck-primary">
+                          <input type="checkbox" id="overview" />
+                          <label for="overview">Overview</label>
+                        </div>
+                      </div>
+                    </div>
+                  </ng-template>
+                </li>
+              </ul>
+
+              <div [ngbNavOutlet]="nav" class="mt-2"></div>
+            </div>
+            <div class="row mt-30 justify-content-center">
+              <div class="col-3">
+                <button class="btn btn-color width-100" *ngIf="!isReveiw">SAVE</button>
+                <button class="btn btn-color width-100" *ngIf="isReveiw" (click)="next()">Next</button>
+              </div>
+            </div>
+            <div class="mt-30"></div>
+          </ng-template>
+        </li>
+        <li [ngbNavItem]="2">
+          <a ngbNavLink>Organization Details</a>
+          <ng-template ngbNavContent>
+            <div class="row mt-20 modal-form">
+              <div class="col-4">
+                <div class="row">
+                  <div class="col-5 mt-10 pr-0">
+                    <label for="">Select Country :</label>
+                  </div>
+                  <div class="col-7 pl-5">
+                    <select name="" id="" class="form-select form-control">
+                      <option value="IN">USA</option>
+                      <option value="IN">India</option>
+                      <option value="IN">India</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="icheck-primary mt-20">
+                  <input type="checkbox" id="someCheckboxId" />
+                  <label for="someCheckboxId">Add Organisation Screen</label>
+                </div>
+              </div>
+            </div>
+            <div class="row mt-30 modal-form">
+              <div class="col-4">
+                <div class="row">
+                  <div class="col-5 mt-10 pr-0">
+                    <label for="">Select Country :</label>
+                  </div>
+                  <div class="col-7 pl-5">
+                    <select name="" id="" class="form-control form-select">
+                      <option value="IN">USA</option>
+                      <option value="IN">India</option>
+                      <option value="IN">India</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="row">
+                  <div class="col-5 mt-10 pr-0">
+                    <label for="">Select State :</label>
+                  </div>
+                  <div class="col-7 pl-5">
+                    <select name="" id="" class="form-control form-select">
+                      <option value="IN">Telangana, Gujarath….</option>
+                      <option value="IN">Telangana, Gujarath….</option>
+                      <option value="IN">Telangana, Gujarath….</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="row">
+                  <div class="col-5 mt-10 pr-0">
+                    <label for="">Select Organisation: :</label>
+                  </div>
+                  <div class="col-7 pl-5">
+                    <select name="" id="" class="form-control form-select">
+                      <option value="IN">Microsoft, Amazon..</option>
+                      <option value="IN">Microsoft, Amazon..</option>
+                      <option value="IN">Microsoft, Amazon..</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="icheck-primary">
+                  <input type="checkbox" id="z" />
+                  <label for="z">Add Entity Screen</label>
+                </div>
+              </div>
+            </div>
+            <div class="row mt-30 modal-form nasted-tabs">
+              <ul ngbNav #nav="ngbNav" class="nav-tabs nav-pills nav-fill mt-20">
+                <li [ngbNavItem]="4">
+                  <a ngbNavLink>For Organisation</a>
+                  <ng-template ngbNavContent>
+                    <div class="row mt-30">
+                      <div class="col-8">
+                        <div class="row">
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 mt-10 pr-0">
+                                <label for="">Select Country :</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <select name="" id="" class="form-control form-select">
+                                  <option value="IN">India, Malaysia.</option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 mt-10 pr-0">
+                                <label for="">Select Organisation:</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <select name="" id="" class="form-control form-select">
+                                  <option value="IN">
+                                    Microsoft, Amazon..
+                                  </option>
+                                  <option value="IN">
+                                    Microsoft, Amazon..
+                                  </option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-4">
+                        <div class="icheck-primary">
+                          <input type="checkbox" id="overviewscreen" />
+                          <label for="overviewscreen">Overview Screen</label>
+                        </div>
+                        <h6 class="heading"><b>Billing Details screen</b></h6>
+                        <div class="row">
+                          <div class="col-6">
+                            <div class="icheck-primary">
+                              <input type="checkbox" id="dashboard" />
+                              <label for="dashboard">Dash Board</label>
+                            </div>
+                          </div>
+                          <div class="col-6">
+                            <div class="icheck-primary">
+                              <input type="checkbox" id="list" />
+                              <label for="list">List</label>
+                            </div>
+                          </div>
+                        </div>
+
+                        <h6 class="heading"><b>Add Billing Screen</b></h6>
+                        <div class="row">
+                          <div class="col-6">
+                            <div class="icheck-primary">
+                              <input type="checkbox" id="overview" />
+                              <label for="overview">Basic Details</label>
+                            </div>
+                          </div>
+                          <div class="col-6">
+                            <div class="icheck-primary">
+                              <input type="checkbox" id="collection" />
+                              <label for="collection">Collection</label>
+                            </div>
+                          </div>
+                          <div class="col-4">
+                            <div class="icheck-primary">
+                              <input type="checkbox" id="Billing" />
+                              <label for="billing">Billing</label>
+                            </div>
+                          </div>
+                          <div class="col-6">
+                            <div class="icheck-primary">
+                              <input type="checkbox" id="sale" />
+                              <label for="sale">Sale</label>
+                            </div>
+                          </div>
+                          <div class="col-6">
+                            <div class="icheck-primary">
+                              <input type="checkbox" id="deliveryy" />
+                              <label for="deliveryy">Delivery</label>
+                            </div>
+                          </div>
+                        </div>
+
+
+
+
+
+                      </div>
+                    </div>
+                  </ng-template>
+                </li>
+                <li [ngbNavItem]="5">
+                  <a ngbNavLink>For Entity</a>
+                  <ng-template ngbNavContent>
+                    <div class="row mt-30">
+                      <div class="col-8">
+                        <div class="row">
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 mt-10 pr-0">
+                                <label for="">Select Country :</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <select name="" id="" class="form-control form-select">
+                                  <option value="IN">India, Malaysia.</option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                  <option value="IN">
+                                    Telangana, Gujarath….
+                                  </option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 mt-10 pr-0">
+                                <label for="">Select Organisation:</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <select name="" id="" class="form-control form-select">
+                                  <option value="IN">
+                                    Microsoft, Amazon..
+                                  </option>
+                                  <option value="IN">
+                                    Microsoft, Amazon..
+                                  </option>
+                                  <option value="IN">
+                                    Microsoft, Amazon..
+                                  </option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-6 mt-20">
+                            <div class="row">
+                              <div class="col-5 mt-10 pr-0">
+                                <label for="">Select Entites :</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <select name="" id="" class="form-control form-select">
+                                  <option value="IN">
+                                    Microsoft, Amazon..
+                                  </option>
+                                  <option value="IN">
+                                    Microsoft, Amazon..
+                                  </option>
+                                  <option value="IN">
+                                    Microsoft, Amazon..
+                                  </option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-4">
+                        <div class="icheck-primary">
+                          <input type="checkbox" id="overviewscreen" />
+                          <label for="overviewscreen">Overview Screen</label>
+                        </div>
+                        <h6 class="heading"><b>Billing Details screen</b></h6>
+                        <div class="row">
+                          <div class="col-6">
+                            <div class="icheck-primary">
+                              <input type="checkbox" id="dashboard" />
+                              <label for="dashboard">Dash Board</label>
+                            </div>
+                          </div>
+                          <div class="col-6">
+                            <div class="icheck-primary">
+                              <input type="checkbox" id="list" />
+                              <label for="list">List</label>
+                            </div>
+                          </div>
+                        </div>
+
+                        <h6 class="heading"><b>Add Billing Screen</b></h6>
+                        <div class="row">
+                          <div class="col-6">
+                            <div class="icheck-primary">
+                              <input type="checkbox" id="overview" />
+                              <label for="overview">Basic Details</label>
+                            </div>
+                          </div>
+                          <div class="col-6">
+                            <div class="icheck-primary">
+                              <input type="checkbox" id="collection" />
+                              <label for="collection">Collection</label>
+                            </div>
+                          </div>
+                          <div class="col-4">
+                            <div class="icheck-primary">
+                              <input type="checkbox" id="Billing" />
+                              <label for="billing">Billing</label>
+                            </div>
+                          </div>
+                          <div class="col-4">
+                            <div class="icheck-primary">
+                              <input type="checkbox" id="sale" />
+                              <label for="sale">Sale</label>
+                            </div>
+                          </div>
+                          <div class="col-4">
+                            <div class="icheck-primary">
+                              <input type="checkbox" id="delivery" />
+                              <label for="delivery">Delivery</label>
+                            </div>
+                          </div>
+                        </div>
+                        <h6 class="heading"><b>Service Request Screen</b></h6>
+                        <div class="row">
+                          <div class="col-6">
+                            <div class="icheck-primary">
+                              <input type="checkbox" id="dashboardd" />
+                              <label for="dashboardd">Dash Board</label>
+                            </div>
+                          </div>
+                          <div class="col-6">
+                            <div class="icheck-primary">
+                              <input type="checkbox" id="listt" />
+                              <label for="listt">List</label>
+                            </div>
+                          </div>
+                        </div>
+
+
+
+
+
+                      </div>
+                    </div>
+                  </ng-template>
+                </li>
+              </ul>
+
+              <div [ngbNavOutlet]="nav" class="mt-2"></div>
+            </div>
+            <div class="row mt-30 justify-content-center">
+              <div class="col-3">
+                <button class="btn btn-color width-100" *ngIf="!isReveiw" >SAVE</button>
+                <button class="btn btn-color width-100" *ngIf="isReveiw" (click)="next()">Next</button>
+              </div>
+            </div>
+            <div class="mt-30"></div>
+          </ng-template>
+        </li>
+        <li [ngbNavItem]="3">
+          <a ngbNavLink>User Management</a>
+          <ng-template ngbNavContent>
+            <div class="row">
+              <div class="col-md-3"></div>
+              <div class="col-md-6">
+                <form action="" [formGroup]="formgroup">
+                  <div class="icheck-primary mt-20">
+                    <input type="checkbox" id="roleScreen" formControlName="roleScreen" />
+                    <label for="roleScreen">Role Screen</label>
+                  </div>
+                  <div class="icheck-primary mt-20">
+                    <input type="checkbox" id="Userscreen" formControlName="Userscreen" />
+                    <label for="Userscreen">User Screen</label>
+                  </div>
+                  <div class="icheck-primary mt-20">
+                    <input type="checkbox" id="accessControl" formControlName="accessControl" />
+                    <label for="accessControl">Access Control Screen</label>
+                  </div>
+                  <div class="mt-20">
+                    <button class="btn btn-color width-100" (click)="userMangeSubmit()"
+                      *ngIf="!isReveiw">SAVE</button>
+                    <div class="row">
+                      <div class="col-md-4">
+                        <button class="btn btn-approved width-100" (click)="approve()"
+                          *ngIf="isReveiw">Approve</button>
+                      </div>
+                      <div class="col-md-4">
+                        <button class="btn btn-reject width-100" (click)="reject()"
+                          *ngIf="isReveiw">Reject</button>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </ng-template>
+        </li>
+      </ul>
+
+      <div [ngbNavOutlet]="nav" class="mt-2"></div>
+    </div>
+  </div>
+</div>

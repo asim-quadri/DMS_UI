@@ -1,10 +1,16 @@
 import { Component } from '@angular/core';
+import { PersistenceService } from './Services/persistence.service';
+import { LoaderService } from './Services/loader.service';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrl: './app.component.scss'
+  styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  title = 'Dms-UI';
+  title = 'compliancenew';
+  showMenus:boolean =false;
+
+  constructor(private persistance: PersistenceService,public loaderService: LoaderService) {
+  }
 }
