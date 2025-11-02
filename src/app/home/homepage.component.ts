@@ -31,16 +31,27 @@ import { SidemenuComponent } from './components/sidemenu/sidemenu.component';
     providers: [MessageService]
 })
 export class HomeComponent  implements OnInit{
-  showMenus: boolean;
+  showMenus: boolean = false;
   constructor(private persistance: PersistenceService,public loaderService: LoaderService) {
-    if(this.persistance.getUserUID() == null){
+    // Check authentication more thoroughly
+    this.checkAuthenticationState();
+	}
+  
+  private checkAuthenticationState() {
+    const currentUser = sessionStorage.getItem('currentUser');
+    const userUID = this.persistance.getUserUID();
+    
+    console.log('Auth check - currentUser:', currentUser);
+    console.log('Auth check - userUID:', userUID);
+    
+    if(!currentUser || currentUser === '{}' || !userUID){
       this.showMenus = false;
+      // Don't auto logout on the homepage - let auth guard handle it
     }
     else{
-      this.showMenus =true;
+      this.showMenus = true;
     }
-
-	}
+  }
   ngOnInit(): void {
   }
 

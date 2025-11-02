@@ -70,7 +70,8 @@ export class FileuploadComponent implements OnInit {
 
   };
   currentUserId: number= 1;
-  selectedFolderTreeNodeItem!: FolderTreeNode;
+  selectedFolderTreeNodeItem: FolderTreeNode | null = null;
+  breadcrumbPath: { label: string, node?: FolderTreeNode }[] = [];
 
   constructor(private folderService: FolderService,private notifier:NotifierService,private formBuilder: FormBuilder,private http: HttpClient) {
     this.formgroupCreateFolder = this.formBuilder.group({
@@ -98,6 +99,7 @@ export class FileuploadComponent implements OnInit {
       this.treeData = result;
       if (this.treeData.length > 0) {
         this.selectedFolderTreeNodeItem = this.treeData[0];
+        this.buildBreadcrumbPath(this.treeData[0]); // Initialize breadcrumb
       }
     });
   }
@@ -260,7 +262,7 @@ export class FileuploadComponent implements OnInit {
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    if (file) {
+    if (file && this.selectedFolderTreeNodeItem) {
       console.log("selected file ==",file);
       this.fileModel.fileName=file.name;
       this.fileModel.fileType = file.type;
@@ -275,7 +277,7 @@ export class FileuploadComponent implements OnInit {
 
 
   isSelected(item: FolderTreeNode): boolean {
-    return this.selectedFolderTreeNodeItem === item;
+    return this.selectedFolderTreeNodeItem?.id === item.id;
   }
 
   uploadFile(file: File) {
@@ -317,7 +319,7 @@ export class FileuploadComponent implements OnInit {
     });
   }
   createSubFolder() {
-    if (this.formgroupCreateFolder.valid) {
+    if (this.formgroupCreateFolder.valid && this.selectedFolderTreeNodeItem) {
       this.folderModel.folderName = this.formgroupCreateFolder.controls['folderName'].value;
       this.folderModel.isParent = false;
       this.folderModel.entityId =this.selectedEntityId;
@@ -414,6 +416,48 @@ export class FileuploadComponent implements OnInit {
     event.stopPropagation();
     this.selectedFolderTreeNodeItem = item;
     console.log("selected item ==",this.selectedFolderTreeNodeItem);
+    this.buildBreadcrumbPath(item);
     this.getAllFilesbyFolderId(item.id);
+  }
+
+  buildBreadcrumbPath(selectedNode: FolderTreeNode): void {
+    this.breadcrumbPath = [{ label: 'DMS' }]; // Start with DMS root
+    
+    // Find the path to the selected node
+    const path = this.findNodePath(this.treeData, selectedNode);
+    if (path) {
+      this.breadcrumbPath = this.breadcrumbPath.concat(path.map(node => ({ label: node.label, node })));
+    }
+  }
+
+  findNodePath(nodes: FolderTreeNode[], targetNode: FolderTreeNode): FolderTreeNode[] | null {
+    for (const node of nodes) {
+      if (node.id === targetNode.id) {
+        return [node];
+      }
+      
+      if (node.children && node.children.length > 0) {
+        const childPath = this.findNodePath(node.children, targetNode);
+        if (childPath) {
+          return [node, ...childPath];
+        }
+      }
+    }
+    return null;
+  }
+
+  navigateToBreadcrumb(breadcrumb: { label: string, node?: FolderTreeNode }): void {
+    if (breadcrumb.node) {
+      this.selectedFolderTreeNodeItem = breadcrumb.node;
+      this.buildBreadcrumbPath(breadcrumb.node);
+      this.getAllFilesbyFolderId(breadcrumb.node.id);
+    } else {
+      // Navigate to root (DMS)
+      if (this.treeData.length > 0) {
+        this.selectedFolderTreeNodeItem = this.treeData[0];
+        this.buildBreadcrumbPath(this.treeData[0]);
+        this.getAllFilesbyFolderId(this.treeData[0].id);
+      }
+    }
   }
 }

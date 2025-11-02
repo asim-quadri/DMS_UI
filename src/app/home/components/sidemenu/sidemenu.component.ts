@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
+import { PersistenceService } from '../../../Services/persistence.service';
 
 @Component({
   selector: 'app-sidenav',
@@ -8,13 +9,18 @@ import { Router } from '@angular/router';
   standalone: true
 })
 export class SidemenuComponent {
-  constructor(private router: Router){
+  constructor(private router: Router, private persistenceService: PersistenceService){
 
   }
 navigatetoPage(navigateUrl: string) {
   this.router.navigate(['/home/'+ navigateUrl]).then(() => {
     location.reload();
   });
+}
+
+logout(event: Event) {
+  event.preventDefault();
+  this.persistenceService.logout();
 }
 
 

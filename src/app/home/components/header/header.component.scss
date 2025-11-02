@@ -39,6 +39,28 @@ li {
 	color: #fff;
 	border-radius: 5px;
 }
+.btn-logout {
+	background-color: transparent;
+	width: 40px!important;
+	height: 40px;
+	border: 1px solid #fff;
+	color: #fff;
+	border-radius: 5px;
+	font-size: 16px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.3s ease;
+}
+.btn-logout:hover {
+	background-color: rgba(255, 255, 255, 0.1);
+	color: #fff;
+	border-color: #fff;
+}
+.logout-option {
+	display: flex;
+	align-items: center;
+}
 .wid-170 {
 	width: 170px!important;
 }

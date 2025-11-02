@@ -23,6 +23,11 @@ export class HeaderComponent {
   ngOnInit(): void {
     this.getAllEntityList();
   }
+
+  logout(): void {
+    this.persistance.logout();
+  }
+
   getAllEntityList(){
     this.entityService.getAllEntityList().subscribe((result: any) => {
       result.forEach((element: any) => {

@@ -12,11 +12,12 @@ import { catchError, finalize } from 'rxjs/operators';
 import { url } from './url';
 import { find } from 'underscore';
 import { LoaderService } from '../../Services/loader.service';
-import { environment } from '../../../environments/environment.dev';
+import { AppConfig } from '../../app.config';
 
 @Injectable()
 export class HttpRequestInterceptor implements HttpInterceptor {
   private arrDownloadApi = [] as Array<string>;
+  private appConfig = new AppConfig();
   // private arrUnauthApi = [url.auth.login, url.auth.logout] as Array<string>;
   // constructor(private localStorage: LocalStorage) {}
   constructor(private loaderService: LoaderService) { }
@@ -51,7 +52,7 @@ export class HttpRequestInterceptor implements HttpInterceptor {
     }
 
     if (!/^(http|https):/i.test(request.url)) {
-      request = request.clone({ url: environment.serverUrl + request.url });
+      request = request.clone({ url: this.appConfig.ServiceUrl + request.url });
     }
     return next.handle(request).pipe(
       catchError((error: HttpErrorResponse) => {

@@ -1,67 +1,115 @@
-<div class="container-fluid" style="width: 1385px; overflow: scroll;">
-  <!-- Header Section -->
-  <div class="row">
-    <div class="col-3">
-      <!-- Create Folder and Upload File Buttons -->
-      <div class="row mb-3 btn-padding-top">
-        <div class="col-6">
-          <button class="btn btn-success w-100 mb-2" (click)="openSm(content)">Create Folder</button>
-        </div>
-        <div class="col-6">
-          <button class="btn btn-success w-100 mb-2" (click)="triggerFileInput()">Upload File</button>
-          <input type="file" #fileInput style="display: none;" (change)="onFileSelected($event)">
-        </div>
+<div class="file-manager-container">
+  <!-- Top Toolbar -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <button class="btn btn-primary toolbar-btn" (click)="openSm(content)">
+        <i class="bi bi-folder-plus"></i> New Folder
+      </button>
+      <button class="btn btn-success toolbar-btn" (click)="triggerFileInput()">
+        <i class="bi bi-upload"></i> Upload
+      </button>
+      <input type="file" #fileInput style="display: none;" (change)="onFileSelected($event)">
+      <div class="toolbar-separator"></div>
+      <button class="btn btn-outline-secondary toolbar-btn">
+        <i class="bi bi-list-ul"></i>
+      </button>
+      <button class="btn btn-outline-secondary toolbar-btn">
+        <i class="bi bi-grid-3x3-gap"></i>
+      </button>
+    </div>
+    <div class="toolbar-right">
+      <div class="search-container">
+        <i class="bi bi-search search-icon"></i>
+        <input type="text" class="search-input" placeholder="Search in DMS">
       </div>
+      <button class="btn btn-outline-secondary toolbar-btn">
+        <i class="bi bi-three-dots"></i>
+      </button>
+    </div>
+  </div>
 
-      <!-- Folder Structure -->
-      <div class="p-3 bg-success rounded" style="height: calc(100vh - 150px); overflow-y: auto;">
-        <div class="treeview">
-          <ul class="list-group">
-            <li
-              class="list-group-item border-0"
-              *ngFor="let item of treeData"
-              [ngClass]="{'selected': isSelected(item)}"
-            >
-              <div class="d-flex justify-content-between align-items-center">
-                <div class="icon">
-                  <i class="bi bi-folder-fill" style="font-size: 1rem; color: #28a745;"></i>
-                </div> &nbsp;
-                <div (click)="selectItem(item, $event)" class="flex-grow-1">
-                  {{ item.label }}
+  <!-- Navigation Bar -->
+  <div class="nav-bar">
+    <div class="breadcrumb-container">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item" 
+              *ngFor="let breadcrumb of breadcrumbPath; let last = last"
+              [class.active]="last">
+            <span *ngIf="!last" 
+                  class="breadcrumb-link" 
+                  (click)="navigateToBreadcrumb(breadcrumb)">
+              <i class="bi bi-house-door" *ngIf="breadcrumb.label === 'DMS'"></i>
+              {{ breadcrumb.label }}
+            </span>
+            <span *ngIf="last" class="breadcrumb-current">
+              <i class="bi bi-house-door" *ngIf="breadcrumb.label === 'DMS'"></i>
+              {{ breadcrumb.label }}
+            </span>
+          </li>
+        </ol>
+      </nav>
+    </div>
+    <div class="view-options">
+      <div class="dropdown">
+        <button class="btn btn-sm dropdown-toggle filter-btn" type="button" data-bs-toggle="dropdown">
+          <i class="bi bi-funnel"></i> Filter
+        </button>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item" href="#">All files</a></li>
+          <li><a class="dropdown-item" href="#">Documents</a></li>
+          <li><a class="dropdown-item" href="#">Images</a></li>
+          <li><a class="dropdown-item" href="#">Recently modified</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h6 class="sidebar-title">Folders</h6>
+        <button class="btn btn-sm btn-outline-primary" (click)="openSm(primaryFolder)">
+          <i class="bi bi-plus"></i>
+        </button>
+      </div>
+      
+      <div class="folder-tree-container">
+        <div class="folder-tree">
+          <ul class="tree-list">
+            <li class="tree-item" *ngFor="let item of treeData" [class.selected]="isSelected(item)">
+              <div class="tree-node" (click)="selectItem(item, $event)">
+                <div class="tree-node-content">
+                  <span class="tree-toggle" *ngIf="item.children?.length" (click)="toggle(item, $event)">
+                    <i class="bi" [class.bi-chevron-right]="!item.expanded" [class.bi-chevron-down]="item.expanded"></i>
+                  </span>
+                  <i class="bi bi-folder-fill folder-icon"></i>
+                  <span class="folder-name">{{ item.label }}</span>
                 </div>
-                <span *ngIf="item.children?.length" (click)="toggle(item, $event)">
-                  <i class="fas" [ngClass]="item.expanded ? 'fa-caret-down' : 'fa-caret-right'"></i>
-                </span>
               </div>
-              <ul *ngIf="item.expanded" class="list-group nested pl-3">
-                <li
-                  class="list-group-item border-0"
-                  *ngFor="let child of item.children"
-                  [ngClass]="{'selected': isSelected(child)}"
-                >
-                  <div class="d-flex justify-content-between align-items-center">
-                    <div class="icon">
-                      <i class="bi bi-folder-fill" style="font-size: 1rem; color: #28a745;"></i>
-                    </div> &nbsp;
-                    <div (click)="selectItem(child, $event)" class="flex-grow-1">
-                      {{ child.label }}
+              
+              <!-- Nested folders -->
+              <ul class="tree-list nested" *ngIf="item.expanded && item.children?.length">
+                <li class="tree-item" *ngFor="let child of item.children" [class.selected]="isSelected(child)">
+                  <div class="tree-node" (click)="selectItem(child, $event)">
+                    <div class="tree-node-content nested-content">
+                      <span class="tree-toggle" *ngIf="child.children?.length" (click)="toggle(child, $event)">
+                        <i class="bi" [class.bi-chevron-right]="!child.expanded" [class.bi-chevron-down]="child.expanded"></i>
+                      </span>
+                      <i class="bi bi-folder folder-icon"></i>
+                      <span class="folder-name">{{ child.label }}</span>
                     </div>
-                    <span *ngIf="child.children?.length" (click)="toggle(child, $event)">
-                      <i class="fas" [ngClass]="child.expanded ? 'fa-caret-down' : 'fa-caret-right'"></i>
-                    </span>
                   </div>
-                  <ul *ngIf="child.expanded" class="list-group nested pl-3">
-                    <li
-                      class="list-group-item border-0"
-                      *ngFor="let grandchild of child.children"
-                      [ngClass]="{'selected': isSelected(grandchild)}"
-                    >
-                      <div class="d-flex justify-content-between align-items-center">
-                        <div class="icon">
-                          <i class="bi bi-folder-fill" style="font-size: 1rem; color: #28a745;"></i>
-                        </div> &nbsp;
-                        <div (click)="selectItem(grandchild, $event)" class="flex-grow-1">
-                          {{ grandchild.label }}
+                  
+                  <!-- Third level -->
+                  <ul class="tree-list nested" *ngIf="child.expanded && child.children?.length">
+                    <li class="tree-item" *ngFor="let grandchild of child.children" [class.selected]="isSelected(grandchild)">
+                      <div class="tree-node" (click)="selectItem(grandchild, $event)">
+                        <div class="tree-node-content nested-content-deep">
+                          <i class="bi bi-folder folder-icon"></i>
+                          <span class="folder-name">{{ grandchild.label }}</span>
                         </div>
                       </div>
                     </li>
@@ -71,133 +119,98 @@
             </li>
           </ul>
         </div>
-
-
-
-        <button class="btn btn-light w-100 mt-3 border border-success" (click)="openSm(primaryFolder)">Add Primary Folder</button>
       </div>
     </div>
 
-    <div class="col-9">
-      <div class="row" style="padding: 10px 0 0 13px;">
-        <!-- Search Input -->
-        <input type="text" class="form-control mb-2" placeholder="Searching for..." style="max-width: 300px;">
-        <div class="col d-flex justify-content-end" style="padding-right: 10px;">
-          <div class="dropdown">
-            <button class="btn btn-light dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-              Owned by me
-            </button>
-            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-              <li><a class="dropdown-item" href="#">Owned by me</a></li>
-              <li><a class="dropdown-item" href="#">Shared with me</a></li>
-            </ul>
-          </div>
+    <!-- Content Area -->
+    <div class="content-area">
+      <!-- File Grid Header -->
+      <div class="content-header">
+        <div class="content-title">
+          <h5 class="mb-0">{{ selectedFolderTreeNodeItem?.label || 'Files' }}</h5>
+          <small class="text-muted">{{ files.length }} items</small>
+        </div>
+        <div class="content-actions">
+          <button class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-info-circle"></i>
+          </button>
         </div>
       </div>
 
-      <!-- <div class="row">
-        <div class="col-md-10">
-          <div class="row">
-            <div class="col">
-              <span>Folders & Files</span>
-            </div>
-          </div>
-        </div>
-      </div> -->
-
-      <!-- <div class="mt-3 row">
-        <div class="col-md-2 mb-3" *ngFor="let folder of folders">
-          <div class="card" (click)="onClickFolder(folder.id)">
-            <div class="card-body p-2 text-center">
-              <div class="icon mb-2">
-                <i class="bi bi-folder-fill" style="font-size: 2rem; color: #28a745;"></i>
-              </div>
-              <h6 class="card-title">{{folder.folderName}}</h6>
-              <p class="card-text text-muted">Folder ID - {{folder.id}}</p>
-              <p class="card-text"><small>{{folder.createdOn | date : "dd:mm:yyyy"}}</small></p>
-            </div>
-          </div>
-        </div>
-      </div> -->
-
-      <div class="d-flex flex-column mt-3" style="width: 100%;">
-        <!-- <h5>{{selectedFolderTreeNodeItem.label}}</h5> -->
+      <!-- File Grid -->
+      <div class="file-grid">
         <ag-grid-angular
-        style="flex: 1 1 auto; width: 100%; height: 500px;"
-        class="ag-theme-alpine"
+          class="ag-theme-alpine file-grid-table"
           [rowData]="files"
           [columnDefs]="columnDefs"
           [defaultColDef]="defaultColDef"
-          [pagination]="true">
+          [pagination]="true"
+          [paginationPageSize]="50"
+          [rowHeight]="40"
+          [headerHeight]="40"
+          [suppressCellFocus]="true"
+          [rowSelection]="'single'">
         </ag-grid-angular>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="files.length === 0">
+        <div class="empty-state-content">
+          <i class="bi bi-folder2-open empty-icon"></i>
+          <h6>This folder is empty</h6>
+          <p class="text-muted">Add files by clicking the Upload button or drag and drop files here.</p>
+          <button class="btn btn-primary" (click)="triggerFileInput()">
+            <i class="bi bi-upload"></i> Upload Files
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
+<!-- Modal Templates -->
 <ng-template #primaryFolder let-modal>
-  <div class="modal-header text-center">
-    <h4 class="modal-title w-100">Create New Primary Folder</h4>
-    <button class="btn close-btn" (click)="modal.dismiss('Cross click')">
-      <img src="assets/icons/cancel.svg" alt="Close" style="width: 17px;">
-    </button>
+  <div class="modal-header">
+    <h5 class="modal-title">Create Primary Folder</h5>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
-  <div class="modal-body mb-3" style="max-height: 80vh; overflow-y: auto;">
-    <div class="row justify-content-center">
-      <form [formGroup]="fbCreatePrimaryFolder" (ngSubmit)="createPrimaryFolder()" class="mb-6">
-        <div class="col-7 text-center">
-          <input type="text" class="form-control" placeholder="Primary Folder Name" formControlName="primaryFolderName">
-          <br>
-          <button type="submit" class="btn btn-outline-primary mt-4">Submit</button>
-        </div>
-      </form>
-    </div>
+  <div class="modal-body">
+    <form [formGroup]="fbCreatePrimaryFolder" (ngSubmit)="createPrimaryFolder()">
+      <div class="mb-3">
+        <label class="form-label">Folder Name</label>
+        <input type="text" class="form-control" formControlName="primaryFolderName" placeholder="Enter folder name">
+      </div>
+      <div class="d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="!fbCreatePrimaryFolder.valid">
+          <i class="bi bi-folder-plus"></i> Create
+        </button>
+      </div>
+    </form>
   </div>
 </ng-template>
 
 <ng-template #content let-modal>
-  <div class="modal-header text-center">
-    <h4 class="modal-title w-100">Create New Folder</h4>
-    <button class="btn close-btn" (click)="modal.dismiss('Cross click')">
-      <img src="assets/icons/cancel.svg" alt="Close" style="width: 17px;">
-    </button>
+  <div class="modal-header">
+    <h5 class="modal-title">Create New Folder</h5>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
-  <div class="modal-body mb-3" style="max-height: 80vh; overflow-y: auto;">
-    <div class="row justify-content-center">
-      <form [formGroup]="formgroupCreateFolder" (ngSubmit)="createSubFolder()" class="mb-6">
-        <div class="col-7 text-center">
-          <input type="text" class="form-control" placeholder="Folder Name" formControlName="folderName">
-          <br>
-          <button type="submit" class="btn btn-outline-primary mt-4">Create Folder</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</ng-template>
-
-<ng-template #upload let-modal>
-  <div class="modal-header text-center">
-    <h4 class="modal-title w-100">Upload Folder/File</h4>
-    <button class="btn close-btn" (click)="modal.dismiss('Cross click')">
-      <img src="assets/icons/cancel.svg" alt="" style="width: 17px;">
-    </button>
-  </div>
-  <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
-    <div class="row">
-      <div class="col-12">
-        <div class="drag-container text-center">
-          <div class="drag-img">
-            <img src="assets/login-images/fileupload.svg" alt="" class="img-fluid">
-          </div>
-          <div class="drag-text">
-            <p>Drag and Drop Files/Folders here<br>or Click to upload button/create folder</p>
-          </div>
-        </div>
+  <div class="modal-body">
+    <form [formGroup]="formgroupCreateFolder" (ngSubmit)="createSubFolder()">
+      <div class="mb-3">
+        <label class="form-label">Folder Name</label>
+        <input type="text" class="form-control" formControlName="folderName" placeholder="Enter folder name">
+        <div class="form-text">This folder will be created in: {{ selectedFolderTreeNodeItem?.label || 'Root' }}</div>
       </div>
-      <div class="col-12 text-center mt-3">
-        <button class="btn btn-outline-primary me-3" (click)="modal.dismiss('Cross click')">Cancel</button>
-        <button class="btn btn-primary">Continue</button>
+      <div class="d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="!formgroupCreateFolder.valid">
+          <i class="bi bi-folder-plus"></i> Create
+        </button>
       </div>
-    </div>
+    </form>
   </div>
 </ng-template>

@@ -3,11 +3,12 @@ import { RouterModule, Routes } from '@angular/router';
 import { LoginComponent } from './home/auth/login/login.component';
 import { ForgotPasswordComponent } from './home/auth/forgot-password/forgot-password.component';
 import { NewOrganizationComponent } from './home/components/new-organization/new-organization.component';
+import { AuthGuardService } from './Services/auth-guard.service';
 
 const routes: Routes = [
   {
     path: 'home',
-    //canActivate: [AuthGuardService],
+    canActivate: [AuthGuardService],
     loadChildren: () => import('./home/homepage.module').then(m => m.HomepageModule)
   },
   { path: 'login', component: LoginComponent },

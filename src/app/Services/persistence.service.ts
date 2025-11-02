@@ -32,6 +32,10 @@ export class PersistenceService {
 
   setSessionStorage(key: string, data: any): void {
     sessionStorage.setItem(key, JSON.stringify(data));
+    // Update the user property if we're setting currentUser
+    if (key === 'currentUser') {
+      this.user = data;
+    }
   }
 
   removeSessionStorage(key: string) {
@@ -47,7 +51,23 @@ export class PersistenceService {
   }
 
   getUserUID() {
-    return this.user!.uid ? this.user!.uid : null;
+    // First check the user property, then fallback to session storage
+    if (this.user?.uid) {
+      return this.user.uid;
+    }
+    
+    // Fallback: check session storage directly
+    const currentUser = sessionStorage.getItem('currentUser');
+    if (currentUser && currentUser !== '{}') {
+      try {
+        const userData = JSON.parse(currentUser);
+        return userData?.uid || null;
+      } catch (error) {
+        return null;
+      }
+    }
+    
+    return null;
   }
 
   getRoleUID() {

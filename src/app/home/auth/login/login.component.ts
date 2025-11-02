@@ -39,18 +39,32 @@ export class LoginComponent {
       this.apiService.login(login).subscribe(
         (user: any) => {
           if (user) {
+            console.log('Login successful, user data:', user);
             this.persistance.setSessionStorage('currentUser', user);
             this.notifier.notify('success', 'Login Successfully');
             this.formgroup.reset();
-            this.router.navigate(['/home']).then(() => {
-              location.reload();
-            });
+            
+            // Give a small delay to ensure session storage is set before navigation
+            setTimeout(() => {
+              this.router.navigate(['/home']).then((navigationSuccess) => {
+                console.log('Navigation result:', navigationSuccess);
+                if (navigationSuccess) {
+                  location.reload();
+                }
+              });
+            }, 100);
+          } else {
+            this.notifier.notify('error', 'Invalid login response');
           }
         },
         (error) => {
-          this.notifier.notify('error', 'Some thing went wrong');
+          console.error('Login error:', error);
+          this.notifier.notify('error', 'Something went wrong during login');
         }
       );
+    } else {
+      console.log('Form is invalid');
+      this.notifier.notify('error', 'Please fill in all required fields');
     }
   }
 }
