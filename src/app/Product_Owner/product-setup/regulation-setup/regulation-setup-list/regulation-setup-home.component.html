@@ -1,0 +1,397 @@
+<div class="main-container">
+  <app-header-menus [active]="active"></app-header-menus>
+  <div class="home-content user-table product-setup">
+    <div class="row py-4 mb-2">
+      <div class="col-md-6">
+        <form action="">
+          <div class="row">
+            <!-- <div class="col-4">
+              <label for="">Country :</label>
+              <app-input-dropdown [formGroup]="formgroup" [name]="'countryId'" [object]="this.countryStateMapping"
+                [key]="'countryName'" [value]="'id'">
+              </app-input-dropdown>
+            </div> -->
+            <div class="col-4">
+              <!-- <label for="">Regulation: :</label> -->
+              <!-- <ng-multiselect-dropdown
+                [placeholder]="'Select Regulation:'"
+                [settings]="regulationdropdownSettings"
+                [data]="regulationList"
+                class="singleselect"
+              >
+              </ng-multiselect-dropdown> -->
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="col-6 mt-25 pl-70">
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+          <button class="btn btn-color m-10" type="button" (click)="toggleRegulationRedirect($event)"
+                  *ngIf="showAddNewRegulation">
+            <img src="assets/images/icons/map-lawyer.svg" alt="Add Regulation" class="pb-1" width="18" height="18" /> &nbsp; Add New Regulation
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="row mt-1 gx-1">
+      <div class="col-12 col-lg-5">
+        <div class="product-panel">
+          <div class="product-panel-header">
+            <div class="input-group text-center mb-1">
+              <label for="Country" class="mt-10">Regulation/Compliance:&nbsp; &nbsp;</label>
+              <input  #searchInput type="search"  (search)="clearSearch()" class="form-control" placeholder="Search by keywords ..."  (keyup)="searchRegulations($event)" />
+              <div class="input-group-prepend">
+                <button class="btn btn-white" type="button"  (click)="searchRegulations(searchInput.value)">
+                  <i class="bi bi-search"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        
+          <div class="product-panel-body">
+            <div class="regulation">
+              <div *ngFor="let regulation of regulationSetup">
+                <div [hidden]="!regulation.visible">
+                  <div class="accordion" id="accordionRegulations">
+                    <div class="accordion-item">
+                      <h2 class="accordion-header mb-0" id="heading{{regulation.id}}">
+                        <button class="accordion-button" type="button" (click)="toggleRegulation(regulation!)"
+                                (contextmenu)="onMenuRightClick($event, regulation, regulation)">
+                          {{ regulation.regulationName }}
+                        </button>
+                      </h2>
+                      <div [id]="'collapse'+regulation.id" class="accordion-collapse collapse"
+                           [class.show]="isRegulationExpanded(regulation.id!)">
+                        <div class="accordion-body">
+                          <ng-container *ngFor="let compliance of regulation.compliance">
+                            <ng-container *ngTemplateOutlet="renderCompliance; context: { $implicit: compliance, regulation: regulation }">
+                            </ng-container>
+                          </ng-container>
+        
+                          <div *ngFor="let toc of regulation.toc">
+                            <h5 (click)="toggleTocUnderRegulation(toc!, regulation)">
+                              {{ toc.typeOfComplianceName }} - {{ regulation.regulationName }}
+                            </h5>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+        
+              <!-- Context Menu -->
+              <div *ngIf="showContextMenu && !hideShowContextMenuContainer" [ngStyle]="{'top': contextMenuPosition.y, 'left': contextMenuPosition.x}"
+                class="context-menu">
+                <div *ngIf="showComplianceMenu" (click)="onMenuItemClick('Compliance')">Compliance</div>
+                <div *ngIf="showTypeOfComplianceMenu" (click)="onMenuItemClick('Type of Compliance')">Type of Compliance</div>
+              </div>
+            </div>
+        
+            <!-- Template for rendering compliance recursively -->
+            <ng-template #renderCompliance let-compliance let-regulation="regulation">
+              <div>
+                <h5 (click)="toggleCompliance(compliance, regulation)" class="compliance-inner-title"
+                    (contextmenu)="onMenuRightClick($event, compliance, regulation)">
+                  <b>Complaince-Name: </b>{{ compliance.complianceName }}
+                  <b>Regulation-Name: </b>{{ regulation.regulationName }}
+                  <span class="float-end"><i class="fa-solid fa-angle-down"></i></span>
+                   <div class="nested-panel" *ngIf="isComplianceExpanded(compliance.id!)">
+                  <div *ngFor="let toc of compliance.toc">
+                    <h6 class="mb-0 compliance-sub-title" (click)="toggleTocUnderCompliance(compliance, toc!, regulation)">
+                      {{ toc.typeOfComplianceName }} - {{ compliance.complianceName }}
+                    </h6>
+                  </div>
+        
+                  <ng-container *ngFor="let childCompliance of compliance.compliance">
+                    <ng-container *ngTemplateOutlet="renderCompliance; context: { $implicit: childCompliance, regulation: regulation }">
+                    </ng-container>
+                  </ng-container>
+                </div>
+                </h5>
+              </div>
+            </ng-template>
+          </div>
+
+          <button class="btn btn-approve mt-20" (click)="openRegulationApproverModal($event)">
+            <i class="bi bi-arrow-down-up"></i> &nbsp; APPROVALS&nbsp;
+            <span>{{regulationSetupCount}}</span>
+          </button>
+        </div>
+        
+      </div>
+      <div class="col-12 col-lg-7">
+        <!-- All the compment will come hear -->
+        <app-add-ragulation-setup *ngIf="currentComponent === 'ragulation-setup'" [ActionType]="ActionType"
+          [RegulationSetupUID]="regulationSetupUID" [regulationSetupId]="regulationId"
+          (reloaddata)="reload($event)"></app-add-ragulation-setup>
+        <app-add-compliance *ngIf="currentComponent === 'Add-Compliance'" [ActionType]="ActionType"
+          [RegComplianceUID]="RegComplianceUID" [regulationSetupId]="regulationId" [ParentComplianceId]="complianceId"
+          [ParentComplianceName]="complianceName" [regulationSetupName]="regulationSetupName"
+          (reloaddata)="reload($event)" [isParameterChecked]="isParameterChecked"
+          [regulationSetupUID]="regulationSetupUID"></app-add-compliance>
+        <app-toc-setup *ngIf="currentComponent === 'Add-TOC'" [regulationSetupName]="regulationSetupName"
+          [regulationSetupId]="regulationId" [complianceId]="complianceId" [ParentComplianceName]="complianceName"
+          [RegTOC]="RegTOC" [ActionType]="ActionType" (reloaddata)="reload($event)"
+          [isParameterChecked]="isParameterChecked" [regulationSetupUID]="regulationSetupUID"></app-toc-setup>
+        <div *ngIf="currentComponent === ''">
+          <div class="row">
+            <div class="col-md-12 pr-0">
+              <div class="main-container">
+                <div class="home-content user-table product-setup">
+                  <div class="row mt-20">
+                    <div class="col-12">
+                      <div class="product-panel">
+                        <div class="product-panel-header text-center">
+                          <h4>Regulation Setup</h4>
+                        </div>
+                        <div class="product-panel-body new-regulation text-center ">
+                          <div class="row justify-content-center">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="clearfix"></div>
+<!-- modal -->
+
+
+
+<!-- <ng-template #Approvals let-modal>
+  <app-regulation-approval [modal]="modal" (reloaddata)="reload($event)" (openCountryPopup)="openCountryPopup($event)"
+    (sendSelectedUID)="getSelectedUId($event)"></app-regulation-approval>
+</ng-template> -->
+
+<ng-template #RegComplianceReview let-modal>
+  <app-review-compliance [approverUID]="approverUID" (reloaddata)="reload($event)"></app-review-compliance>
+</ng-template>
+
+<!-- <ng-template #RegulationSetupReview let-modal>
+  <app-review-regulation-setup [approverUID]="approverUID"></app-review-regulation-setup>
+</ng-template> -->
+
+<ng-template #AddRegulationSetup let-modal>
+  <app-add-ragulation-setup [regulationSetupScreen]="regulationSetupScreen"></app-add-ragulation-setup>
+</ng-template>
+
+<ng-template #TOCRegistration let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title" id="modal-basic-title">Type of Compliance Registration</h4>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <div class="row">
+      <div class="col-md-1"></div>
+      <div class="col-md-10">
+        <div class="row justify-content-center">
+          <app-toc-registration [tocRegistrationHistory]="tocRegistrationHistory"></app-toc-registration>
+        </div>
+      </div>
+      <div class="col-md-1"></div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #TOCRules let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title" id="modal-basic-title">Type of Compliance Registration</h4>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <div class="row">
+      <div class="col-md-1"></div>
+      <div class="col-md-10">
+        <div class="row justify-content-center">
+          <app-toc-rules [tocRulesHistory]="tocRulesHistory"></app-toc-rules>
+        </div>
+      </div>
+      <div class="col-md-1"></div>
+    </div>
+  </div>
+</ng-template>
+<!-- <ng-template #content let-modal>
+  <app-regulation-approval [modal]="modal" (openRegulationSetupReview)="openRegulationSetupReview($event)"
+    (sendSelectedUID)="getSelectedUId($event)"></app-regulation-approval>
+</ng-template> -->
+
+<!-- <ng-template #addParameterApporoval let-modal>
+  <app-review-regulation-setup [modal]="modal" [RegulationSetupList]="rowData" [pendingRegulationSetupApproval]="pendingApproval" (reloadPage)="reloadPage($event)">
+  </app-review-regulation-setup>
+</ng-template> -->
+
+<!-- <ng-template #RegComplianceReview let-modal>
+ <app-review-compliance [RegComplianceUID]="RegComplianceUID"></app-review-compliance>
+</ng-template> -->
+
+<ng-template #Approvalsincometex let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title" id="modal-basic-title">Approvals Income Tax</h4>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body approval">
+    <div class="row">
+      <div class="col-3">
+        <button class="btn btn-status">Approval Pending</button>
+      </div>
+      <div class="col-8 text-center user-info">
+        <ul>
+          <li>ID : <span>Rg1234</span></li>
+          <li>Parent Name : <span>RaviKumar</span></li>
+          <li>Point of Contact : <span>Haribabu</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-2"></div>
+      <div class="col-8 mt-25 new-regulation text-center">
+        <nav ngbNav #nav="ngbNav" class="nav-tabs justify-content-center">
+          <ng-container [ngbNavItem]="2" ngbNavItem>
+            <a ngbNavLink>Basic details</a>
+            <ng-template ngbNavContent>
+              <div class="row mt-25 justify-content-center">
+                <div class="col-3">
+                  <label for="">Type</label> <br />
+                  <select class="form-select" name="type" required="">
+                    <option value="">Select</option>
+                    <option value="Regulation" selected>Regulation</option>
+                  </select>
+                </div>
+                <div class="col-3">
+                  <label for="">County</label> <br />
+                  <select class="form-select" name="country" required="">
+                    <option value="">Select</option>
+                    <option value="india" selected>India</option>
+                  </select>
+                </div>
+                <div class="col-3">
+                  <label for="">State</label> <br />
+                  <select class="form-select" name="state" required="">
+                    <option value="">Select</option>
+                    <option value="none" selected>None</option>
+                  </select>
+                </div>
+              </div>
+              <div class="row justify-content-center mt-25">
+                <div class="col-3">
+                  <label for="">Regulation Name</label> <br />
+                  <select class="form-select" name="regulationname" required="">
+                    <option value="">Select</option>
+                    <option value="Regulation">Regulation</option>
+                  </select>
+                </div>
+                <div class="col-3">
+                  <label for="">Regulation Group</label> <br />
+                  <select class="form-select" name="regulationgroup" required="">
+                    <option value="">Select</option>
+                    <option value="india">India</option>
+                  </select>
+                </div>
+              </div>
+              <div class="row justify-content-center mt-25">
+                <div class="col-8">
+                  <label for="">Description</label> <br />
+                  <textarea name="" class="form-control height-100"></textarea>
+                </div>
+              </div>
+              <div class="row justify-content-center mt-25">
+                <div class="col-3">
+                  <button class="btn btn-save" [disabled]="active === 3" (click)="nav.select(3)">
+                    Next
+                  </button>
+                </div>
+              </div>
+            </ng-template>
+          </ng-container>
+          <ng-container [ngbNavItem]="3" ngbNavItem>
+            <a ngbNavLink>Setup</a>
+            <ng-template ngbNavContent>
+              <div class="row mt-25 justify-content-center">
+                <div class="col-3">
+                  <label for="">Major Industry</label>
+                  <select class="form-select" name="major" required="">
+                    <option value="">Agriculture</option>
+                  </select>
+                </div>
+                <div class="col-3">
+                  <label for="">Minor Industry</label>
+                  <select class="form-select" name="minor" required="">
+                    <option value="">Fishing</option>
+                  </select>
+                </div>
+                <div class="col-3">
+                  <label for="">Legal Entity type</label>
+                  <select class="form-select" name="legalentity" required="">
+                    <option value="">Pvt</option>
+                  </select>
+                </div>
+              </div>
+              <div class="row justify-content-center mt-25">
+                <label>Select Parameter</label>
+                <div class="col-3">
+                  <select class="form-select" name="parameter" required="">
+                    <option value="">No.of Employees</option>
+                  </select>
+                </div>
+                <div class="col-3">
+                  <input type="text" value="Ex: 200" class="form-control h-500" />
+                </div>
+                <div class="col-3 mt-10">
+                  <button class="btn btn-and">AND&</button>
+                  <button class="btn btn-or">OR/</button>
+                </div>
+              </div>
+              <div class="row justify-content-center mt-25">
+                <label>Select Parameter</label>
+                <div class="col-3">
+                  <select class="form-select" name="parameter" required="">
+                    <option value="">No.of Employees</option>
+                  </select>
+                </div>
+                <div class="col-3 mt-10">
+                  <button class="btn btn-or">Yes</button>
+                  <button class="btn btn-or">No</button>
+                </div>
+                <div class="col-3 mt-10">
+                  <button class="btn btn-or">AND&</button>
+                  <button class="btn btn-or">OR/</button>
+                </div>
+              </div>
+
+              <div class="row mb-2 justify-content-center mt-25">
+                <div class="col-3">
+                  <button class="btn btn-save" [disabled]="active === 2" (click)="nav.select(2)">
+                    <i class="fa-solid fa-angles-left"></i> Previous
+                  </button>
+                </div>
+              </div>
+              <div class="row mb-5 justify-content-center mt-25">
+                <div class="col-6">
+                  <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button class="btn btn-accept">
+                      <i class="bi bi-check2-circle"></i> &nbsp; ACCEPT
+                    </button>
+                    &nbsp;
+                    <button class="btn btn-reject">
+                      <i class="bi bi-x-circle"></i> &nbsp;REJECT
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </ng-template>
+          </ng-container>
+        </nav>
+        <div [ngbNavOutlet]="nav" class="mt-2"></div>
+      </div>
+    </div>
+  </div>
+</ng-template>

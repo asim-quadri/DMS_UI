@@ -1,0 +1,98 @@
+<div class="modal-header text-center">
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <div class="row">
+      <div class="col-md-8">
+        <div class="stauts-list">
+          <ul>
+            <li class="status-circle green-status"></li>
+            <li class="status-text">Approved</li>
+
+            <li class="status-circle oragne-status"></li>
+            <li class="status-text">Pending</li>
+
+            <li class="status-circle red-status"></li>
+            <li class="status-text">Rejected</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <form action="">
+          <div class="input-group">
+            <input type="text" class="form-control" placeholder="Search by keyword  ..." />
+            <div class="input-group-append">
+              <button class="btn btn-search h45" type="submit">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="row">
+      <div class="table-responsive modal-table">
+        <ag-grid-angular #agGrid style="width: 1100px; height: 540px;" class="ag-theme-alpine" [rowData]="rowData!"
+        [columnDefs]="columnDefs" [defaultColDef]="defaultColumnDef"
+        [rowSelection]="rowSelection"
+        [suppressRowClickSelection]="true"
+        (gridReady)="onGridReady($event)"  [pagination]="true"
+        [paginationPageSize]="10"
+        [paginationAutoPageSize]="true"
+        >
+      </ag-grid-angular>
+        <!-- <table class="table">
+          <thead>
+            <tr>
+              <th scope="col"></th>
+              <th scope="col">S.No</th>
+              <th scope="col">Type</th>
+              <th scope="col">Username</th>
+              <th scope="col">Employee ID</th>
+              <th scope="col">Role</th>
+              <th scope="col">Point Of Contact</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr >
+              <td scope="row" class="bg-white text-green">
+                <i class="fa-solid fa-arrow-down-long"></i>
+              </td>
+              <td scope="row" class="status-approved">1</td>
+              <td scope="row" class="text-black">Add User</td>
+              <td scope="row">Hari Babu</td>
+              <td scope="row">EMP1234</td>
+              <td scope="row">User</td>
+              <td scope="row">Hari Babu</td>
+              <td scope="row" class="text-green">Approved</td>
+            </tr>
+            <tr >
+              <td scope="row" class="bg-white text-green">
+                <i class="fa-solid fa-arrow-down-long"></i>
+              </td>
+              <td scope="row" class="status-pending">2</td>
+              <td scope="row" class="text-black">Access Control</td>
+              <td scope="row">Hari Babu</td>
+              <td scope="row">EMP1234</td>
+              <td scope="row">User</td>
+              <td scope="row">Hari Babu</td>
+              <td scope="row" class="access-control">N/A</td>
+            </tr>
+            <tr >
+              <td scope="row" class="bg-white text-green">
+                <i class="fa-solid fa-arrow-down-long"></i>
+              </td>
+              <td scope="row" class="status-reject">3</td>
+              <td scope="row" class="text-black">Access Control</td>
+              <td scope="row">Hari Babu</td>
+              <td scope="row">EMP120000034</td>
+              <td scope="row">User</td>
+              <td scope="row">Hari Babu</td>
+              <td scope="row" class="access-control">Approval Rejected</td>
+            </tr>
+          </tbody>
+        </table> -->
+      </div>
+    </div>
+  </div>

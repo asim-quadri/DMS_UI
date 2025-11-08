@@ -1,0 +1,64 @@
+<div class="file-viewer-container">
+  <div *ngIf="loading" class="viewer-loading">Loading document...</div>
+
+  <div *ngIf="error" class="viewer-error">
+    <p>{{ error }}</p>
+    <p>If the file is on localhost the browser may block embedded viewers. Consider making the file accessible via a public URL or use the built-in renderer (requires the <code>xlsx</code> and/or <code>mammoth</code> packages for Excel/DOCX rendering).</p>
+  </div>
+  <!-- Excel rendered as structured table -->
+  <div *ngIf="sheetDataRows && sheetDataRows.length > 0 && !loading" class="viewer-content">
+    <div class="sheet-toolbar" style="margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+  <label *ngIf="sheetNames.length" style="font-weight:600">Sheet:</label>
+  <select *ngIf="sheetNames.length" (change)="changeSheet($any($event.target).value)">
+        <option *ngFor="let s of sheetNames; let i = index" [value]="i" [selected]="i===selectedSheetIndex">{{ s }}</option>
+      </select>
+      <div style="margin-left:auto; font-size:12px; color:#666">Rows: {{ sheetDataRows.length }} | Columns: {{ sheetHeaders.length }}</div>
+    </div>
+
+    <div class="sheet-table-wrapper" style="overflow:auto; max-height:600px; border:1px solid #eee;">
+      <table class="sheet-table" style="border-collapse:collapse; width:100%;">
+        <thead style="position:sticky; top:0; background:#fafafa; z-index:2;">
+          <tr>
+            <th *ngFor="let h of sheetHeaders" style="border:1px solid #ddd; padding:6px; text-align:left;">{{ h }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of sheetDataRows">
+            <td *ngFor="let cell of row" style="border:1px solid #f1f1f1; padding:6px;">{{ cell }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DOCX rendered HTML -->
+  <div *ngIf="docHtml && !loading" class="viewer-content" [innerHTML]="docHtml"></div>
+
+  <!-- Images -->
+  <div *ngIf="imageSrc && !loading" class="viewer-image">
+    <img [src]="imageSrc" alt="image preview" style="max-width:100%; height:auto" />
+  </div>
+
+  <!-- PDF or generic embed -->
+  <div *ngIf="blobResourceUrl && fileType === 'pdf' && !loading" class="viewer-pdf">
+    <iframe [src]="blobResourceUrl" width="100%" height="800px"></iframe>
+  </div>
+
+  <!-- Generic embed fallback for other blob types -->
+  <div *ngIf="blobResourceUrl && fileType !== 'pdf' && !loading" class="viewer-embed">
+    <object [data]="blobResourceUrl" type="" width="100%" height="800px">
+      <p>Your browser cannot display this file. <a [href]="fileUrl" target="_blank">Download</a> to open it locally.</p>
+    </object>
+  </div>
+
+  <!-- Text files -->
+  <div *ngIf="textContent && !loading" class="viewer-text">
+    <pre>{{ textContent }}</pre>
+  </div>
+
+  <!-- Final fallback: direct link -->
+  <div *ngIf="!sheetHtml && !docHtml && !imageSrc && !blobResourceUrl && !textContent && !loading && !error" class="viewer-fallback">
+    <p>Unable to render inline — open or download the file.</p>
+    <a [href]="fileUrl" target="_blank">Open file</a>
+  </div>
+</div>

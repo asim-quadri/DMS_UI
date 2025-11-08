@@ -1,0 +1,583 @@
+<div class="main-container">
+  <app-header-menus [active]="active"></app-header-menus>
+  <div class="home-content user-table product-setup">
+    <div class="row gx-5 my-2 pb-2">
+      <div class="col-md-4">
+        <form action="">
+          <div class="row gx-2">
+            <div class="col-6">
+              <label for="">Country :</label>
+              <app-input-dropdown
+                [formGroup]="formgroup"
+                [name]="'countryId'"
+                [object]="this.countries"
+                [key]="'countryName'"
+                [value]="'id'"
+                (change)="getStateById($event)"
+              >
+              </app-input-dropdown>
+            </div>
+            <div class="col-6">
+              <label for="">State :</label>
+              <!-- <app-input-dropdown [formGroup]="formgroup" [name]="'stateId'"
+                                        [object]="this.stateList" [key]="'stateName'" [value]="'id'">
+                                    </app-input-dropdown> -->
+              <app-input-multiselect
+                [formGroup]="formgroup"
+                [name]="'stateId'"
+                [object]="this.stateList"
+                [key]="'id'"
+                [value]="'stateName'"
+                (getSelectedItems)="getDropdownSelectedStates($event)"
+              ></app-input-multiselect>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="col-2 pl-0 d-flex align-items-end">
+        <button
+          class="btn btn-color w-auto primary-orange-btn"
+          type="button"
+          (click)="addCountryState($event)"
+          [disabled]="!formgroup.valid"
+          *ngIf="showAddButton"
+        >
+          ADD
+        </button>
+      </div>
+      <div class="col-6 d-flex align-items-end justify-content-end">
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+          <button
+            class="btn btn-color me-md-2"
+            (click)="open(state)"
+            *ngIf="showAddStateButton"
+          >
+            <img
+              src="assets/images/icons/location-add.svg"
+              alt="Add New State"
+              class="mb-1"
+              width="16"
+              height="16"
+            />
+            &nbsp; Add New State
+          </button>
+          <button
+            class="btn btn-color"
+            (click)="openCountryPopup(undefined)"
+            *ngIf="showAddCountryButton"
+          >
+            <img
+              src="assets/images/icons/location-add.svg"
+              alt="Add New State"
+              class="mb-1"
+              width="16"
+              height="16"
+            />
+            &nbsp; Add New Country
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="row mt-1">
+      <div class="product-panel">
+        <div class="product-panel-header">
+          <div class="row">
+            <div class="col-md-5">
+              <div class="input-group text-center">
+                <label for="Country">Country: &nbsp; &nbsp; </label>
+                <input
+                  type="search"
+                  class="form-control"
+                  placeholder="Search by keywords ..."
+                  [(ngModel)]="searchCountryText"
+                  (keyup)="searchCountry($event)"
+                />
+                <div class="input-group-prepend">
+                  <button class="btn btn-white" type="button">
+                    <i class="bi bi-search"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-5">
+              <div class="input-group text-center">
+                <label for="State | UT:">State | UT: &nbsp; &nbsp; </label>
+                <input
+                  type="search"
+                  class="form-control"
+                  placeholder="Search by keywords ..."
+                  [(ngModel)]="searchStateText"
+                  (keyup)="searchState($event)"
+                />
+                <div class="input-group-prepend">
+                  <button class="btn btn-white" type="button">
+                    <i class="bi bi-search"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="col-2">
+              <!-- <ul class="alphabetic-sort">
+                                <li>A</li>
+                                <li>B</li>
+                                <li>C</li>
+                                <li>D</li>
+                                <li>E</li>
+                                <li>F</li>
+                                <li>G</li>
+                                <li>H</li>
+                                <li>I</li>
+                                <li>J</li>
+                                <li>K</li>
+                                <li>L</li>
+                                <li>M</li>
+                                <li>N</li>
+                                <li>O</li>
+                                <li>P</li>
+                                <li>Q</li>
+                                <li>R</li>
+                                <li>S</li>
+                                <li>T</li>
+                                <li>U</li>
+                                <li>V</li>
+                                <li>W</li>
+                                <li>X</li>
+                                <li>Y</li>
+                                <li>Z</li>
+                            </ul> -->
+            </div>
+          </div>
+        </div>
+        <div class="product-panel-body">
+          <div class="row">
+            <div class="col-5">
+              <div class="panel-gray uppercase new-list p-2">
+                <!-- <button class="btn btn-trash" (click)="open(deletecountry)">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button> -->
+                <ul>
+                  <li
+                    *ngFor="let item of getUniqueCountries()"
+                    [class.selected]="isSelected(item.countryName?.toString()!)"
+                    (click)="toggleSelection(item.countryName?.toString()!)"
+                  >
+                    {{ item.countryName
+                    }}<span class="float-end"
+                      ><i class="fa-solid fa-chevron-right"></i
+                    ></span>
+                  </li>
+                </ul>
+
+                <div class="clearfix"></div>
+              </div>
+              <button
+                class="btn btn-approve mt-20"
+                (click)="openXl(mappingApprovals)"
+              >
+                <i class="bi bi-arrow-down-up"></i> &nbsp; APPROVALS &nbsp;
+                <span>{{ approvalCount }}</span>
+              </button>
+            </div>
+            <div class="col-7">
+              <div class="panel-gray">
+                <div
+                  *ngFor="let country of getSelectedStates()"
+                  class="panel-gray pt-0 overflow-visible h-auto"
+                >
+                  <p>
+                    {{ country.countryName }}
+                    <button
+                      class="btn btn-edit"
+                      (click)="openCountryPopup(country)"
+                      *ngIf="showEditButton"
+                    >
+                      <i class="fa fa-edit"></i> Edit
+                    </button>
+                  </p>
+                  <ul>
+                    <ng-container *ngFor="let item of country.states">
+                      <li
+                        *ngIf="!item.hide"
+                        [class.selected]="isSelected(item.stateName)"
+                        (click)="toggleSelection(item.stateName)"
+                      >
+                        {{ item.stateName }}
+                      </li>
+                    </ng-container>
+                  </ul>
+                  <div class="clearfix"></div>
+                </div>
+                <!-- <button class="btn btn-trash" (click)="open(deletestate)">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button> -->
+                <!-- <p>India</p>
+                                <ul>
+                                    <li *ngFor="let item of getSelectedStates()" [class.selected]="isSelected(item.stateName?.toString()!)"
+                                        (click)="toggleSelection(item.stateName?.toString()!)">
+                                        {{item.stateName}}
+                                    </li>
+
+                                </ul> -->
+
+                <div class="clearfix"></div>
+              </div>
+              <!-- <div class="row">
+                                <div class="col-6"></div>
+                                <div class="col-6">
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                        <button class="btn btn-approve-outline mt-20">
+                                            <img src="./assets/images/icons/pdf.svg" />
+                                            Download as Excel
+                                        </button>
+                                        <button class="btn btn-approve mt-20">
+                                            <img src="./assets/images/icons/pdf.svg" />
+                                            Download as Pdf
+                                        </button>
+                                    </div>
+                                </div>
+                            </div> -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="clearfix"></div>
+
+<!-- new state-->
+<ng-template #state let-modal>
+  <app-add-state [modal]="modal" (reloaddata)="reload($event)"></app-add-state>
+</ng-template>
+
+<!-- new country-->
+<ng-template #country let-modal>
+  <app-add-country
+    [modal]="modal"
+    [selectedEditRecord]="selectedEditRecord"
+    (reloaddata)="reload($event)"
+  ></app-add-country>
+</ng-template>
+
+<!-- new country-->
+<ng-template #mappingApprovals let-modal>
+  <app-approval-countrystate
+    [modal]="modal"
+    (reloaddata)="reload($event)"
+    (openCountryPopup)="openCountryPopup($event)"
+  >
+  </app-approval-countrystate>
+</ng-template>
+
+<ng-template #addCountryapproval let-modal>
+  <div class="modal-header">
+    <div class="modal-title">Approvals &nbsp; Add New Country</div>
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close"
+      (click)="modal.dismiss('Cross click')"
+    ></button>
+  </div>
+  <div class="modal-body product-steup-modal">
+    <div class="row">
+      <div class="col-5">
+        <button class="btn btn-status">Approval Pending</button>
+      </div>
+      <div class="col-6 text-center user-info">
+        <ul>
+          <li>Point of Contact : <span>Haribabu</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-3"></div>
+      <div class="col-6 mt-50">
+        <form #countryApprovals="">
+          <div class="mb-3 text-center">
+            <label for="">Country Name</label>
+            <div class="input-group text-center">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="India"
+                name="country"
+                ngModel
+              />
+            </div>
+          </div>
+
+          <div class="mb-3 text-center">
+            <label for="">Country Code (Alpha)</label>
+            <div class="input-group text-center">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="IN"
+                name="countrycode"
+                ngModel
+              />
+            </div>
+          </div>
+          <div class="mb-3 text-center">
+            <label for="">Country Code (Numeric)</label>
+            <div class="input-group text-center">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="91"
+                name="countrycodenumeric"
+                ngModel
+              />
+            </div>
+          </div>
+          <div class="text-center mb-3">
+            <label for="">Financial Year</label>
+            <div class="row">
+              <div class="col-6">
+                <div class="input-group text-center">
+                  <label for="from" class="mt-10">From: &nbsp; &nbsp; </label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    placeholder="91"
+                    name="F_Year_F"
+                    required
+                  />
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="input-group text-center">
+                  <label for="to" class="mt-10">To: &nbsp; &nbsp; </label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    placeholder="91"
+                    name="F_Year_T"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mb-3 text-center">
+            <div class="text-center">
+              <button class="btn btn-accept">
+                <i class="bi bi-check2-circle"></i> &nbsp; APPROVE
+              </button>
+              &nbsp;
+              <button class="btn btn-reject">
+                <i class="bi bi-x-circle"></i> &nbsp;REJECT
+              </button>
+              <div class="mt-20">
+                <br />
+                OR <br />
+                <a href="">Forward</a>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #addStateapproval let-modal>
+  <div class="modal-header">
+    <div class="modal-title">Approvals &nbsp; Add New State</div>
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close"
+      (click)="modal.dismiss('Cross click')"
+    ></button>
+  </div>
+  <div class="modal-body product-steup-modal">
+    <div class="row">
+      <div class="col-5">
+        <button class="btn btn-status">Approval Pending</button>
+      </div>
+      <div class="col-6 text-center user-info">
+        <ul>
+          <li>Point of Contact : <span>Haribabu</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-3"></div>
+      <div class="col-6 mt-50">
+        <form>
+          <div class="mb-3 text-center">
+            <label for="">Country Name</label>
+            <div class="input-group text-center">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="India"
+                name="country"
+                ngModel
+              />
+            </div>
+          </div>
+          <div class="mb-3 text-center">
+            <label for="">State Name</label>
+            <div class="input-group text-center">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Telangana"
+                name="state"
+                ngModel
+              />
+            </div>
+          </div>
+
+          <div class="mb-3 text-center">
+            <label for="">Country Code (Alpha)</label>
+            <div class="input-group text-center">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="TG"
+                name="countrycode"
+                ngModel
+              />
+            </div>
+          </div>
+
+          <div class="mb-3 text-center">
+            <div class="text-center">
+              <button class="btn btn-accept">
+                <i class="bi bi-check2-circle"></i> &nbsp; APPROVE
+              </button>
+              &nbsp;
+              <button class="btn btn-reject">
+                <i class="bi bi-x-circle"></i> &nbsp;REJECT
+              </button>
+              <div class="mt-20">
+                <br />
+                OR <br />
+                <a href="">Forward</a>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #mappingapproval let-modal>
+  <div class="modal-header">
+    <div class="modal-title">Approvals &nbsp; Maping</div>
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close"
+      (click)="modal.dismiss('Cross click')"
+    ></button>
+  </div>
+  <div class="modal-body product-steup-modal">
+    <div class="row">
+      <div class="col-5">
+        <button class="btn btn-status">Approval Pending</button>
+      </div>
+      <div class="col-6 text-center user-info">
+        <ul>
+          <li>Point of Contact : <span>Haribabu</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-3"></div>
+      <div class="col-6 mt-50">
+        <form>
+          <div class="mb-3 text-center">
+            <label for="">Country Name</label>
+            <div class="input-group text-center">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="India"
+                name="country"
+                ngModel
+              />
+            </div>
+          </div>
+          <div class="mb-3 text-center">
+            <label for="">State Name</label>
+            <div class="input-group text-center">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Telangana"
+                name="state"
+                ngModel
+              />
+            </div>
+          </div>
+
+          <div class="mb-3 text-center">
+            <div class="text-center">
+              <button class="btn btn-accept">
+                <i class="bi bi-check2-circle"></i> &nbsp; APPROVE
+              </button>
+              &nbsp;
+              <button class="btn btn-reject">
+                <i class="bi bi-x-circle"></i> &nbsp;REJECT
+              </button>
+              <div class="mt-20">
+                <br />
+                OR <br />
+                <a href="">Forward</a>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<!-- delete country-->
+<ng-template #deletecountry let-modal>
+  <div class="modal-header">
+    <div class="modal-title">Delete Country</div>
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close"
+      (click)="modal.dismiss('Cross click')"
+    ></button>
+  </div>
+  <div class="modal-body product-steup-modal">
+    <div class="alert-message text-center">
+      <h4>Are you sure you want to delete this country?</h4>
+      <div class="d-grid gap-2 d-md-flex justify-content-center">
+        <button class="btn btn-color btn-no me-md-2" type="button">No</button>
+        <button class="btn btn-yes" type="button">Yes</button>
+      </div>
+    </div>
+  </div>
+</ng-template>
+<!-- delete state-->
+<ng-template #deletestate let-modal>
+  <div class="modal-header">
+    <div class="modal-title">Delete State</div>
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close"
+      (click)="modal.dismiss('Cross click')"
+    ></button>
+  </div>
+  <div class="modal-body product-steup-modal">
+    <div class="alert-message text-center">
+      <h4>Are you sure you want to delete this states?</h4>
+      <div class="d-grid gap-2 d-md-flex justify-content-center">
+        <button class="btn btn-color btn-no me-md-2" type="button">No</button>
+        <button class="btn btn-yes" type="button">Yes</button>
+      </div>
+    </div>
+  </div>
+</ng-template>

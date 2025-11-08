@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http'
 import { AppConfig } from '../app.config'
-import { EntityModel, EntityHistory, EntityApproval, EntityApprovalList } from '../models/entityModel';
-import { forkJoin, BehaviorSubject  } from 'rxjs';
-import { accessModel } from '../models/pendingapproval';
+import { EntityModel, EntityHistory, EntityApproval, EntityApprovalList } from '../Models/entityModel';
+import { forkJoin, BehaviorSubject } from 'rxjs';
+import { accessModel } from '../Models/pendingapproval';
+import { MajorMinorMapping } from '../Models/industrysetupModel';
 
 @Injectable(
   {
@@ -12,7 +13,7 @@ import { accessModel } from '../models/pendingapproval';
 )
 
 export class EntityService {
-  private selectedEntitySource : BehaviorSubject<any> = new BehaviorSubject<any>(null);
+  private selectedEntitySource: BehaviorSubject<any> = new BehaviorSubject<any>(null);
   private BASEURL: any = '';
   public error: any;
   friends: Array<any> = [];
@@ -59,19 +60,24 @@ export class EntityService {
     return { headers: { 'Content-Type': 'application/json' } }
   }
 
-  getEntityApprovalList(userId : any)  {
-    debugger;
-    return this.http.get<Array<EntityApprovalList>>(this.BASEURL + '/Entity/GetEntityApprovalList/'+userId, this.getAuthHeadersJSON())
+  getEntityApprovalList(userId: any) {
+
+    return this.http.get<Array<EntityApprovalList>>(this.BASEURL + '/Entity/GetEntityApprovalList/' + userId, this.getAuthHeadersJSON())
   }
 
-  getEntityDetails(EntityId : any) {
-    debugger;
-    return this.http.get<EntityModel>(this.BASEURL + '/Entity/GetEntityDetails?entityId='+EntityId, this.getAuthHeadersJSON())
+  getEntityDetails(EntityId: any) {
+
+    return this.http.get<EntityModel>(this.BASEURL + '/Entity/GetEntityDetails?entityId=' + EntityId, this.getAuthHeadersJSON())
   }
 
-  GetEntityView(EntityId : any) {
-    debugger;
-    return this.http.get<EntityModel>(this.BASEURL + '/Entity/GetEntityView?entityId='+EntityId, this.getAuthHeadersJSON())
+  GetEntityView(EntityId: any) {
+
+    return this.http.get<EntityModel>(this.BASEURL + '/Entity/GetEntityView?entityId=' + EntityId, this.getAuthHeadersJSON())
+  }
+
+  getStartAndEndMonthsByCountryId(countryId: any) {
+
+    return this.http.get<any>(this.BASEURL + '/Entity/GetStartAndEndMonthsByCountryId?countryId=' + countryId, this.getAuthHeadersJSON())
   }
 
   postEntity(entity: EntityModel) {
@@ -91,19 +97,25 @@ export class EntityService {
     return this.http.post<any>(this.BASEURL + '/Entity/PostEntityForward', access, this.getAuthHeadersJSON())
   }
 
-  multipleAPIRequests(request:any){
+  multipleAPIRequests(request: any) {
     return forkJoin(request);
   }
 
   setClearForm(flag: boolean): void {
     this.clearFormEvent.next(true);
   }
-  getClearForm(){
+  getClearForm() {
     return this.clearFormEvent.asObservable();
   }
-
-  getAllEntityList() {
-    return this.http.get<EntityModel>(this.BASEURL + '/Entities')
+  GetMinorIndustrybyMajorID(countryId: any) {
+    return this.http.get<Array<MajorMinorMapping>>(this.BASEURL + '/RegulationSetup/GetMinorIndustrybyMajorID?majorIndustoryId=' + countryId, this.getAuthHeadersJSON());
   }
 
+  GetEntitiesByOrganizationIdByCountryId(organizationId: any, countryId: any) {
+    return this.http.get<Array<EntityModel>>(this.BASEURL + '/Entity/GetEntitiesByOrganizationAndCountryId/' + organizationId + '/' + countryId, this.getAuthHeadersJSON());
+  }
+
+  GetEntitiesByOrganizationId(organizationId: any) {
+    return this.http.get<Array<EntityModel>>(this.BASEURL + '/Entity/GetEntitiesByOrganizationId/' + organizationId, this.getAuthHeadersJSON());
+  }
 }

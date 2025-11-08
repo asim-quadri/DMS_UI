@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http'
 import { AppConfig } from '../app.config'
-import { RegulationGroupModel } from '../models/regulationGroupModel';
+import { RegulationGroupModel } from '../Models/regulationGroupModel';
 import { forkJoin } from 'rxjs';
-import { accessModel } from '../models/pendingapproval';
+import { accessModel } from '../Models/pendingapproval';
 
 
 
@@ -70,7 +70,11 @@ export class RegulationGroupService {
   getAllRegulationGroups() {
     return this.http.get<Array<RegulationGroupModel>>(this.BASEURL + '/RegulationGroup/GetAllRegulationGroups', this.getAuthHeadersJSON());
   }
-  getCountryRegulationGroupMapping() {
+
+  getCountryRegulationGroupMapping(countryId?: number | null) {    
+    if (countryId !== null && countryId !== undefined) {      
+      return this.http.get<Array<RegulationGroupModel>>(this.BASEURL + '/RegulationGroup/GetCountryRegulationGroupMapping?countryId=' + countryId, this.getAuthHeadersJSON());
+    }
     return this.http.get<Array<RegulationGroupModel>>(this.BASEURL + '/RegulationGroup/GetCountryRegulationGroupMapping', this.getAuthHeadersJSON());
   }
 
@@ -81,6 +85,14 @@ export class RegulationGroupService {
 
   getRegulationGroupApprovalList(UserUID:any) {
     return this.http.get<Array<RegulationGroupModel>>(this.BASEURL + '/RegulationGroup/GetRegulationGroupApprovalList/'+UserUID, this.getAuthHeadersJSON());
+  }
+
+  getAllRegulationGroupApprovalList() {
+    return this.http.get<Array<RegulationGroupModel>>(this.BASEURL + '/RegulationGroup/GetAllRegulationGroupApprovalList/', this.getAuthHeadersJSON());
+  }
+
+  getAllCountryRegulationGroupMappingApproval() {
+    return this.http.get<Array<RegulationGroupModel>>(this.BASEURL + '/RegulationGroup/GetAllCountryRegulationGroupMappingApproval/', this.getAuthHeadersJSON());
   }
 
   getCountryRegulationGroupMappingApproval(UserUID:any) {
@@ -115,5 +127,9 @@ export class RegulationGroupService {
 
   multipleAPIRequests(request:any){
     return forkJoin(request);
+  }
+
+  getNextRegulationGroupCode() {
+    return this.http.get<string>(this.BASEURL + '/RegulationGroup/GetNextRegulationGroupCode', this.getAuthHeadersJSON());
   }
 }

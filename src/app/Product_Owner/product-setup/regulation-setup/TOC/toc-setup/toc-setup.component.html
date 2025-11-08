@@ -1,0 +1,67 @@
+<div class="product-panel">
+  <div class="product-panel-header text-center">
+    <h4>Add Type of Compliance</h4>
+  </div>
+  <div class="product-panel-body new-regulation text-center ">
+    <div class="row justify-content-center">
+      <div class="col-12">
+        <div class="home-header compliance-sub-header">
+          <div class="row">
+            <div class="col-md-12 compliance-sub-menu">
+              <button class="btn " [ngClass]="{'btn-color': active == 1, 'text-black': active !== 1}"
+                (click)="changeTab(1)">
+                Registration
+              </button>
+              <button class="btn" (click)="changeTab(2)"
+                [ngClass]="{'btn-color': active == 2, 'text-black': active !== 2}">
+                Payments
+              </button>
+              <button class="btn" (click)="changeTab(3)"
+                [ngClass]="{'btn-color': active == 3, 'text-black': active !== 3}">
+                Filing
+              </button>
+              <button class="btn" (click)="changeTab(4)"
+                [ngClass]="{'btn-color': active == 4, 'text-black': active !== 4}">
+                Activity
+              </button>
+              <button class="btn" (click)="changeTab(5)"
+                [ngClass]="{'btn-color': active == 5, 'text-black': active !== 5}">
+                Events
+              </button>
+
+            </div>
+          </div>
+        </div>
+        <app-toc-registration *ngIf="active == 1" [ActionType]="ActionType" [regulationSetupId]="regulationSetupId"
+          [regulationSetupName]="regulationSetupName" [complianceId]="complianceId!"
+          [ParentComplianceName]="ParentComplianceName" [ruleType]="'Registration'" [RegTOC]="RegTOC"
+          (updateData)="UpdateTOCModel($event)" (reloaddata)="reload($event)" [isParameterChecked]="isParameterChecked"
+          [regulationSetupUID]="regulationSetupUID"></app-toc-registration>
+        <app-toc-rules *ngIf="active == 2" [ActionType]="ActionType" [regulationSetupId]="regulationSetupId"
+          [complianceId]="complianceId!" [ParentComplianceName]="ParentComplianceName" [active]="active"
+          [ruleType]="'Payments'" [RegTOC]="RegTOC" (updateData)="UpdateTOCModel($event)" (reloaddata)="reload($event)"
+          [isParameterChecked]="isParameterChecked" [regulationSetupUID]="regulationSetupUID"></app-toc-rules>
+
+        <app-toc-rules *ngIf="active == 3" [ParentComplianceName]="ParentComplianceName" [ActionType]="ActionType"
+          [regulationSetupId]="regulationSetupId" [complianceId]="complianceId!"
+          [ParentComplianceName]="ParentComplianceName" [ruleType]="'Filing'" [RegTOC]="RegTOC"
+          (updateData)="UpdateTOCModel($event)" (reloaddata)="reload($event)" [isParameterChecked]="isParameterChecked"
+          [regulationSetupUID]="regulationSetupUID"></app-toc-rules>
+        <app-toc-rules *ngIf="active == 4" [ParentComplianceName]="ParentComplianceName" [ActionType]="ActionType"
+          [regulationSetupId]="regulationSetupId" [complianceId]="complianceId!"
+          [ParentComplianceName]="ParentComplianceName" [ruleType]="'Activity'" [RegTOC]="RegTOC"
+          (updateData)="UpdateTOCModel($event)" (reloaddata)="reload($event)" [isParameterChecked]="isParameterChecked"
+          [regulationSetupUID]="regulationSetupUID"></app-toc-rules>
+        <app-toc-rules *ngIf="active == 5" [ActionType]="ActionType" [regulationSetupId]="regulationSetupId"
+          [complianceId]="complianceId!" [ParentComplianceName]="ParentComplianceName" [ruleType]="'Events'"
+          [RegTOC]="RegTOC" (updateData)="UpdateTOCModel($event)" (reloaddata)="reload($event)"
+          [isParameterChecked]="isParameterChecked" [regulationSetupUID]="regulationSetupUID"></app-toc-rules>
+        <br>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- <div [ngbNavOutlet]="nav" class="mt-2"></div> -->
+</div>

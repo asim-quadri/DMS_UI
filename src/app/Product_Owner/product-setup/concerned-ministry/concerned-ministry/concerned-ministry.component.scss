@@ -1,0 +1,25 @@
+@use "../../../../../assets/scss/colors";
+
+.btn:disabled {
+  display: inline-block !important;
+}
+
+label {
+  margin-bottom: 0px;
+}
+
+.panel-gray ul li {
+  float: none !important;
+  width: 100% !important;
+  border-radius: 5px;
+  font-size: 13px;
+  padding: 10px 15px;
+  color: colors.$text-black;
+}
+.panel-gray ul li.selected {
+  color: colors.$white !important;
+}
+.btn-color {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}

@@ -1,0 +1,38 @@
+<div class="row g-3 align-items-center">
+  <form [formGroup]="formgroup" (ngSubmit)="onSubmit()" class="long-form">
+    <div class="form-group">
+      <label for="">Role Display Name</label>
+      <app-input-text [formGroup]="formgroup" [name]="'roleDisplayName'"></app-input-text>
+
+      <!-- <div *ngIf="updateroles.controls['role'].invalid && (updateroles.controls['role'].dirty || updateroles.controls['role'].touched)" class="alert">
+          <div *ngIf="updateroles.controls['role'].errors?.['required']">
+          Please enter Role
+        </div>
+      </div> -->
+    </div>
+    <div class="form-group">
+      <label class="col-form-label">Role:</label>
+      <app-input-dropdown [formGroup]="formgroup" [name]="'id'" [object]="rolesData" [key]="'roleName'" [value]="'id'">
+      </app-input-dropdown>
+
+      <!-- <div *ngIf="formgroup.controls['roleId'].invalid && (formgroup.controls['roleId'].dirty ||
+             formgroup.controls['roleId'].touched)" class="alert">
+          <div *ngIf="formgroup.controls['roleId'].errors?.['required']">
+            Please select role
+          </div>
+        </div> -->
+    </div>
+    <!-- <app-input-text [formName]="'role'" [placeholder]="'Enter name'"></app-input-text> -->
+    <!-- <div class="form-group">
+        <label class="col-form-label">Reporting To:</label>
+  
+        <app-input-dropdown [formGroup]="formgroup" [name]="'managerId'" [object]="getActiveUsers()" [key]="'fullName'"
+          [value]="'id'">
+        </app-input-dropdown>
+  
+      </div> -->
+    <div class="form-group mb-4">
+      <button class="btn btn-secondary width-100" *ngIf="showSaveButton">Save Changes</button>
+    </div>
+  </form>
+</div>

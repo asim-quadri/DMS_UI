@@ -1,0 +1,201 @@
+<div class="header">
+  <div class="d-flex justify-content-between align-items-center flex-wrap">
+      <!-- <img
+        src="./assets/images/comp-360-logo.svg"
+        alt="logo"
+        class="img-fluid"
+        routerLink="/home"
+      /> -->
+
+      <div class="header-title">DMS</div>
+    <div class="">
+      <!-- <div class="row">
+        <div class="col-md-3" style="text-align: end;padding: 10px;">
+          <label for="entitydd" style="color: white;">Entity :</label>
+        </div>
+        <div class="col-md-8">
+
+          <select class="col-12 form-select" (change)="onEntityChange($event)" formControlName="ddEntity">
+            <option value="">Please Select</option>
+            <option *ngFor="let entity of this.entityList" [ngValue]="entity.id">
+              {{ entity.entityName }}
+            </option>
+          </select>
+        </div>
+      </div> -->
+    </div>
+
+      <div class="d-grid d-md-flex justify-content-md-end">
+        <!-- notification-popup.component.html -->
+        <ul class="header-list">
+          <li class="header-notification position-relative">
+            <div class="notification-count" *ngIf="unreadCount > 0">
+              {{ unreadCount }}
+            </div>
+            <button
+              type="button"
+              class="btn btn-profile-dropdown"
+              (click)="toggleNotificationPopup()"
+            >
+              <img src="./assets/images/icons/notification-bell.svg" alt="notification" width="16" height="16" />
+            </button>
+
+            <div class="notification-popup" *ngIf="showNotificationPopup">
+              <div
+                class="popup-header d-flex justify-content-between align-items-center notification-list"
+              >
+                <h4 class="mb-0">Notifications</h4>
+                <button
+                  class="custom-close"
+                  (click)="closeNotificationPopup()"
+                  aria-label="Close"
+                >
+                  &times;
+                </button>
+              </div>
+              <div *ngIf="notifications.length > 0; else noNotifications">
+                <div
+                  *ngFor="let notification of notifications"
+                  [ngClass]="{ unread: !notification.markAsRead }"
+                  class="notification-item d-flex align-items-center mb-2 mt-2"
+                >
+                  <button
+                    class="single-notification inline-notification d-flex align-items-center w-100 text-start"
+                    [ngClass]="{ unread: !notification.markAsRead }"
+                    (click)="onNotificationClick(notification)"
+                  >
+                    <div class="notificatoin-avatar me-2">
+                      <img
+                        src="./assets/images/icons/avstsr.svg"
+                        class="img-fluid mt-0"
+                        alt="notification"
+                      />
+                    </div>
+                    <div class="notificatoin-content flex-grow-1">
+                      <!-- <p class="notification mb-0">
+            <span><strong>{{ notification.senderUserName }}</strong></span>
+            {{ this.addedText }}
+            <span>{{ notification.notificationTitle }}</span><br />
+           
+          </p> -->
+                      <p class="notification mb-0">
+                        <span
+                          [innerHTML]="notification.notificationTitle"
+                        ></span
+                        ><br />
+                        <span>{{
+                          formatNotificationDate(
+                            notification.createdDate.toString()
+                          )
+                        }}</span>
+                      </p>
+                    </div>
+                    <div class="clearfix"></div>
+                  </button>
+                </div>
+              </div>
+              <div class="text-center mt-3">
+                <button
+                  class="btn btn-link p-0 view-all-btn"
+                  (click)="openAllNotifications()"
+                >
+                  View All
+                </button>
+              </div>
+              <ng-template #noNotifications>
+                <p>No notifications available.</p>
+              </ng-template>
+            </div>
+          </li>
+          <li class="header-list-divider"></li>
+          <li>
+            <!-- <a routerLink="/"> -->
+            <i class="bi bi-person-fill-gear logout-icon"></i>
+            <!-- </a> -->
+          </li>
+          <li class="header-list-divider"></li>
+          <li class="wid-170">
+            <div class="user-profile">
+              {{ name }}
+            </div>
+          </li>
+        </ul>
+      </div>
+  </div>
+
+  <ng-template #allNotificationsModal let-modal>
+    <div class="modal-header">
+      <h5 class="modal-title">All Notifications</h5>
+      <button
+        type="button"
+        class="btn-close"
+        aria-label="Close"
+        (click)="modal.dismiss()"
+      ></button>
+    </div>
+    <div class="modal-body" style="overflow: auto">
+      <div class="row">
+        <div class="col-6">
+          <ng-container *ngFor="let note of allNotifications; let i = index">
+            <div
+              *ngIf="i % 2 === 0"
+              class="d-flex align-items-center mb-2 mt-2"
+            >
+              <button
+                class="single-notification inline-notification d-flex align-items-center w-100 text-start"
+                [ngClass]="{ unread: !note.markAsRead }"
+                (click)="onNotificationClick(note)"
+              >
+                <div class="notificatoin-avatar me-2">
+                  <img
+                    src="./assets/images/icons/avstsr.svg"
+                    class="img-fluid mt-0"
+                    alt="notification"
+                  />
+                </div>
+                <div class="notificatoin-content flex-grow-1">
+                  <p class="notification mb-0">
+                    <span [innerHTML]="note.notificationTitle"></span><br />
+                    <span>{{
+                      formatNotificationDate(note.createdDate.toString())
+                    }}</span>
+                  </p>
+                </div>
+              </button>
+            </div>
+          </ng-container>
+        </div>
+        <div class="col-6">
+          <ng-container *ngFor="let note of allNotifications; let i = index">
+            <div
+              *ngIf="i % 2 === 1"
+              class="d-flex align-items-center mb-2 mt-2"
+            >
+              <button
+                class="single-notification inline-notification d-flex align-items-center w-100 text-start"
+                [ngClass]="{ unread: !note.markAsRead }"
+                (click)="onNotificationClick(note)"
+              >
+                <div class="notificatoin-avatar me-2">
+                  <img
+                    src="./assets/images/icons/avstsr.svg"
+                    class="img-fluid mt-0"
+                    alt="notification"
+                  />
+                </div>
+                <div class="notificatoin-content flex-grow-1">
+                  <p class="notification mb-0">
+                    <span [innerHTML]="note.notificationTitle"></span><br />
+                    <span>{{
+                      formatNotificationDate(note.createdDate.toString())
+                    }}</span>
+                  </p>
+                </div>
+              </button>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+  </ng-template>
+</div>

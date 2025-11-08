@@ -1,0 +1,81 @@
+<div class="product-panel">
+  <div class="product-panel-header">
+    <div class="input-group text-center mb-1">
+      <label for="Country" class="mt-10">Organization/Entity:&nbsp; &nbsp;
+      </label>
+      <input #searchInput type="search" class="form-control" placeholder="Search by keywords ..." (search)="clearSearch()"  (keyup)="searchOrganizationEntity($event)" />
+      <div class="input-group-prepend">
+        <button class="btn btn-white" type="button" (click)="searchOrganizationEntity(searchInput.value)">
+          <i class="bi bi-search"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="product-panel-body">
+    <div>
+      <div class="panel-gray regulation justify-content-center text-center">
+        <div class="organization-accordian">
+          <div>
+            <ngb-accordion #acc="ngbAccordion" activeIds="ngb-panel-0" class="position-relative">
+              <ng-container *ngFor="let org of organizationEntityList">
+                <ngb-panel *ngIf="!org.hide">
+                  <ng-template ngbPanelTitle class="accordian-header">
+                    <span (click)="onOrganizationSelect(org.id)" (contextmenu)="onRightClick($event, org)">
+                      {{ org.organizationName }}
+                    </span>
+                  </ng-template>
+              
+                  <ng-template ngbPanelContent>
+                    <ng-container *ngFor="let ent of org.entityList">
+                      <div
+                        class="organization-accordian-content"
+                        *ngIf="!ent.hide"
+                      >
+                        <p (click)="editEntity(ent.entityId!, org.id!)" (contextmenu)="onRightClickEntity($event, org, ent)">
+                          {{ ent.entityName }}
+                        </p>
+                      </div>
+                    </ng-container>
+                  </ng-template>
+                  
+                </ngb-panel>
+              </ng-container>
+              
+            </ngb-accordion>
+            <div *ngIf="showContextMenu" [style.left.px]="contextMenuPosition.x" [style.top.px]="contextMenuPosition.y + 26"
+              class="context-menu">
+              <ul>
+                <li *ngIf="selectedOrg?.isOrganization">+ Add New Billing</li>
+              </ul>
+            </div>
+            <div *ngIf="showContextMenu" [style.left.px]="contextMenuPosition.x" [style.top.px]="contextMenuPosition.y + 26"
+              class="context-menu">
+              <ul>
+                <li (click)="canAddNewEntity ? addEntity(selectedOrg.id) : notifyMaxEntitiesReached()" [class.disabled]="!canAddNewEntity" [style.pointer-events]="'auto'">+ Add New Entity</li>
+                <li *ngIf="selectedOrg?.isOrganization" (click)="addBillingDetails(selectedOrg.id)">+ Add New Billing
+                </li>
+              </ul>
+            </div>
+
+            <div *ngIf="showEntityContextMenu && !selectedOrg?.isOrganization" [style.left.px]="contextMenuPosition.x"
+              [style.top.px]="contextMenuPosition.y + 26" class="context-menu">
+              <ul>
+                <li (click)="addBillingDetails(selectedOrg.id,selectedEnt.entityId)">+
+                  Add New Billing
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- modal -->
+
+        <button class="btn btn-approve mt-20" (click)="openApprovalOrganization()">
+          <i class="bi bi-arrow-down-up"></i> &nbsp; APPROVALS &nbsp;
+          <span>{{ approvedCount }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

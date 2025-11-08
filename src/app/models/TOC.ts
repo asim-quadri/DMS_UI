@@ -1,9 +1,12 @@
+import { ConcernedMinistry } from "./postConcernedMinistry";
+import { RegulatoryAuthorities } from "./postRegulatoryAuthorities";
+import { RegSetupComplianceParameterHistory, RegulationMajorIndustry, RegulationSetupLegalEntityType, RegulationTOB } from "./regulationsetupModel";
 import { ResponseModel } from "./responseModel";
 
 export interface TOCRegistration extends ResponseModel{
     id?: number; 
-    complianceId?:number;
-    regulationSetupId?:number;
+    complianceId?:number  | null;
+    regulationSetupId?:number | null;
     registrationName?: string;
     description?: string;
     createdOn?: Date;
@@ -16,6 +19,15 @@ export interface TOCRegistration extends ResponseModel{
     ruleType?:string;
     tocDocument?:TOCDocuments[];
     tocParameter?:TOCParameter[];
+    tobs?:number [] | null;
+    tobList?: RegulationTOB[];
+    sectionNameOfRegister?: string;
+    regulationSetupTypeOfComplianceRegisterRC?: string;  
+      parameters?: RegSetupComplianceParameterHistory[] | null;
+    industry?: RegulationMajorIndustry[];  
+    legalEntityType?: RegulationSetupLegalEntityType[];  
+    regulatoryAuthorityId?: number | null;
+    concernedMinistryId?: number | null;   
 }
 export interface TOC{
     complianceId?:number
@@ -26,9 +38,9 @@ export interface TOC{
 
 export interface TOCRules{
     ruleType?:string
-    tocDues?:TOCDues;
-    complianceId?:number;
-    regulationSetupId?:number;
+    tocDues?:TOCDues[];
+    complianceId?:number | null;
+    regulationSetupId?:number | null
     tocIntrestPenality?:TOCIntrestPenality[];
     tocImprisonment?:TOCImprisonment[];
     tocParameter?:TOCParameter[];
@@ -38,7 +50,14 @@ export interface TOCRules{
     createdBy?: number;
     modifiedBy?: number;
     modifiedOn?: Date;
-
+    tobs?:number [] | null;
+    tobList?: RegulationTOB[];
+    industry?:RegulationMajorIndustry [] | null;
+   legalEntityType?: RegulationSetupLegalEntityType[];
+   concernedMinistryId?:number| null;
+   regulatoryAuthorityId?:number | null;
+   regulatoryAuthority?:RegulatoryAuthorities[]|[];
+    concernedMinistry?:ConcernedMinistry[]|[];
 }
 
 export interface TOCDocuments {
@@ -51,13 +70,15 @@ export interface TOCDocuments {
     modifiedBy?: number;
     modifiedOn?: Date;
     uid?: string;
-    
 }
 
 export interface TOCDues {
     id?: number;
     registrationId?: number;
     frequency?: string;
+    frequencyType?: string;
+    fromTrunOver?: string;
+    toTrunOver?: string;
     forTheMonth?: Date;
     dueDate?: Date;
     createdOn?: Date;
@@ -66,6 +87,9 @@ export interface TOCDues {
     modifiedOn?: Date;
     uid?: string;
     tocDueDates?:TOCDueDates[];
+    status?:boolean;
+    sectionNameofDues?: string;
+    duesReferenceCode?: string;
 }
 
 export interface TOCDueDates {
@@ -78,6 +102,13 @@ export interface TOCDueDates {
     modifiedBy?: number;
     modifiedOn?: Date;
     uid?: string;
+    frequencyType?: string;
+    fromTrunOver?: string;
+    toTrunOver?: string;
+    forTheMonth?: Date;
+    status?:boolean;
+    tocDueMonths?:TOCDueDates [];
+    parentTocDueDateId?: number;
 }
 
 export interface TOCImprisonment {

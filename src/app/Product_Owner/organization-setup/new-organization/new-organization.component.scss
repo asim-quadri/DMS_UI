@@ -1,0 +1,9 @@
+@use "src/assets/scss/_colors.scss";
+
+.home-header h3 {
+  color: colors.$white;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0px;
+  text-align: center;
+}

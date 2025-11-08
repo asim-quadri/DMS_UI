@@ -1,0 +1,283 @@
+<div class="modal-header">
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+</div>
+<div class="modal-body product-steup-modal">
+    <ul ngbNav #nav="ngbNav" [(activeId)]="active" class="nav-tabs justify-content-center approval-modal">
+        <li [ngbNavItem]="1">
+            <a ngbNavLink><i class="bi bi-arrow-down-up"></i> &nbsp; Approvals for Mapping 
+                &nbsp; <span>20</span></a>
+                <ng-template ngbNavContent>
+                    <div class="row mt-40">
+                        <div class="col-md-8">
+                            <div class="stauts-list">
+                                <ul>
+                                    <li class="mt-03 mr-10">
+                                        <i class="bi bi-arrow-down-up"></i>&nbsp;Approvals
+                                    </li>
+                                    <li class="status-circle green-status"></li>
+                                    <li class="status-text">1 Approved</li>
+    
+                                    <li class="status-circle oragne-status"></li>
+                                    <li class="status-text">0 Pending</li>
+    
+                                    <li class="status-circle red-status"></li>
+                                    <li class="status-text">0 Rejected</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <form action="">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" placeholder="Search by keyword  ..." />
+                                    <div class="input-group-append">
+                                        <button class="btn btn-search h45" type="submit">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="table-responsive modal-table">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col"></th>
+                                        <th scope="col">S.No</th>
+                                        <th scope="col">Country</th>
+                                        <th scope="col">State/UT</th>
+                                        <th scope="col">Point of Contact</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr >
+                                        <td scope="row" class="bg-white">
+                                            <input type="checkbox" />
+                                        </td>
+                                        <td scope="row" class="status-pending">1</td>
+                                        <td scope="row">India</td>
+                                        <td scope="row">Telangana</td>
+    
+                                        <td scope="row">Hari Babu</td>
+                                        <td scope="row">N/A</td>
+                                        <td scope="row">
+                                            Forward <i class="fa-regular fa-circle-right"></i>
+                                        </td>
+                                    </tr>
+                                    <tr >
+                                        <td scope="row" class="bg-white">
+                                            <input type="checkbox" />
+                                        </td>
+                                        <td scope="row" class="status-pending">2</td>
+                                        <td scope="row">Canada</td>
+                                        <td scope="row">N/A</td>
+    
+                                        <td scope="row">Hari Babu</td>
+                                        <td scope="row">Approval Sent</td>
+                                        <td scope="row">
+                                            Forward <i class="fa-regular fa-circle-right"></i>
+                                        </td>
+                                    </tr>
+                                    <tr >
+                                        <td scope="row" class="bg-white">
+                                            <input type="checkbox" />
+                                        </td>
+                                        <td scope="row" class="status-reject">3</td>
+                                        <td scope="row">USA</td>
+                                        <td scope="row">N/A</td>
+    
+                                        <td scope="row">Hari Babu</td>
+                                        <td scope="row" class="reject">
+                                            <span>Approval Rejected</span> <br />
+                                            by Haribabu
+                                        </td>
+                                        <td scope="row">
+                                            Forward <i class="fa-regular fa-circle-right"></i>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td scope="row" class="bg-white">
+                                            <input type="checkbox" />
+                                        </td>
+                                        <td scope="row" class="status-pending">1</td>
+                                        <td scope="row">UK</td>
+                                        <td scope="row">N/A</td>
+    
+                                        <td scope="row">Hari Babu</td>
+                                        <td scope="row">N/A</td>
+                                        <td scope="row">
+                                            Forward <i class="fa-regular fa-circle-right"></i>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td scope="row" class="bg-white">
+                                            <input type="checkbox" />
+                                        </td>
+                                        <td scope="row" class="status-pending">2</td>
+                                        <td scope="row">France</td>
+                                        <td scope="row">N/A</td>
+    
+                                        <td scope="row">Hari Babu</td>
+                                        <td scope="row">Approval Sent</td>
+                                        <td scope="row">
+                                            Forward <i class="fa-regular fa-circle-right"></i>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+    
+                            <ag-grid-angular #agCSMappingApproveGrid style="width: 1100px; height: 540px;" class="ag-theme-alpine" 
+                            [rowData]="mappingRowData!"
+                            [columnDefs]="mappingColumnDefs" [defaultColDef]="defaultColumnDef"
+                            [rowSelection]="rowSelection"
+                            [suppressRowClickSelection]="true"
+                            (gridReady)="onMappingGridReady($event)"  [pagination]="true"
+                            [paginationPageSize]="10"
+                            [paginationAutoPageSize]="true"
+                            >
+                          </ag-grid-angular>
+                            <div class="row">
+                                <div class="col-8"></div>
+                                <div class="col-4">
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                        <button class="btn btn-accept" (click)="acceptSelectedMappingRequests()">
+                                            <i class="bi bi-check2-circle"></i> &nbsp; ACCEPT
+                                        </button>
+                                        &nbsp;
+                                        <button class="btn btn-reject" (click)="rejectSelectedMappingRequests()">
+                                            <i class="bi bi-x-circle"></i> &nbsp;REJECT
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </ng-template>
+        </li>
+        <li [ngbNavItem]="2">
+            <a ngbNavLink><i class="bi bi-arrow-down-up"></i> &nbsp; Approvals for Insertion 2
+                &nbsp; <span>09</span></a>
+            <ng-template ngbNavContent>
+                <div class="row mt-40">
+                    <div class="col-md-8">
+                        <div class="stauts-list">
+                            <ul>
+                                <li class="mt-03 mr-10">
+                                    <i class="bi bi-arrow-down-up"></i>&nbsp;Approvals
+                                </li>
+                                <li class="status-circle green-status"></li>
+                                <li class="status-text">1 Approved</li>
+
+                                <li class="status-circle oragne-status"></li>
+                                <li class="status-text">0 Pending</li>
+
+                                <li class="status-circle red-status"></li>
+                                <li class="status-text">0 Rejected</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <form action="">
+                            <div class="input-group">
+                                <input type="text" class="form-control" placeholder="Search by keyword  ..." />
+                                <div class="input-group-append">
+                                    <button class="btn btn-search h45" type="submit">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="table-responsive modal-table">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col"></th>
+                                    <th scope="col">S.No</th>
+                                    <th scope="col">Type</th>
+                                    <th scope="col">Country</th>
+                                    <th scope="col">Country Code</th>
+                                    <th scope="col">State/UT</th>
+                                    <th scope="col">State Code</th>
+                                    <th scope="col">Financial Year</th>
+                                    <th scope="col">Point of Contact</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr 
+                                    (click)="modal.dismiss('mappingApprovals')">
+                                    <td scope="row" class="bg-white">
+                                        <input type="checkbox" />
+                                    </td>
+                                    <td scope="row" class="status-pending">1</td>
+                                    <td scope="row">Add Country</td>
+                                    <td scope="row">India</td>
+                                    <td scope="row">IN91</td>
+                                    <td scope="row">Telangana</td>
+                                    <td scope="row">TG</td>
+                                    <td scope="row">Aprl - Mar</td>
+                                    <td scope="row">Hari Babu</td>
+                                    <td scope="row">N/A</td>
+                                    <td scope="row">
+                                        Forward <i class="fa-regular fa-circle-right"></i>
+                                    </td>
+                                </tr>
+                                <tr  (click)="modal.dismiss('mappingApprovals')">
+                                    <td scope="row" class="bg-white">
+                                        <input type="checkbox" />
+                                    </td>
+                                    <td scope="row" class="status-pending">2</td>
+                                    <td scope="row">Add State</td>
+                                    <td scope="row">India</td>
+                                    <td scope="row">IN91</td>
+                                    <td scope="row">Telangana</td>
+                                    <td scope="row">TG</td>
+                                    <td scope="row">Jan - Dec</td>
+                                    <td scope="row">Hari Babu</td>
+                                    <td scope="row" class="approvesent">Approval Sent</td>
+                                    <td scope="row">
+                                        Forward <i class="fa-regular fa-circle-right"></i>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <ag-grid-angular #agCSApproveGrid style="width: 1100px; height: 540px;" class="ag-theme-alpine" 
+                        [rowData]="rowData!"
+                        [columnDefs]="columnDefs" [defaultColDef]="defaultColumnDef"
+                        [rowSelection]="rowSelection"
+                        [suppressRowClickSelection]="true"
+                        (gridReady)="onGridReady($event)"  [pagination]="true"
+                        [paginationPageSize]="10"
+                        [paginationAutoPageSize]="true"
+                        >
+                      </ag-grid-angular>
+                        
+
+                        <div class="row">
+                            <div class="col-8"></div>
+                            <div class="col-4">
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <button class="btn btn-accept" (click)="acceptSelectedRequests()">
+                                        <i class="bi bi-check2-circle"></i> &nbsp; ACCEPT
+                                    </button>
+                                    &nbsp;
+                                    <button class="btn btn-reject" (click)="rejectSelectedRequests()">
+                                        <i class="bi bi-x-circle"></i> &nbsp;REJECT
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </ng-template>
+        </li>
+    </ul>
+    <div [ngbNavOutlet]="nav"></div>
+</div>

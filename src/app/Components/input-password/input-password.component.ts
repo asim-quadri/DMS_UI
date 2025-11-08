@@ -12,4 +12,10 @@ export class InputPasswordComponent {
   name: any;
   @Input()
   placeholder: any;
+  @Input()
+  showPassword: boolean = false;
+  togglePassword()
+  {
+    this.showPassword = !this.showPassword;
+  }
 }

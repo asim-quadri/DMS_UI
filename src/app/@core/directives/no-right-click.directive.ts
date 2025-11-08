@@ -1,15 +1,13 @@
 import { Directive, HostListener } from '@angular/core';
-import { AppConfig } from '../../app.config';
+import { environment } from 'src/environments/environment';
 
 @Directive({
   selector: '[appNoRightClick]'
 })
 export class NoRightClickDirective {
-  private appConfig = new AppConfig();
-
   @HostListener('contextmenu', ['$event'])
   onRightClick(e: any) {
-    if (this.appConfig.production) {
+    if (environment.production) {
       e.preventDefault();
     }
   }

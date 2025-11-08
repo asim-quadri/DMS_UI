@@ -1,0 +1,48 @@
+<div class="sidemenu" [class.collapsed]="isCollapsed">
+  <ul>
+    <li *ngFor="let item of menuItems" routerLinkActive="active">
+      <a
+        [routerLink]="item.route"
+        [attr.title]="isCollapsed ? item.title : null"
+      >
+        <ng-container>
+          <img
+            [src]="item.imgUrl"
+            [alt]="item.imgAlt"
+            [ngClass]="{
+              'icon-collapsed': isCollapsed,
+              'icon-expanded': !isCollapsed
+            }"
+          />
+        </ng-container>
+        <span *ngIf="!isCollapsed">{{ item.title }}</span>
+      </a>
+    </li>
+  </ul>
+
+  <div class="bottom-buttons">
+    <button class="logout-btn" (click)="logout()">
+      <img
+        src="assets/images/logout.png"
+        alt="Logout"
+        [ngClass]="{
+          'icon-collapsed': isCollapsed,
+          'icon-expanded': !isCollapsed
+        }"
+      />
+      <span *ngIf="!isCollapsed">Logout</span>
+    </button>
+
+    <button class="collapse-btn" (click)="toggleSidebar()">
+      <img
+        src="assets/images/icons/Icon-collapse.svg"
+        alt="Expand"
+        [ngClass]="{
+          'icon-collapsed': isCollapsed,
+          'icon-expanded': !isCollapsed
+        }"
+      />
+      <span *ngIf="!isCollapsed">Collapse</span>
+    </button>
+  </div>
+</div>

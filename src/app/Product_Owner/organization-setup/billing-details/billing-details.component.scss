@@ -1,0 +1,92 @@
+@use "src/assets/scss/_colors.scss";
+
+.organization-tabs {
+	position: relative !important;
+	margin-top: 25px !important;
+
+	.nav-tabs {
+		.nav-link {
+			&:nth-child(1) {
+				width: 25% !important;
+				border-radius: 25px 0px 0px 25px !important;
+			}
+
+			&:nth-child(2) {
+				width: 25% !important;
+			}
+
+			&:nth-child(3) {
+				width: 25% !important;
+			}
+
+			&:nth-child(4) {
+				width: 25% !important;
+				border-radius: 0px 25px 25px 0px !important;
+			}
+		}
+	}
+}
+
+.address {
+	padding: 20px 40px !important;
+	border-radius: 10px !important;
+}
+
+ul {
+	&.billing-level {
+		display: flex !important;
+		justify-content: center !important;
+		align-items: center !important;
+		height: 100% !important;
+		list-style: none !important;
+		margin-top: -65px !important;
+		padding: 0 !important;
+
+		li {
+			background-color: transparent !important;
+			padding: 1px !important;
+			border: none !important;
+			color: colors.$black !important;
+			width: auto !important;
+			padding: 1px 10px !important;
+			margin: 0px !important;
+			text-align: center !important;
+			font-size: 13px !important;
+
+			span {
+				font-weight: 600 !important;
+			}
+		}
+	}
+}
+
+.new-class {
+	background-color: colors.$primary-blue !important;
+	color: #fff !important;
+}
+
+.nav-tabs {
+	border: 1px solid colors.$primary-blue !important;
+	border-radius: 50px;
+}
+
+.product-panel-body {
+	height: 500px !important;
+}
+
+.checkbox-label {
+	font-size: 14px !important;
+}
+
+.input-checkbox {
+	height: 15px !important;
+	width: 15px !important;
+}
+
+.billing-sub-nav {
+	.active {
+		background-color: colors.$primary-blue !important;
+		color: colors.$white !important;
+		border-radius: 0px !important;
+	}
+}

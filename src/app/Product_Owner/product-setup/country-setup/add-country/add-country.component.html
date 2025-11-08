@@ -1,0 +1,139 @@
+<div class="modal-header">
+  <h4 class="modal-title" id="modal-basic-title">{{ headerLabel }}</h4>
+  <button
+    type="button"
+    class="btn-close"
+    aria-label="Close"
+    (click)="modal.dismiss('Cross click')"
+  ></button>
+</div>
+<div class="modal-body product-steup-modal">
+  <form [formGroup]="formgroup" class="row justify-content-center">
+    <div class="col-10 mt-3">
+      <label for="">Country Reference Code</label>
+      <div class="input-group">
+        <app-input-text
+          [formGroup]="formgroup"
+          [name]="'countryReferenceCode'"
+          [placeholder]="'Country Reference Code'"
+          readonly="true"
+        ></app-input-text>
+      </div>
+    </div>
+    <div class="col-10 mt-3">
+      <label for="">Country Name</label>
+      <div class="input-group">
+        <app-input-text
+          [formGroup]="formgroup"
+          [name]="'countryName'"
+          [placeholder]="'Country Name'"
+        ></app-input-text>
+      </div>
+    </div>
+
+    <div class="col-10 mt-3">
+      <label for="">Country Code (Alpha)</label>
+      <div class="input-group">
+        <app-input-text
+          [formGroup]="formgroup"
+          [name]="'countryCode'"
+          [placeholder]="'Country code'"
+        ></app-input-text>
+      </div>
+    </div>
+
+    <div class="col-10 mt-3">
+      <label for="">Country code (Telephone)</label>
+      <div class="input-group">
+        <app-input-text
+          [formGroup]="formgroup"
+          [name]="'countryCodeNumber'"
+          [placeholder]="'+xx'"
+        ></app-input-text>
+      </div>
+    </div>
+    <div class="col-10 mt-3">
+      <label for="currencyDropdown" class="form-label">Select Currency</label>
+      <ngx-select-dropdown
+        name="currencyCode"
+        [instanceId]="'currencyDropdown1'"
+        [multiple]="false"
+        [formControlName]="'currencyCode'"
+        [config]="dropdownConfig"
+        [options]="currencies"
+      >
+      </ngx-select-dropdown>
+    </div>
+
+    <div class="col-10 mt-3">
+      <label for="">File names</label>
+      <div class="input-group text-start d-flex">
+        <input
+          type="text"
+          formControlName="fileName"
+          placeholder="Enter file name"
+          (keydown.enter)="addFileName()"
+        />
+        <button (click)="addFileName()" class="primary-blue-btn">Add</button>
+      </div>
+      <div class="tags">
+        <span class="tag" *ngFor="let name of fileNames; let i = index">
+          {{ name }}
+          <button class="remove-btn" (click)="removeFileName(i)">×</button>
+        </span>
+      </div>
+    </div>
+
+    <div class="col-10 mt-3">
+      <label for="">Financial Year</label>
+      <div class="row">
+        <div class="col-6">
+          <!--<div class="input-group text-center">
+                        <label for="startDate" class="mt-10">From: &nbsp; &nbsp; </label>
+                        <app-input-date [formGroup]="formgroup" [name]="'financialStartDate'"
+                        (change)="validateCurrentDates($event)"></app-input-date>
+                    </div>-->
+          <div class="input-group">
+            <label for="startDate" class="mt-10">From: &nbsp; &nbsp; </label>
+            <app-input-dropdown
+              [formGroup]="formgroup"
+              [name]="'financialStartDate'"
+              [object]="this.fromDates"
+              [key]="'fromDate'"
+              [value]="'id'"
+              (change)="getToDates($event)"
+            >
+            </app-input-dropdown>
+          </div>
+        </div>
+        <div class="col-6">
+          <!--<div class="input-group text-center">
+                        <label for="endDate" class="mt-10">To: &nbsp; &nbsp; </label>
+                        <app-input-date [formGroup]="formgroup" [name]="'financialEndDate'"
+                            (change)="validateCurrentDates($event)"></app-input-date>
+                    </div>-->
+          <div class="input-group">
+            <label for="endDate" class="mt-10">To: &nbsp; &nbsp; </label>
+            <app-input-dropdown
+              [formGroup]="formgroup"
+              [name]="'financialEndDate'"
+              [object]="this.toDates"
+              [key]="'toDate'"
+              [value]="'id'"
+            >
+            </app-input-dropdown>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-10 mt-20 text-center">
+      <button
+        type="button"
+        class="btn btn-color btn-block primary-blue-btn w-100"
+        (click)="onSubmit()"
+      >
+        &nbsp; {{ buttonLabel }} &nbsp;
+      </button>
+    </div>
+  </form>
+</div>

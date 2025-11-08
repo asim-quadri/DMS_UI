@@ -1,0 +1,117 @@
+<div class="main-container">
+  <div class="home-header" *ngIf="showServiceRequestDataTable">
+    <h3>Service Request</h3>
+  </div>
+  <div class="px-4 py-2" *ngIf="showServiceRequestDataTable">
+    <div class="row my-2">
+      <div class="col-md-4 mx-2 ">
+        <label>Filter:</label>
+        <select class="form-select col-md-12" id="sortBy" (change)="onSortByChange($event)">
+          <option *ngFor="let item of serviceRequestSortBy" [value]="item.filterId">
+            {{ item.filterRequestName }}
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="home-content role-table" *ngIf="showServiceRequestDataTable">
+    <div class="table-responsive table-request">
+      <ag-grid-angular #agGrid style="width: 100%; height:450px;" class="ag-theme-alpine"
+        [rowData]="serviceRequestData!" [columnDefs]="columnDefs" [defaultColDef]="defaultColDef"
+        (gridReady)="onGridReady($event)" [pagination]="true" [paginationPageSize]="10"
+        [suppressRowClickSelection]="true" [paginationAutoPageSize]="true" (rowClicked)="onRowClicked($event)">
+      </ag-grid-angular>
+    </div>
+    <ng-template #ActionRequest let-modal>
+      <div class="modal-header">
+        <h4 class="modal-title" id="modal-basic-title">Service Request</h4>
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+      </div>
+
+      <div class="row justify-content-center">
+        <div class="col-10">
+          <form [formGroup]="serviceRequestUpdate">
+            <div class="modal-body py-3 px-5">
+              <div class="row mb-3">
+                <div class="col">
+                  <label>Subject</label>
+                  <input type="text" class="form-control  readonly-field" formControlName="subject" readonly />
+                </div>
+
+                <div class="col">
+                  <label>Entity:</label>
+                  <input type="text" class="form-control  readonly-field" formControlName="entityName" readonly />
+                </div>
+
+              </div>
+
+              <div class="row mb-3">
+                <div class="col">
+                  <label>Description:</label>
+                  <textarea class="form-control  readonly-field" formControlName="description" readonly></textarea>
+                </div>
+                <div class="col">
+                  <label>Organization:</label>
+                  <input type="text" class="form-control  readonly-field" formControlName="organizationName" readonly />
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <div class="col">
+                  <label>Major Module:</label>
+                  <input type="text" class="form-control  readonly-field" formControlName="majorModuleName" readonly />
+                </div>
+                <div class="col">
+                  <label>Minor Module:</label>
+                  <input type="text" class="form-control  readonly-field" formControlName="minorModuleName" readonly />
+                </div>
+              </div>
+
+              <div class="row mb-3">
+
+                <div class="col">
+                  <label>Select a Level:</label>
+                  <select formControlName="levelMasterId" id="levelSelect" class="form-select ">
+                    <option *ngFor="let option of levelMasterOptions" [ngValue]="option.id">
+                      {{ option.levelType }}
+                    </option>
+                  </select>
+                </div>
+                <div class="col">
+                  <label>Expected Date:</label>
+                  <input type="date" class="form-control " formControlName="expectedDate" [attr.min]="minDate" />
+                </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col">
+                  <label>Comments:</label>
+                  <textarea class="form-control " formControlName="comments"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-center w-100 m-3 ">
+              <button type="button" class="btn btn-danger flex-fill mx-1 btn-Width d-flex justify-content-center align-items-center"
+                (click)="modal.dismiss('Cross click')">
+                <i class="fas fa-times-circle"></i>
+                <p class="button-text m-0">Close</p>
+              </button>
+              <button type="button" class="btn btn-primary flex-fill mx-1 update-btn btn-Width d-flex justify-content-center align-items-center" [ngClass]="{
+                'btn-primary': serviceRequestUpdate.dirty && serviceRequestUpdate.valid,
+                'btn-secondary': !serviceRequestUpdate.dirty || serviceRequestUpdate.invalid
+              }" [disabled]="!serviceRequestUpdate.dirty || serviceRequestUpdate.invalid"
+                (click)="updateServiceRequest()">
+                <i class="fas fa-save"></i>
+                <p class="button-text m-0">Update</p>
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </ng-template>
+  </div>
+  <div class="home-header" *ngIf="!showServiceRequestDataTable">
+    <app-no-access></app-no-access>
+  </div>
+</div>

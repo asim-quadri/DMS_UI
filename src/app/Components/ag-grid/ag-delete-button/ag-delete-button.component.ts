@@ -1,6 +1,5 @@
-import { ICellRendererAngularComp } from 'ag-grid-angular';
-import { ICellRendererParams } from 'ag-grid-community';
 import { Component } from '@angular/core';
+import { ICellRendererAngularComp } from 'ag-grid-angular';
 
 @Component({
   selector: 'app-ag-delete-button',
@@ -20,7 +19,7 @@ export class AgDeleteButtonComponent implements ICellRendererAngularComp{
     this.params.clicked(this.params);
   }
 
-
+  
 
   // gets called whenever the cell refreshes
   refresh(params: any): boolean {

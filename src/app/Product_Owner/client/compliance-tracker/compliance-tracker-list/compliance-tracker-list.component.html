@@ -1,0 +1,210 @@
+<div class="main-container">
+    <app-header-menus></app-header-menus>
+
+    <div class="home-content user-table product-setup">
+        <div class="row mt-1 gx-1">
+            <div class="col-4">
+                <div class="product-panel">
+                    <div class="product-panel-header">
+                        <div class="input-group text-center mb-1">
+                            <label for="">Group By :</label>
+                            <app-input-dropdown [formGroup]="formgroup" [name]="'regulationGroupId'"
+                                [object]="this.regulationGroupList" [key]="'regulationGroupName'"
+                                [value]="'regulationGroupId'">
+                            </app-input-dropdown>
+                        </div>
+                    </div>
+                    <div class="product-panel-body">
+                        <div class="regulation">
+                            <div *ngFor="let regulation of regulationSetup">
+                                <div class="accordion" id="accordionRegulations">
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="heading{{regulation.id}}">
+                                            <button class="accordion-button" type="button"
+                                                (click)="toggleRegulation(regulation!)">
+                                                {{ regulation.regulationName }} (Rs)
+                                            </button>
+                                        </h2>
+                                        <div [id]="'collapse'+regulation.id" class="accordion-collapse collapse"
+                                            [class.show]="isRegulationExpanded(regulation.id!)">
+                                            <div class="accordion-body">
+                                                <ng-container *ngFor="let compliance of regulation.compliance">
+                                                    <ng-container
+                                                        *ngTemplateOutlet="renderCompliance; context: { $implicit: compliance }"></ng-container>
+                                                </ng-container>
+                                                <div *ngFor="let toc of regulation.toc">
+                                                    <h5 (click)="toggleTocUnderRegulation(toc!, regulation)">
+                                                        {{ toc.typeOfComplianceName }} (TOC)
+                                                    </h5>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Context Menu -->
+                            <div *ngIf="showContextMenu"
+                                [ngStyle]="{'top': contextMenuPosition.y, 'left': contextMenuPosition.x}"
+                                class="context-menu">
+                                <div (click)="onMenuItemClick('Compliance')">Compliance</div>
+                                <div (click)="onMenuItemClick('Type of Compliance')">Type of Compliance</div>
+                            </div>
+                        </div>
+
+                        <!-- Template for rendering compliance recursively -->
+                        <ng-template #renderCompliance let-compliance>
+                            <div>
+                                <h5 (click)="toggleCompliance(compliance)">
+                                    {{ compliance.complianceName }} (RC) <span class="float-end"><i
+                                            class="fa-solid fa-angle-down"></i></span>
+                                </h5>
+                                <div class="nested-panel" *ngIf="isComplianceExpanded(compliance.id!)">
+                                    <div *ngFor="let toc of compliance.toc">
+                                        <h6 (click)="toggleTocUnderCompliance(compliance, toc!)">
+                                            {{ toc.typeOfComplianceName }} (TOC)
+                                        </h6>
+                                    </div>
+                                    <ng-container *ngFor="let childCompliance of compliance.compliance">
+                                        <ng-container
+                                            *ngTemplateOutlet="renderCompliance; context: { $implicit: childCompliance }"></ng-container>
+                                    </ng-container>
+                                </div>
+                            </div>
+                        </ng-template>
+
+                    </div>
+                </div>
+            </div>
+            <div class="col-8">
+                <!-- All the compment will come hear -->
+                <div>
+                    <div class="row" style="display: none;">
+                        <div class="col-md-3" style="padding: 10px;">
+                            <label for="entitydd">Entity :</label>
+                        </div>
+                        <div class="col-md-8">
+                            <!-- <app-input-dropdown [name]="'ddentity'" [object]="this.entityList"
+                                [key]="'entityName'" [value]="'entityId'" (change)="onEntityChange($event)">
+                            </app-input-dropdown> -->
+                            <!-- <select name="ddEntity" class="col-12 form-select" (change)="onEntityChange($event)" [(ngModel)]="entitySelected"
+                                formControlName="entitydd">
+                                <option value="">Please Select</option>
+                                <option *ngFor="let entity of this.entityList" [ngValue]="entity.id">
+                                    {{ entity.entityName }}
+                                </option>
+                            </select> -->
+
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="entitydd">Financial Year :</label>
+                        </div>
+                        <div class="col-md-8" style="float: left;">
+                            <!-- <app-input-dropdown [name]="'entityId'" [object]="this.entityList"
+                                [key]="'entityName'" [value]="'entityId'" (change)="onEntityChange($event)">
+                            </app-input-dropdown> -->
+                            <select name="ddFinYear" [(ngModel)]='optionSelected' class="col-12 form-select"
+                                (change)="onFinYrChange($event)">
+                                <option value="">Please Select</option>
+                                <option *ngFor="let yr of this.finYearList" [ngValue]="yr.month">
+                                    {{ yr.year }}
+                                </option>
+                            </select>
+                        </div>
+                        <!-- <div class="col-md-3">
+                            <button type="button" class="btn btn-color btn-block" (click)="OnSubmit()">Save</button>
+                        </div> -->
+                    </div>
+                    <div class="row client-data">
+                        <div class="table-responsive modal-table" style="overflow: scroll; height: 400px;">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <!-- <th>Cmp ID</th> -->
+                                        <th>For the Month</th>
+                                        <th>Due Date</th>
+                                        <th style="width: 120px;">Due Amount</th>
+                                        <th style="width: 120px;">Amount Paid</th>
+                                        <th style="width: 120px;">Actual Date</th>
+                                        <th style="width: 120px;">Payable Amount</th>
+                                        <th style="width: 120px;">Reason</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody style="overflow: scroll; height: 400px;">
+
+                                    <tr *ngFor="let detail of this.rowData">
+                                        <!-- <td>{{ detail.cmpId }}</td> -->
+                                        <td>{{ detail.ForTheMonth }}</td>
+                                        <td><span class="bg-critical">{{ detail.DueDate }}</span></td>
+                                        <td>
+                                            <input class="form-control" [(ngModel)]="detail.DueAmount"
+                                                *ngIf="isEditable(detail)" #duaAmount>
+                                            <span class="bg-critical" *ngIf="!isEditable(detail)">{{ detail.DueAmount
+                                                }}</span>
+                                        </td>
+                                        <td><input class="form-control" *ngIf="isEditable(detail)"
+                                                [(ngModel)]="detail.AmountPaid" #amountPaid>
+                                            <span class="bg-critical" *ngIf="!isEditable(detail)">{{ detail.AmountPaid
+                                                }}</span>
+                                        </td>
+                                        <td><input class="form-control" type="date" *ngIf="isEditable(detail)"
+                                                [(ngModel)]="detail.ActualDate" #actualDate>
+                                            <span class="bg-critical" *ngIf="!isEditable(detail)">{{ detail.ActualDate
+                                                }}</span>
+                                        </td>
+                                        <td><input class="form-control" *ngIf="isEditable(detail)"
+                                                [(ngModel)]="detail.PayableAmount" #payableAmount>
+                                            <span class="bg-critical" *ngIf="!isEditable(detail)">{{
+                                                detail.PayableAmount
+                                                }}</span>
+                                        </td>
+                                        <td><input class="form-control" *ngIf="isEditable(detail)"
+                                                [(ngModel)]="detail.Reason" #reason>
+                                            <span class="bg-critical" *ngIf="!isEditable(detail)">{{ detail.Reason
+                                                }}</span>
+                                        </td>
+                                        <td class="link">
+                                            <button class="btn btn-color btn-block" *ngIf="isEditable(detail)"
+                                                (click)="OnSubmit(detail)" type="button">Update</button>
+                                        </td>
+                                        <!-- <td><i class="fa-solid fa-ellipsis-vertical"></i></td> -->
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <!-- <ag-grid-angular #agCSMappingApproveGrid style="width: 1100px; height: 540px;"
+                                class="ag-theme-alpine" [rowData]="rowData!" [columnDefs]="columnDefs"
+                                [defaultColDef]="defaultColumnDef" [suppressRowClickSelection]="true"
+                                (gridReady)="onGridReady($event)" [pagination]="true" [paginationPageSize]="10" [paginationAutoPageSize]="true">
+                            </ag-grid-angular> -->
+                        </div>
+                    </div>
+                    <div class="row" style="visibility: collapse;">
+                        <div class="col-md-12 pr-0">
+                            <div class="main-container">
+                                <div class="home-content user-table product-setup">
+                                    <div class="row mt-20">
+                                        <div class="col-12">
+                                            <div class="product-panel">
+                                                <div class="product-panel-header text-center">
+                                                    <h4>Regulation Setup</h4>
+                                                </div>
+                                                <div class="product-panel-body new-regulation text-center ">
+                                                    <div class="row justify-content-center">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

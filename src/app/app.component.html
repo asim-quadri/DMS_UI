@@ -1,22 +1,32 @@
-<div class="row">
-    <div class="col-md-12 pr-0">
+<div class="row min-vh-100">
+  <div class="col-md-12 pr-0">
+    <app-header *ngIf="showMenus"></app-header>
+    <div class="body-wrapper">
+      <app-sidemenu *ngIf="showMenus"></app-sidemenu>
+      <div class="w-100">
         <router-outlet></router-outlet>
+      </div>
     </div>
+  </div>
 </div>
 <div class="my-container">
-    <ng-template #customLoadingTemplate>
-      <div class="custom-class">
-        <h3>Loading...</h3>
-        <!-- <button (click)="showAlert()">Click me!</button> -->
-      </div>
-    </ng-template>
+  <ng-template #customLoadingTemplate>
+    <div class="custom-class">
+      <h3>Loading...</h3>
+      <!-- <button (click)="showAlert()">Click me!</button> -->
+    </div>
+  </ng-template>
 
-    <ngx-loading
-      [show]="(loaderService.getLoaderState() | async) ?? false"
-      [config]="{ backdropBorderRadius: '3px',primaryColour: '#1976d2',secondaryColour:'#dd0031',tertiaryColour:'#1976d2' }"
-      [template]="customLoadingTemplate"
-    ></ngx-loading>
-    <!-- <ngx-loading [show]="(loaderService.getLoaderState() | async) ?? false"></ngx-loading> -->
-  </div>
+  <ngx-loading
+    [show]="(loaderService.getLoaderState() | async) ?? false"
+    [config]="{
+      backdropBorderRadius: '3px',
+      primaryColour: '#1976d2',
+      secondaryColour: '#dd0031',
+      tertiaryColour: '#1976d2'
+    }"
+    [template]="customLoadingTemplate"
+  ></ngx-loading>
+  <!-- <ngx-loading [show]="(loaderService.getLoaderState() | async) ?? false"></ngx-loading> -->
+</div>
 <notifier-container></notifier-container>
-

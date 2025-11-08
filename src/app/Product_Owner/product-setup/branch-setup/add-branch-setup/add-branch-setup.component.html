@@ -1,0 +1,19 @@
+<div class="modal-header">
+    <h4 class="modal-title" id="modal-basic-title">Add Type Of Branch</h4>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+</div>
+<div class="modal-body p-4">
+    <form>
+         <div class="mb-3">
+            <label>Type Of Branch Reference Code</label>
+            <!-- <input type="text" placeholder="Enter Type Of Branch" class="form-control"> -->
+            <app-input-text [formGroup]="formgroup" [name]="'tOBReferenceCode'" [placeholder]="'Enter Type Of Branch'"></app-input-text>
+        </div>
+        <div class="mb-3">
+            <label>Type Of Branch</label>
+            <!-- <input type="text" placeholder="Enter Type Of Branch" class="form-control"> -->
+            <app-input-text [formGroup]="formgroup" [name]="'tobName'" [placeholder]="'Enter Type Of Branch'"></app-input-text>
+            <button class="btn btn-color mt-3 primary-blue-btn w-100" (click)="onSubmit()" [disabled]="!formgroup.valid">Add Branch</button>
+        </div>
+    </form>
+</div>

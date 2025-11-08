@@ -1,0 +1,50 @@
+<div class="row">
+    <div class="col-md-12 pr-0">
+      <app-header></app-header>
+      <app-sidemenu></app-sidemenu>
+      <div class="main-container">
+        <app-top-nav></app-top-nav>
+        <div class="home-content user-table product-setup">
+          <div class="row">
+            <div class="col-md-6">
+              <form action="">
+                <div class="row">
+                  <div class="col-4">
+                    <label for="">Country :</label>
+                    <ng-multiselect-dropdown
+                      [placeholder]="'Select Country'"
+                      [settings]="dropdownSettings"
+                      [data]="countryList"
+                    >
+                    </ng-multiselect-dropdown>
+                  </div>
+                </div>
+              </form>
+            </div>
+  
+            <div class="col-6 mt-25 pl-70">
+              <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <button class="btn btn-color m-10" routerLink="/new-organization">
+                  <i class="fa-solid fa-sitemap"></i> &nbsp; Add New Organization
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="row mt-20">
+            <div class="col-4">
+            <app-organization-verticalnav></app-organization-verticalnav>
+            </div>
+            <div class="col-8">
+              <div class="product-panel">
+               
+              </div>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+      <div class="clearfix"></div>
+    </div>
+  </div>
+  
+  

@@ -1,0 +1,269 @@
+<div class="modal-header">
+  <h4 class="modal-title" id="modal-basic-title">
+    Review Regulation Setup Compliance
+  </h4>
+  <button
+    type="button"
+    class="btn-close"
+    aria-label="Close"
+    (click)="close()"
+  ></button>
+</div>
+<div class="modal-body">
+  <div class="row justify-content-center">
+    <div class="col-8 justify-content-center align-self-center mt-2">
+      <form [formGroup]="formgroup">
+        <div class="container mt-4">
+          <ul class="nav nav-tabs">
+            <li class="nav-item">
+              <button
+                class="nav-link"
+                [class.active]="active === 'basic-details-compliance'"
+                (click)="showTab('basic-details-compliance')"
+              >
+                Basic Details
+              </button>
+            </li>
+            <li class="nav-item">
+              <button
+                class="nav-link"
+                [class.active]="active === 'compliance-setup'"
+                (click)="showTab('compliance-setup')"
+              >
+                Setup
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content mt-3">
+            <!-- Basic Details -->
+            <div
+              class="tab-pane"
+              id="basic-details-compliance"
+              [class.show]="active === 'basic-details-compliance'"
+              [class.active]="active === 'basic-details-compliance'"
+            >
+              <div class="row justify-content-center">
+                <div class="col-6">
+                  <div class="form-group">
+                    <label for="">Section Name</label>
+                    <app-input-text
+                      [formGroup]="formgroup"
+                      [name]="'sectionName'"
+                      [placeholder]="'Section Name'"
+                    ></app-input-text>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="form-group">
+                    <label for="">Regulation Setup Compliance Reference Code</label>
+                    <app-input-text
+                      [formGroup]="formgroup"
+                      [name]="'regulationSetupComplianceReferenceCode'"
+                      [placeholder]="'Reference Code'"
+                      [readonly]="true"
+                    ></app-input-text>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="form-group text-center">
+                    <label for="">Regulation Name</label>
+                    <app-input-text
+                      [formGroup]="formgroup"
+                      [name]="'regulationName'"
+                      [placeholder]="'Regulation Name'"
+                    ></app-input-text>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="form-group">
+                    <label for="">Compliance Name</label>
+                    <app-input-text
+                      [formGroup]="formgroup"
+                      [name]="'complianceName'"
+                      [placeholder]="'Compliance Name'"
+                    ></app-input-text>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="form-group">
+                    <label for="">Description</label>
+                    <textarea
+                      class="form-control text-center"
+                      formControlName="description"
+                      rows="8"
+                      placeholder="Description"
+                    ></textarea>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <label for="">Major Industry</label>
+                  <label for="majorIndustryId">Major Industry</label>
+                  <app-input-multiselect
+                    [formGroup]="formgroup"
+                    [name]="'majorIndustryId'"
+                    [object]="this.selectedMajorIndustryList"
+                    [key]="'majorIndustryId'"
+                    [value]="'majorIndustryName'"
+                  >
+                  </app-input-multiselect>
+                </div>
+                <div class="col-6">
+                  <label for="">Minor Industry</label>
+                  <div>
+                    <app-treeview
+                      [treeData]="minorIndustoryTreeNode"
+                      [label]="'Minor Industory'"
+                    >
+                      ></app-treeview
+                    >
+                  </div>
+                </div>
+
+                <div class="col-4">
+                  <label for="">Type Of Branch</label>
+                  <div class="form-group">
+                    <app-treeview
+                      [treeData]="TOBTreeNode"
+                      [label]="'Type Of Branch'"
+                    >
+                      ></app-treeview
+                    >
+                  </div>
+                </div>
+                <div class="col-8">
+                  <label for="">Legal Entity Type</label>
+                  <app-input-multiselect
+                    [formGroup]="formgroup"
+                    [name]="'entityTypeId'"
+                    [object]="this.selectedEntityList"
+                    [key]="'entityTypeId'"
+                    [value]="'entityName'"
+                  >
+                  </app-input-multiselect>
+                  <div
+                    class="invalid-feedback"
+                    *ngIf="
+                      formgroup.get('entityTypeId')?.invalid &&
+                      formgroup.get('entityTypeId')?.touched
+                    "
+                  >
+                    <small
+                      class="form-text text-danger"
+                      *ngIf="formgroup.get('entityTypeId')?.errors?.required"
+                    >
+                      Entity type is required
+                    </small>
+                  </div>
+                </div>
+               
+              
+                <div class="col-6">
+                  <label for="">Concerned Ministry</label>
+                  <app-input-dropdown
+                    [formGroup]="formgroup"
+                    [name]="'concernedMinistryId'"
+                    [object]="this.concernedMinistry"
+                    [key]="'concernedMinistryName'"
+                    [value]="'id'"
+                  >
+                  </app-input-dropdown>
+                  <div
+                    class="invalid-feedback"
+                    *ngIf="
+                      formgroup.get('concernedMinistryId')?.invalid &&
+                      formgroup.get('concernedMinistryId')?.touched
+                    "
+                  >
+                    <small
+                      class="form-text text-danger"
+                      *ngIf="
+                        formgroup.get('concernedMinistryId')?.errors
+                          ?.required
+                      "
+                    >
+                      Concerned Ministry is required
+                    </small>
+                  </div>
+                </div>
+                
+                <div class="col-6">
+                  <label for="">Regulatory Authority</label>
+                  <app-input-dropdown
+                    [formGroup]="formgroup"
+                    [name]="'regulatoryAuthorityId'"
+                    [object]="this.regulatoryAuthority"
+                    [key]="'regulatoryAuthorityName'"
+                    [value]="'id'"
+                  >
+                  </app-input-dropdown>
+                  <div
+                    class="invalid-feedback"
+                    *ngIf="
+                      formgroup.get('regulatoryAuthorityId')?.invalid &&
+                      formgroup.get('regulatoryAuthorityId')?.touched
+                    "
+                  >
+                    <small
+                      class="form-text text-danger"
+                      *ngIf="
+                        formgroup.get('regulatoryAuthorityId')?.errors
+                          ?.required
+                      "
+                    >
+                      Regulatory Authority is required
+                    </small>
+                  </div>
+                </div>
+                
+                <div class="clearfix"></div>
+                <div class="col-4 mt-25">
+                  <button
+                    class="btn btn-save"
+                    (click)="showTab('compliance-setup')"
+                  >
+                    Next >>
+                  </button>
+                </div>
+              </div>
+            </div>
+           <div
+            class="tab-pane"
+            id="compliance-setup"
+            [class.show]="active === 'compliance-setup'"
+            [class.active]="active === 'compliance-setup'"
+           >
+            <div class="row justify-content-center">
+              <app-parameter
+                [parameterObject]="compliance?.parameters!"
+                [inReview]="true"
+              ></app-parameter>
+              <div class="row mt-2">
+                <div class="col-8">
+                <div class="col-4" *ngIf="!persistanceService!.isUser()">
+                  <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button
+                      class="btn btn-accept"
+                      (click)="acceptSelectedRequests()"
+                    >
+                      <i class="bi bi-check2-circle"></i> &nbsp; ACCEPT
+                    </button>
+                    &nbsp;
+                    <button
+                      class="btn btn-reject"
+                      (click)="rejectSelectedRequests()"
+                    >
+                      <i class="bi bi-x-circle"></i> &nbsp;REJECT
+                    </button>
+                  </div>
+                  </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

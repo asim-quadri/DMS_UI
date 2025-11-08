@@ -1,11 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http'
 import { AppConfig } from '../app.config'
-import { OrganizationModel, OrganizationHistory, OrganizationApproval, OrganizationDetail, OrganizationEntityList } from '../models/organizationModel';
-import { forkJoin, BehaviorSubject  } from 'rxjs';
-import { accessModel } from '../models/pendingapproval';
-import { BillingLevelModel } from '../models/billingLevelModel';
-import { ProductTypeModel } from '../models/productTypeModel';
+import { OrganizationModel, OrganizationHistory, OrganizationApproval, OrganizationDetail, OrganizationEntityList } from '../Models/organizationModel';
+import { forkJoin, BehaviorSubject } from 'rxjs';
+import { accessModel } from '../Models/pendingapproval';
+import { BillingLevelModel } from '../Models/billingLevelModel';
+import { ProductTypeModel } from '../Models/productTypeModel';
+import { RolesModels } from '../Models/roles';
+import { MajorMinorMapping } from '../Models/industrysetupModel';
 
 @Injectable(
   {
@@ -15,7 +17,7 @@ import { ProductTypeModel } from '../models/productTypeModel';
 
 export class OrganizationService {
 
-  private selectedOrganizationSource : BehaviorSubject<any> = new BehaviorSubject<any>(null);
+  private selectedOrganizationSource: BehaviorSubject<any> = new BehaviorSubject<any>(null);
   private BASEURL: any = '';
   public error: any;
   friends: Array<any> = [];
@@ -39,13 +41,13 @@ export class OrganizationService {
   setClearForm(flag: boolean): void {
     this.clearFormEvent.next(true);
   }
-  getClearForm(){
+  getClearForm() {
     return this.clearFormEvent.asObservable();
   }
-  setOrgAddOrUpdate(): void{
+  setOrgAddOrUpdate(): void {
     this.ogranizationAddOrUpdate.next(true)
   }
-  getOrgAddOrUpdate(){
+  getOrgAddOrUpdate() {
     return this.ogranizationAddOrUpdate.asObservable();
   }
 
@@ -53,7 +55,7 @@ export class OrganizationService {
     this.selectedOrganizationSource.next(organization);
   }
 
-  getSelectedOrganization(){
+  getSelectedOrganization() {
     return this.selectedOrganizationSource.asObservable();
   }
 
@@ -84,18 +86,29 @@ export class OrganizationService {
     return { headers: { 'Content-Type': 'application/json' } }
   }
 
-  getOrganizations(user: any) {
+  getOrganizationsByUserId(user: any) {
     let url = this.BASEURL + '/Organizations/GetAllOrganization';
     if (user !== null && user !== undefined) {
-        url += '?user=' + user;
+      url += '?user=' + user;
     }
     return this.http.get<Array<OrganizationModel>>(url, this.getAuthHeadersJSON());
+  }
+
+  getOrganizations() {
+    return this.http.get<Array<OrganizationModel>>(this.BASEURL + '/Organizations/GetAllOrganizations', this.getAuthHeadersJSON());
+  }
+
+  getOrganizationByCountryId(countryId: any) {
+    return this.http.get<Array<OrganizationModel>>(this.BASEURL + '/Organizations/GetOrganizationsByCountry/' + countryId, this.getAuthHeadersJSON())
+  }
+  getOrganizationByCountryIdAndUserId(countryId: any, userId: any) {
+    return this.http.get<Array<OrganizationModel>>(this.BASEURL + '/Organizations/GetOrganizationsByUserandCountry/' + userId + '/' + countryId, this.getAuthHeadersJSON())
   }
 
   getOrganizationWithoutStatus(user: any) {
     let url = this.BASEURL + '/Organizations/GetAllOrganizationWithoutStatus';
     if (user !== null && user !== undefined) {
-        url += '?user=' + user;
+      url += '?user=' + user;
     }
     return this.http.get<Array<OrganizationDetail>>(url, this.getAuthHeadersJSON());
   }
@@ -105,19 +118,26 @@ export class OrganizationService {
   }
 
   getOrgEntityList() {
-    return this.http.get<Array<OrganizationEntityList>>(this.BASEURL + '/Organizations/GetOrgEntityList', this.getAuthHeadersJSON());
+    return this.http.get<Array<OrganizationEntityList>>(this.BASEURL + '/Organizations/GetOrgEntityLists', this.getAuthHeadersJSON());
+  }
+  getOrgEntityListByUserId(UserId: any) {
+    return this.http.get<Array<OrganizationEntityList>>(this.BASEURL + '/Organizations/GetOrgEntityList?userId=' + UserId, this.getAuthHeadersJSON());
   }
 
   getAllProductType() {
     return this.http.get<Array<ProductTypeModel>>(this.BASEURL + '/Organizations/GetAllProductType', this.getAuthHeadersJSON());
   }
 
-  getOrganizationApproval(UserUID:any) {
-    return this.http.get<Array<OrganizationApproval>>(this.BASEURL + '/Organizations/GetOrganizationApprovalList/'+UserUID, this.getAuthHeadersJSON())
+  getOrganizationApproval(UserUID: any) {
+    return this.http.get<Array<OrganizationApproval>>(this.BASEURL + '/Organizations/GetOrganizationApprovalList/' + UserUID, this.getAuthHeadersJSON())
   }
 
-  getBillingLevelById(BillingLevel:any) {
-    return this.http.get<Array<BillingLevelModel>>(this.BASEURL + '/Country/GetBillingLevelById/'+BillingLevel, this.getAuthHeadersJSON());
+  getOrganizationById(Id: any) {
+    return this.http.get<Array<OrganizationDetail>>(this.BASEURL + '/Organizations/GetOrganizationById/' + Id, this.getAuthHeadersJSON())
+  }
+
+  getBillingLevelById(BillingLevel: any) {
+    return this.http.get<Array<BillingLevelModel>>(this.BASEURL + '/Country/GetBillingLevelById/' + BillingLevel, this.getAuthHeadersJSON());
   }
 
   postOrganization(organization: OrganizationModel) {
@@ -137,11 +157,15 @@ export class OrganizationService {
     return this.http.post<any>(this.BASEURL + '/Organizations/PostOrganizationForward', access, this.getAuthHeadersJSON())
   }
 
-  multipleAPIRequests(request:any){
+  multipleAPIRequests(request: any) {
     return forkJoin(request);
   }
 
-  addOrganization(organization: OrganizationModel) {
-    return this.http.post<any>(this.BASEURL + '/Organisation', organization, this.getAuthHeadersJSON())
+  getAllRoles() {
+    return this.http.get<Array<RolesModels>>(this.BASEURL + '/UserManagement/GetAllRoles', this.getAuthHeadersJSON());
+  }
+
+  GetMinorIndustrybyMajorID(countryId: any) {
+    return this.http.get<Array<MajorMinorMapping>>(this.BASEURL + '/RegulationSetup/GetMinorIndustrybyMajorID?majorIndustoryId=' + countryId, this.getAuthHeadersJSON());
   }
 }

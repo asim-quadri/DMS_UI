@@ -1,0 +1,347 @@
+<div class="main-container">
+  <app-header-menus [active]="active"></app-header-menus>
+  <div class="home-content user-table product-setup">
+    <div class="row gx-5 my-2 pb-2">
+      <div class="col-md-8">
+        <form action="">
+          <div class="row">
+            <div class="col-4">
+              <label for="">Country :</label>
+              <app-input-dropdown
+                [formGroup]="formgroup"
+                [name]="'countryId'"
+                [object]="this.countries"
+                [key]="'countryName'"
+                [value]="'id'"
+              >
+              </app-input-dropdown>
+            </div>
+            <div class="col-4">
+              <label for="">Entity Type:</label>
+              <!-- <app-input-dropdown [formGroup]="formgroup" [name]="'entityTypeId'" [object]="this.entityType"
+                [key]="'entityType'" [value]="'id'">
+              </app-input-dropdown> -->
+              <app-input-multiselect
+                [formGroup]="formgroup"
+                [name]="'entityTypeId'"
+                [object]="this.entityType"
+                [key]="'id'"
+                [value]="'entityType'"
+                (getSelectedItems)="getDropdownSelectedStates($event)"
+              ></app-input-multiselect>
+            </div>
+            <div class="col-2 d-flex align-items-end">
+              <button
+                class="primary-orange-btn btn btn-color"
+                type="button"
+                (click)="addCountryEntityType($event)"
+                [disabled]="!formgroup.valid"
+              >
+                ADD
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+      <!-- <div class="col-3"></div> -->
+      <div class="col-4 d-flex align-items-end justify-content-end">
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+          <button class="btn btn-color m-10" (click)="open(addEntityType)">
+            <i class="fa-solid fa-industry"></i> &nbsp; Add New Entity Type
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="row mt-20">
+      <div class="product-panel">
+        <div class="product-panel-header">
+          <div class="row">
+            <div class="col-md-5">
+              <div class="input-group text-center mb-1">
+                <label for="Country" class="mt-10"
+                  >Country: &nbsp; &nbsp;
+                </label>
+                <input
+                  type="search"
+                  class="form-control"
+                  (keyup)="searchCountry($event)"
+                  placeholder="Search by keywords ..."
+                />
+                <div class="input-group-prepend">
+                  <button class="btn btn-white" type="button">
+                    <i class="bi bi-search"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-7 text-center">
+              <h4>Entity Type</h4>
+            </div>
+          </div>
+        </div>
+        <div class="product-panel-body">
+          <div class="row">
+            <div class="col-5">
+              <div class="panel-gray uppercase">
+                <!-- <button class="btn btn-trash"><i class="fa-solid fa-trash-can"></i></button> -->
+                <ul>
+                  <li
+                    *ngFor="let item of getUniqueCountries()"
+                    [class.selected]="isSelected(item.countryName?.toString()!)"
+                    (click)="toggleSelection(item.countryName?.toString()!)"
+                  >
+                    {{ item.countryName }}
+                    <span class="float-end"
+                      ><i class="fa-solid fa-chevron-right"></i
+                    ></span>
+                  </li>
+                </ul>
+                <div class="clearfix"></div>
+              </div>
+              <button
+                class="btn btn-approve mt-20"
+                (click)="openXl(mappingApprovals)"
+              >
+                <i class="bi bi-arrow-down-up"></i> &nbsp; APPROVALS &nbsp;
+                <span>{{ entityTypeApprovalCount }}</span>
+              </button>
+            </div>
+            <div class="col-7">
+              <div class="panel-gray">
+                <!-- <button class="btn btn-trash"><i class="fa-solid fa-trash-can"></i></button> -->
+                <div
+                  *ngFor="let country of getSelectedEntityTypes()"
+                  class="panel-gray h-auto"
+                >
+                  <p>{{ country.countryName }}</p>
+                  <ul>
+                    <li
+                      *ngFor="let item of country.entityTypes"
+                      [class.selected]="isSelected(item.entityType)"
+                      (click)="toggleSelection(item.entityType)"
+                    >
+                      {{ item.entityType }}
+                    </li>
+                  </ul>
+                  <div class="clearfix"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="clearfix"></div>
+
+  <!-- new country-->
+  <ng-template #addEntityType let-modal>
+    <app-add-entity-type
+      [modal]="modal"
+      (reloaddata)="reload($event)"
+    ></app-add-entity-type>
+  </ng-template>
+
+  <ng-template #mappingApprovals let-modal>
+    <app-approve-entity-type
+      [modal]="modal"
+      (reloaddata)="reload($event)"
+    ></app-approve-entity-type>
+  </ng-template>
+
+  <!-- Major Industry Approval-->
+  <ng-template #addMajorIndustry let-modal>
+    <div class="modal-header">
+      <div class="modal-title">Approvals &nbsp; Add New Entity Type</div>
+      <button
+        type="button"
+        class="btn-close"
+        aria-label="Close"
+        (click)="modal.dismiss('Cross click')"
+      ></button>
+    </div>
+    <div class="modal-body product-steup-modal">
+      <div class="row">
+        <div class="col-5">
+          <button class="btn btn-status">Approval Pending</button>
+        </div>
+        <div class="col-6 text-center user-info">
+          <ul>
+            <li>Point of Contact : <span>Haribabu</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-3"></div>
+        <div class="col-6 mt-50">
+          <form>
+            <div class="mb-3 text-center">
+              <label for="">Entity Type</label>
+              <div class="input-group text-center">
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Tax Law"
+                  name="entityTypegroup"
+                  ngModel
+                />
+              </div>
+            </div>
+
+            <div class="mb-3 text-center">
+              <label for="">Code</label>
+              <div class="input-group text-center">
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="TL4574"
+                  name="code"
+                  ngModel
+                />
+              </div>
+            </div>
+
+            <div class="mb-3 text-center">
+              <div class="text-center">
+                <button class="btn btn-accept">
+                  <i class="bi bi-check2-circle"></i> &nbsp; ACCEPT
+                </button>
+                &nbsp;
+                <button class="btn btn-reject">
+                  <i class="bi bi-x-circle"></i> &nbsp;REJECT
+                </button>
+                <div class="mt-20">
+                  <br />
+                  OR <br />
+                  <a href="" class="forword">Forward</a>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </ng-template>
+
+  <ng-template #maping let-modal>
+    <div class="modal-header">
+      <div class="modal-title">Approvals &nbsp; Mapping</div>
+      <button
+        type="button"
+        class="btn-close"
+        aria-label="Close"
+        (click)="modal.dismiss('Cross click')"
+      ></button>
+    </div>
+    <div class="modal-body product-steup-modal">
+      <div class="row">
+        <div class="col-5">
+          <button class="btn btn-status">Approval Pending</button>
+        </div>
+        <div class="col-6 text-center user-info">
+          <ul>
+            <li>Point of Contact : <span>Haribabu</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-3"></div>
+        <div class="col-6 mt-50">
+          <form>
+            <div class="mb-3 text-center">
+              <label for="">Country</label>
+              <div class="input-group text-center">
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="India"
+                  name="country"
+                  ngModel
+                />
+              </div>
+            </div>
+            <div class="mb-3 text-center">
+              <label for="">Entity Type</label>
+              <div class="input-group text-center">
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Tax Law"
+                  name="entityTypegroup"
+                  ngModel
+                />
+              </div>
+            </div>
+            <div class="mb-3 text-center">
+              <label for="">Code</label>
+              <div class="input-group text-center">
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="TL4574"
+                  name="code"
+                  ngModel
+                />
+              </div>
+            </div>
+
+            <div class="mb-3 text-center">
+              <div class="text-center">
+                <button class="btn btn-accept">
+                  <i class="bi bi-check2-circle"></i> &nbsp; ACCEPT
+                </button>
+                &nbsp;
+                <button class="btn btn-reject">
+                  <i class="bi bi-x-circle"></i> &nbsp;REJECT
+                </button>
+                <div class="mt-20">
+                  <br />
+                  OR <br />
+                  <a href="" class="forword">Forward</a>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </ng-template>
+
+  <ng-template #download let-modal>
+    <div class="modal-header">
+      <div class="modal-title">Download File</div>
+      <button
+        type="button"
+        class="btn-close"
+        aria-label="Close"
+        (click)="modal.dismiss('Cross click')"
+      ></button>
+    </div>
+    <div class="modal-body product-steup-modal">
+      <form>
+        <div class="mb-3 text-center">
+          <label for="">Country Name</label>
+          <div class="input-group text-center">
+            <select class="form-select" name="country" ngModel>
+              <option value="IN">India</option>
+              <option value="IN">India</option>
+              <option value="IN">India</option>
+            </select>
+          </div>
+        </div>
+        <!--       
+        <div class="mb-3 text-center">
+          <div class="text-center">
+            <button class="btn btn-accept"><i class="bi bi-check2-circle"></i> &nbsp; APPROVE</button> &nbsp; 
+               <button class="btn btn-reject"><i class="bi bi-x-circle"></i> &nbsp;REJECT</button>
+              <div class="mt-20">
+                <br>
+               OR <br>
+               <a href="">Forward</a>
+              </div>
+          </div>
+        </div> -->
+      </form>
+    </div>
+  </ng-template>
+</div>

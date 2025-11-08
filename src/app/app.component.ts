@@ -12,5 +12,13 @@ export class AppComponent {
   showMenus:boolean =false;
 
   constructor(private persistance: PersistenceService,public loaderService: LoaderService) {
-  }
+
+    if(this.persistance.getUserUID() == null){
+      this.showMenus = false;
+    }
+    else{
+      this.showMenus =true;
+    }
+
+	}
 }

@@ -1,0 +1,55 @@
+<div class="modal-header">
+  <h4 class="modal-title text-center" id="modal-basic-title">
+    Add New Entity Type
+  </h4>
+  <button
+    type="button"
+    class="btn-close"
+    aria-label="Close"
+    (click)="modal.dismiss('Cross click')"
+  ></button>
+</div>
+<div class="modal-body product-steup-modal">
+  <form [formGroup]="formgroup" class="row justify-content-center">
+    <div class="col-10 mt-3">
+      <label for="">Entity Type Reference Code</label>
+      <div class="input-group">
+        <app-input-text
+          [formGroup]="formgroup"
+          [name]="'entityTypeReferenceCode'"
+          [placeholder]="'Entity Type Name'"
+        ></app-input-text>
+      </div>
+    </div>
+    <div class="col-10 mt-3">
+      <label for="">Entity Type</label>
+      <div class="input-group">
+        <app-input-text
+          [formGroup]="formgroup"
+          [name]="'entityType'"
+          [placeholder]="'Entity Type Name'"
+        ></app-input-text>
+      </div>
+    </div>
+    <div class="col-10 mt-3">
+      <label for="">Entity Type Code</label>
+      <div class="input-group">
+        <app-input-text
+          [formGroup]="formgroup"
+          [name]="'entityTypeCode'"
+          [placeholder]="'Entity Type Code'"
+        ></app-input-text>
+      </div>
+    </div>
+    <div class="col-10 mt-20 text-center">
+      <button
+        type="button"
+        class="btn btn-color btn-block primary-blue-btn w-100"
+        (click)="onSubmit()"
+        [disabled]="!formgroup.valid"
+      >
+        &nbsp; Add Entity Type &nbsp;
+      </button>
+    </div>
+  </form>
+</div>

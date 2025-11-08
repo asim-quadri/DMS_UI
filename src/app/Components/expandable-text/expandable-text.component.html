@@ -1,0 +1,6 @@
+<div class="text-wrapper" [class.expanded]="showFull" [style.--lines]="maxLines">
+  <p #textElement>{{ text }}</p>
+  <a class="toggle-link" (click)="toggle()" *ngIf="isTextOverflowing">
+    {{ showFull ? 'View Less' : 'View More' }}
+  </a>
+</div>

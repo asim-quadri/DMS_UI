@@ -5,10 +5,8 @@ import { FormGroup } from '@angular/forms';
   selector: 'app-input-dropdown',
   templateUrl: './input-dropdown.component.html',
   styleUrls: ['./input-dropdown.component.scss'],
-
 })
 export class InputDropdownComponent {
-
   @Input()
   formGroup!: FormGroup;
   @Input()
@@ -23,13 +21,16 @@ export class InputDropdownComponent {
   value: any;
 
   @Input()
-  object: any;
+  disabled: any;
 
+  @Input()
+  object: any;
 
   @Output()
   change: EventEmitter<any> = new EventEmitter<any>();
 
-  onchange(event:any){
+  onchange(event: any) {
     this.change.emit(event);
   }
+
 }

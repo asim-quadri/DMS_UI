@@ -29,6 +29,7 @@ export interface MajorIndustryModel extends ResponseModel{
     uid: string | null;
     managerId: any | null;
     ApprovalUID:string | null;
+    minorIndustryReferenceCode?: string | null;
   }
 
   export interface CountryMajorMapping extends ResponseModel {
@@ -80,6 +81,9 @@ export interface MajorIndustryModel extends ResponseModel{
     modifiedOn: string | null;
     modifiedBy: number | null;
     managerId: any | null;
+    hide:boolean | false;
+    tobId:string | null;
+    tobName:string | null;
   }
 
   export interface MajorMinorIndustryApproval {
@@ -136,4 +140,8 @@ export interface MajorIndustryModel extends ResponseModel{
     modifiedBy: number | null;
     managerId: any | null;
     hide:boolean | false;
+    minorIndustryReferenceCode: string | null;
+    createdByName: string | null;
+    approvedByName: string | null;
+      
   }

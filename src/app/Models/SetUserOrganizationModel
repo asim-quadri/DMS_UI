@@ -1,0 +1,5 @@
+export interface SetUserOrganizationModel {
+  userId: number;
+  organizationId: number;
+  hasAccess: boolean;
+}

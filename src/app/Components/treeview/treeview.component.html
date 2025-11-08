@@ -1,0 +1,49 @@
+<mat-menu #treeMenu="matMenu" [hasBackdrop]="true" [overlapTrigger]="true">
+    <mat-tree [dataSource]="dataSource" [treeControl]="treeControl">
+      <!-- Leaf nodes -->
+      <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding>
+        <mat-checkbox [checked]="node.checked" (change)="onNodeCheckChange(node, $event)"
+          (click)="$event.stopPropagation()">
+          {{ node.name }}
+        </mat-checkbox>
+      </mat-tree-node>
+
+      <!-- Parent nodes -->
+      <mat-nested-tree-node *matTreeNodeDef="let node; when: hasChild">
+        <div class="parent-node">
+          <mat-checkbox [checked]="node.checked" (change)="onNodeCheckChange(node, $event)"
+            (click)="$event.stopPropagation()">
+            {{ node.name }}
+          </mat-checkbox>
+          <button mat-icon-button matTreeNodeToggle>
+            <mat-icon>{{ treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'
+              }}</mat-icon>
+          </button>
+        </div>
+        <div>
+          <!-- Recursive rendering of child nodes -->
+          <mat-tree-node *ngFor="let child of node.children" matTreeNodePadding>
+            <mat-checkbox [checked]="child.checked" (change)="onNodeCheckChange(child, $event)"
+              (click)="$event.stopPropagation()">
+              {{ child.name }}
+            </mat-checkbox>
+          </mat-tree-node>
+        </div>
+      </mat-nested-tree-node>
+    </mat-tree>
+  </mat-menu>
+
+  <!-- Trigger button -->
+  <!-- <button mat-button [matMenuTriggerFor]="treeMenu">{{getLabel()}}</button> -->
+
+  <!-- Styled button with selected items -->
+<button mat-button [matMenuTriggerFor]="treeMenu" class="dropdown-button">
+  <span *ngIf="getLabel().length > 0">
+    <span class="selected-item">{{ getLabel()[0] }}</span>
+    <span *ngIf="getLabel().length > 1" class="more-items">+{{ getLabel().length - 1 }}</span>
+  </span>
+  <span *ngIf="getLabel().length === 0">Select Items</span>
+
+  <!-- <mat-icon class="dropdown-icon">expand_more</mat-icon> -->
+</button>
+

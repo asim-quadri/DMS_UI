@@ -1,6 +1,6 @@
+import { Component } from '@angular/core';
 import { ICellRendererAngularComp } from 'ag-grid-angular';
 import { ICellRendererParams } from 'ag-grid-community';
-import { Component } from '@angular/core';
 
 
 
@@ -10,11 +10,11 @@ import { Component } from '@angular/core';
   styleUrls: ['./agbutton.component.scss']
 })
 export class AgbuttonComponent  implements ICellRendererAngularComp {
+  filed:any;
   refresh(params: ICellRendererParams<any, any, any>): boolean {
     this.params = params;
-       return true;
+      return true;
   }
-  filed:any;
 
   params: any;
 
@@ -30,5 +30,5 @@ export class AgbuttonComponent  implements ICellRendererAngularComp {
   getValueToDisplay(params: any) {
     return params;
 }
-
+  
 }

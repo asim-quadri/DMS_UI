@@ -1,8 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { AppConfig } from '../app.config';
-import { ParameterModel } from '../models/parameter';
-import { accessModel, pendingApproval } from '../models/pendingapproval';
+import { ParameterModel } from '../Models/parameter';
+import { accessModel, pendingApproval } from '../Models/pendingapproval';
 
 @Injectable({
   providedIn: 'root'
@@ -15,7 +15,7 @@ export class ParameterService {
   friends: Array<any> = [];
   public headers: Array<any> = [];
 
-  constructor(public http: HttpClient, private config: AppConfig) {
+  constructor(public http: HttpClient, private config: AppConfig) { 
     this.BASEURL = this.config.ServiceUrl;
     this.http = http;
     this.headers = [];
@@ -74,6 +74,10 @@ export class ParameterService {
     return this.http.post<any>(this.BASEURL + '/ParameterSetup/AddParameter?accessUID=' + accessUID, parameter, this.getAuthHeadersJSON())
   }
 
+  getAllPendingApprovals() {
+    return this.http.get<Array<pendingApproval>>(this.BASEURL + '/ParameterSetup/GetAllParametersApproval/', this.getAuthHeadersJSON());
+  }
+
   getAllParametersPendingApprovals(userUID: string) {
     return this.http.get<Array<pendingApproval>>(this.BASEURL + '/ParameterSetup/GetAllParametersApproval/' + userUID, this.getAuthHeadersJSON());
   }
@@ -95,5 +99,8 @@ export class ParameterService {
   submitApproved(access: accessModel) {
 
     return this.http.post<any>(this.BASEURL + '/ParameterSetup/PostApproveAccess', access, this.getAuthHeadersJSON())
+  }
+  getNextParameterCode() {
+    return this.http.get<string>(this.BASEURL + '/ParameterSetup/GetNextParameterCode', this.getAuthHeadersJSON());
   }
 }

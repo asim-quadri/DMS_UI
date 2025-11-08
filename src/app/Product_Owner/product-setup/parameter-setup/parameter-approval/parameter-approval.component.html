@@ -1,0 +1,44 @@
+<div class="modal-header text-center">
+    <button type="button" class="btn-close" aria-label="Close" (click)="closeParameterApproval()"></button>
+  </div>
+  <div class="modal-body">
+    <div class="row">
+      <div class="col-md-8">
+        <div class="stauts-list">
+          <ul>
+            <li class="status-circle green-status"></li>
+            <li class="status-text">Approved</li>
+
+            <li class="status-circle oragne-status"></li>
+            <li class="status-text">Pending</li>
+
+            <li class="status-circle red-status"></li>
+            <li class="status-text">Rejected</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <form action="">
+          <div class="input-group">
+            <input type="text" class="form-control" placeholder="Search by keyword  ..." />
+            <div class="input-group-append">
+              <button class="btn btn-search h45" type="submit">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="row">
+      <div class="table-responsive modal-table">
+        <ag-grid-angular #agGrid style="width: 1100px; height: 540px;" class="ag-theme-alpine" [rowData]="rowData!"
+        [columnDefs]="columnDefs" [defaultColDef]="defaultColumnDef"
+        [rowSelection]="rowSelection"
+        [suppressRowClickSelection]="true"  [pagination]="true"
+        [paginationPageSize]="10"
+        [paginationAutoPageSize]="true">
+      </ag-grid-angular>
+      </div>
+    </div>
+  </div>

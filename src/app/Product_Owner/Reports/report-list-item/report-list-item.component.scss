@@ -1,0 +1,29 @@
+@use "src/assets/scss/_colors.scss";
+
+:host ::ng-deep .ag-header-cell-menu-button:not(.ag-header-menu-always-show) {
+  transition: opacity 0.2s;
+  opacity: 1 !important;
+  background: none;
+  &::before {
+    content: "";
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+    background-image: url("../../../../assets/images/funnelFilter.svg");
+    background-size: contain;
+  }
+  .ag-icon {
+    display: none;
+  }
+}
+.ag-theme-alpine {
+  padding-left: 20px;
+}
+.home-header h3 {
+  color: colors.$white;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0px;
+  text-align: center;
+}

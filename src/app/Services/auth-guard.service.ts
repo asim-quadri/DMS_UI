@@ -6,24 +6,18 @@ import { PersistenceService } from './persistence.service';
 @Injectable({
   providedIn: 'root'
 })
-export class AuthGuardService implements CanActivate {
+export class AuthGuardService {
 
-  constructor(private persistance: PersistenceService, private router: Router) { }
+  constructor(private persistance: PersistenceService) { }
 
   canActivate(next: ActivatedRouteSnapshot, state: RouterStateSnapshot)
     : Observable<boolean> | Promise<boolean> | UrlTree | boolean {
-    
-    // Check if user is logged in by verifying session storage
-    const currentUser = sessionStorage.getItem("currentUser");
-    const userUID = this.persistance.getUserUID();
-    if (currentUser && currentUser !== '{}' && userUID) {
-      
-      return true;
+    if (this.persistance.getSessionStorage('currentUser')) {
+      var userobje = sessionStorage.getItem("currentUser")!;
+      if (userobje != null) {
+        return true;
+      }
     }
-    
-    
-    // Redirect to login if not authenticated
-    this.router.navigate(['/login']);
     return false;
   }
 }

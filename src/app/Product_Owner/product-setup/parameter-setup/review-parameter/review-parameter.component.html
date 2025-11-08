@@ -1,0 +1,56 @@
+<div class="modal-header text-center">
+    <h4 class="modal-title">
+        <span class="font-light">Approvals</span>
+    </h4>
+    <button type="button" class="btn-close" aria-label="Close" (click)=closeParameterReview()></button>
+</div>
+<div class="modal-body">
+    <div class="row">
+        <div class="col-md-3">
+            <button class="btn btn-status">Approval Pending</button>
+        </div>
+        <div class="col-md-6 text-center user-info">
+            <ul>
+                <li>Employee: <span>{{pendingParameterApproval?.createdBy}}</span></li>
+                <!-- <li>Role: <span>{{pendingParameterApproval?.roleDisplayName}}</span></li> -->
+                <li>Point of Contact: <span>{{pendingParameterApproval?.pointofContact}}</span></li>
+            </ul>
+        </div>
+    </div>
+    <div class="row mt-100">
+        <div class="col-md-4"></div>
+        <div class="col-md-4">
+            <form [formGroup]="formgroup" class="long-form">
+                <div class="form-group">
+                    <label class="col-form-label">Prameter Name:</label>
+                    <app-input-text [formGroup]="formgroup" [name]="'parameterName'"
+                        [placeholder]="'Parameter Name'"></app-input-text>
+                </div>
+                <div class="form-group">
+                    <label class="col-form-label">Prameter Type:</label>
+                    <app-input-text [formGroup]="formgroup" [name]="'parameterType'"
+                        [placeholder]="'Enter Prameter Type'"></app-input-text>
+                </div>
+            </form>
+            <div class="form-group">
+                <!-- <div class="mt-4" *ngIf="!enable && this.roleName != 'User'"> -->
+                <div class="mt-4">
+                    <button class="btn btn-approved width-50" (click)="submitApproved()">APPROVE</button>
+                    <button class="btn btn-reject width-50" (click)="submitReject()">REJECT</button>
+                </div>
+                <!-- <div class="mt-4">
+                    <button class="btn btn-reject width-50" *ngIf="!enable" (click)="enablefields()">Enable</button>
+                    <button class="btn btn-reject width-50" *ngIf="enable" (click)="disablefields()">Disable</button>
+
+                </div> -->
+                <!-- <div class="mt-4" *ngIf="enable">
+                    <button class="btn btn-reject width-50" (click)="onSubmit()">Save</button>
+                </div>
+                <div class="mt-4" *ngIf="!enable">
+                    <button class="btn btn-reject width-50" *ngIf="managerid > 0"
+                        (click)="submitForward()">Forward</button>
+                </div> -->
+            </div>
+        </div>
+    </div>
+</div>
