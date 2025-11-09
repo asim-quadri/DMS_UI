@@ -11,13 +11,22 @@ import { HttpClient } from '@angular/common/http';
 import { PersistenceService } from '../Services/persistence.service';
 import { Router } from '@angular/router';
 
+interface ComFolder {
+  label: string;
+  id: number;
+  parentId: number;
+  expanded: boolean;
+  foldertitle?:string;
+  children: ComFolder[];
+  
+}
+
 @Component({
   selector: 'app-fileupload',
   templateUrl: './fileupload.component.html',
   styleUrls: ['./fileupload.component.css']
 })
 export class FileuploadComponent implements OnInit {
-
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   fileModel: FileModel=  {
     fileName: '',
@@ -87,19 +96,18 @@ export class FileuploadComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.getAllFolders();
-   
-    this.getGetFolderTree(this.selectedEntityId,this.currentUserId);
-
+    //this.getAllFolders();
+    this.getcompdata();
   }
   getGetFolderTree(selectedEntityId: number, currentUserId: any) {
     this.folderService.getGetFolderTree(selectedEntityId,currentUserId).subscribe((result: any) => {
+     if(this.treeData.length>0){
       result.forEach((element: any) => {
-
+        this.treeData.push(element);
       });
-      //console.log("folders result == ",result);
-
+     }else{
       this.treeData = result;
+     }
       if (this.treeData.length > 0) {
         this.selectedFolderTreeNodeItem = this.treeData[0];
         this.buildBreadcrumbPath(this.treeData[0]); // Initialize breadcrumb
@@ -187,7 +195,7 @@ export class FileuploadComponent implements OnInit {
 
   onDownloadClick(params: any): void {
     const imagePath = params.data.filePath;
-    console.log("imagePath ==",imagePath);
+    
     const fileName = params.data.fileName || 'downloaded-image.jpg';
 
   this.http.get(imagePath, { responseType: 'blob' }).subscribe((blob: Blob | MediaSource) => {
@@ -252,11 +260,11 @@ export class FileuploadComponent implements OnInit {
 
 
   viewAllFiles() {
-    console.log('View All Files clicked');
+    
   }
 
   onSearchInputChange(searchQuery: string) {
-    console.log('Search Input:', searchQuery);
+    
     // Implement search logic here
   }
 
@@ -272,13 +280,13 @@ export class FileuploadComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (file && this.selectedFolderTreeNodeItem) {
-      console.log("selected file ==",file);
+      
       this.fileModel.fileName=file.name;
       this.fileModel.fileType = file.type;
       this.fileModel.filePath = file.webkitRelativePath;
       this.fileModel.folderId = this.selectedFolderTreeNodeItem.id;
       this.fileModel.lastModifiedOn = file.lastModified;
-      console.log("file details == ",this.fileModel);
+      
       this.uploadFile(file);
     }
   }
@@ -292,7 +300,7 @@ export class FileuploadComponent implements OnInit {
   uploadFile(file: File) {
     this.folderService.uploadFile(this.fileModel,file).subscribe(
       (result: any) => {
-        console.log('File successfully uploaded:', result);
+        
         this.getAllFilesbyFolderId(this.selectedFolderId);
         this.notifier.notify('success', 'Uploaded Successfully');
       },
@@ -303,22 +311,37 @@ export class FileuploadComponent implements OnInit {
   }
 
   getAllFolders(){
+    // this.getcompdata();
     this.folders = [];
     this.folderService.getAllFolders().subscribe((result: any) => {
       this.getAllFilesbyFolderId(result[0]?.id);
-      console.log("folders result == ",result);
+      
 
       this.folders = result;
     });
   }
 
-  getAllFilesbyFolderId(folderId: number){
+ 
+
+  getcompdata(){
+    this.folders = [];
+    this.folderService.getcompleteFolderList().subscribe((result: any) => {
+      const comFolderTree = this.buildComFolderTree(result);
+          this.treeData = comFolderTree;
+          
+       this.getGetFolderTree(this.selectedEntityId,this.currentUserId);
+    });
+   
+  }
+
+  
+  getAllFilesbyFolderId(folderId: number,type:any='Dms'){
     this.files = [];
-    this.folderService.getFilesbyFolderId(folderId).subscribe((result: any) => {
+    this.folderService.getFilesbyFolderId(folderId,type).subscribe((result: any) => {
       result.forEach((element: any) => {
 
       });
-      console.log("files result == ",result);
+      
       this.files = result;
     },(error: any) => {
       console.error("Error fetching files:", error);
@@ -402,10 +425,11 @@ export class FileuploadComponent implements OnInit {
   // Example method to change search filter
   changeSearchFilter(filter: string) {
     this.searchFilter = filter;
-    console.log('Search Filter changed to:', this.searchFilter);
+    
   }
 
   openSm(content: TemplateRef<any>) {
+    
     this.modalService.open(content, { centered: true, size: 'sm'  });
   }
   open(content: TemplateRef<any>) {
@@ -422,49 +446,286 @@ export class FileuploadComponent implements OnInit {
   selectItem(item: FolderTreeNode, event: MouseEvent): void {
     event.stopPropagation();
     this.selectedFolderTreeNodeItem = item;
-    console.log("selected item ==",this.selectedFolderTreeNodeItem);
-    this.buildBreadcrumbPath(item);
-    this.getAllFilesbyFolderId(item.id);
-  }
-
-  buildBreadcrumbPath(selectedNode: FolderTreeNode): void {
-    this.breadcrumbPath = [{ label: 'DMS' }]; // Start with DMS root
     
-    // Find the path to the selected node
-    const path = this.findNodePath(this.treeData, selectedNode);
-    if (path) {
-      this.breadcrumbPath = this.breadcrumbPath.concat(path.map(node => ({ label: node.label, node })));
-    }
+    this.buildBreadcrumbPath(item);
+    this.getAllFilesbyFolderId(item.id,this.getModuleType(item.foldertitle||''));
   }
 
-  findNodePath(nodes: FolderTreeNode[], targetNode: FolderTreeNode): FolderTreeNode[] | null {
-    for (const node of nodes) {
-      if (node.id === targetNode.id) {
-        return [node];
-      }
-      
-      if (node.children && node.children.length > 0) {
-        const childPath = this.findNodePath(node.children, targetNode);
-        if (childPath) {
-          return [node, ...childPath];
-        }
-      }
-    }
-    return null;
+  getModuleType(label: string): string {
+  const lower = (label || '').toLowerCase();
+  
+  if (['regulation', 'organization', 'announcement','compseqr360'].includes(lower)) {
+    return lower;
+  } else {
+    return 'Dms';
+  }
+}
+
+buildBreadcrumbPath(selectedNode: FolderTreeNode): void {
+  if (!selectedNode) {
+    this.breadcrumbPath = [{ label: 'DMS' }];
+    return;
   }
 
-  navigateToBreadcrumb(breadcrumb: { label: string, node?: FolderTreeNode }): void {
-    if (breadcrumb.node) {
-      this.selectedFolderTreeNodeItem = breadcrumb.node;
-      this.buildBreadcrumbPath(breadcrumb.node);
-      this.getAllFilesbyFolderId(breadcrumb.node.id);
-    } else {
-      // Navigate to root (DMS)
-      if (this.treeData.length > 0) {
-        this.selectedFolderTreeNodeItem = this.treeData[0];
-        this.buildBreadcrumbPath(this.treeData[0]);
-        this.getAllFilesbyFolderId(this.treeData[0].id);
-      }
-    }
+  const path: FolderTreeNode[] = [];
+  let current: FolderTreeNode | undefined = selectedNode;
+
+  // climb up the parent references
+  while (current) {
+    path.unshift(current);
+    current = current.parent;
   }
+
+  // remove duplicates
+  const uniquePath = path.filter(
+    (node, i, arr) => i === 0 || node.label !== arr[i - 1].label
+  );
+
+  // detect if top node is COMPSEQR360
+  const top = uniquePath[0];
+  const isCompseqrRoot =
+    (top.label || '').toLowerCase() === 'compseqr360' ||
+    (top.foldertitle || '').toLowerCase() === 'compseqr360';
+
+  if (isCompseqrRoot) {
+    this.breadcrumbPath = uniquePath.map((n) => ({
+      label: n.label,
+      node: n,
+    }));
+  } else {
+    this.breadcrumbPath = [{ label: 'DMS' }].concat(
+      uniquePath.map((n) => ({
+        label: n.label,
+        node: n,
+      }))
+    );
+  }
+}
+
+
+normalizeNodes(
+  items: any[],
+  parent: FolderTreeNode | null = null,
+  foldertitle?: string
+): FolderTreeNode[] {
+  const out: FolderTreeNode[] = [];
+
+  for (const item of items || []) {
+    // Ensure a valid ID for every node
+    const id =
+      typeof item.id === 'number' && item.id > 0
+        ? item.id
+        : Math.floor(Math.random() * 1e9);
+
+    // Choose readable label name
+    const label =
+      item.label ||
+      item.folderName ||
+      item.regulationName ||
+      item.organizationName ||
+      item.entityName ||
+      `Item_${id}`;
+
+    // ✅ Create node and attach parent reference
+    const node: FolderTreeNode = {
+      id,
+      label,
+      expanded: !!item.expanded,
+      children: [],
+      parentId: parent ? parent.id : 0,
+      parent: parent || undefined,  // 👈 This is the key line
+      foldertitle: item.foldertitle || foldertitle,
+    };
+
+    // Recurse into children (and assign parent reference)
+    const children =
+      item.children || item.compliance || item.toc || item.entityList || [];
+    if (children && children.length > 0) {
+      node.children = this.normalizeNodes(children, node, node.foldertitle);
+    }
+
+    out.push(node);
+  }
+
+  return out;
+}
+
+
+/** ✅ Navigate to breadcrumb click */
+navigateToBreadcrumb(breadcrumb: { label: string; node?: FolderTreeNode }): void {
+  if (!breadcrumb.node) return;
+
+  this.selectedFolderTreeNodeItem = breadcrumb.node;
+  this.buildBreadcrumbPath(breadcrumb.node);
+  this.getAllFilesbyFolderId(
+    breadcrumb.node.id,
+    this.getModuleType(breadcrumb.node.foldertitle || '')
+  );
+}
+
+
+//start filters
+
+ comfolders: ComFolder[] = [];
+ folderId = 1;
+ 
+  buildNestedComFolders(items: any[], parentId: number,foldertitle:any): ComFolder[] {
+  const result: ComFolder[] = [];
+
+    items.forEach(item => {
+      const currentId = this.folderId++;
+      const folder: ComFolder = {
+      label: item.complianceName || item.tocName || item.regulationName || item.typeOfComplianceName|| `Item_${item.id}`,
+      id: currentId,
+      parentId,
+      expanded: false,
+      children: [],
+      foldertitle:foldertitle
+    };
+
+    // Recursively process deeper levels (compliance/toc)
+    if (Array.isArray(item.compliance) && item.compliance.length > 0) {
+      folder.children.push(...this.buildNestedComFolders(item.compliance, currentId,foldertitle));
+    }
+
+    if (Array.isArray(item.toc) && item.toc.length > 0) {
+      folder.children.push(...this.buildNestedComFolders(item.toc, currentId,foldertitle));
+    }
+
+    result.push(folder);
+  });
+
+  return result;
+}
+
+/**
+ * Builds the full nested structure as a tree.
+ */
+ buildComFolderTree(data: any) {
+  const rootId = this.folderId++;
+
+  const rootFolder: ComFolder = {
+    label: "COMPSEQR360",
+    id: rootId,
+    parentId: 0,
+    expanded: false,
+    foldertitle: "COMPSEQR360",
+    children: []
+  };
+
+  // Regulation Root
+  const regulationId = this.folderId++;
+  const regulationFolder: ComFolder = {
+    label: "Regulation",
+    id: regulationId,
+    parentId: rootId,
+    expanded: false,
+    children: [],
+    foldertitle: "Regulation" 
+  };
+
+  // Add regulations
+  data.regulation.forEach((reg: any) => {
+    const regId = this.folderId++;
+    const regFolder: ComFolder = {
+      label: reg.regulationName,
+      id: regId,
+      foldertitle:"Regulation",
+      parentId: regulationId,
+      expanded: false,
+      children: []
+    };
+
+    if (Array.isArray(reg.compliance) && reg.compliance.length > 0) {
+      regFolder.children.push(...this.buildNestedComFolders(reg.compliance, regId,"Regulation"));
+    }
+
+    if (Array.isArray(reg.toc) && reg.toc.length > 0) {
+      regFolder.children.push(...this.buildNestedComFolders(reg.toc, regId,"Regulation"));
+    }
+
+    regulationFolder.children.push(regFolder);
+  });
+
+  // Organization Root
+  const orgId = this.folderId++;
+  const orgFolder: ComFolder = {
+    label: "Organization",
+    id: orgId,
+    parentId: rootId,
+    expanded: false,
+    children: [],
+    foldertitle: "Organization"
+  };
+
+  // Add organizations and entities
+  data.organization.forEach((org: any) => {
+    const orgFolderId = this.folderId++;
+    const orgItem: ComFolder = {
+      label: org.organizationName,
+      id: orgFolderId,
+      parentId: orgId,
+      expanded: false,
+      children: [],
+      foldertitle: "Organization"
+    };
+
+    org.entityList.forEach((ent: any) => {
+      const entId = this.folderId++;
+      orgItem.children.push({
+        label: ent.entityName,
+        id: entId,
+        parentId: orgFolderId,
+        expanded: false,
+        children: [],
+        foldertitle: "Organization"
+      });
+    });
+
+    orgFolder.children.push(orgItem);
+  });
+
+    // Announcement Root
+  const announcementId = this.folderId++;
+  const announcementFolder: ComFolder = {
+    label: "Announcement",
+    id: announcementId,
+    parentId: rootId,
+    expanded: false,
+    children: [],
+    foldertitle: "Announcement"
+  };
+
+  // Add announcements
+  data.announcement.forEach((ann: any) => {
+    const annId = this.folderId++;
+    const annFolder: ComFolder = {
+      label: ann.regulationName,
+      id: annId,
+      parentId: announcementId,
+      expanded: false,
+      children: [],
+      foldertitle: "Announcement"
+    };
+
+     if (Array.isArray(ann.compliance) && ann.compliance.length > 0) {
+      annFolder.children.push(...this.buildNestedComFolders(ann.compliance, annId,"Announcement"));
+    }
+
+    if (Array.isArray(ann.toc) && ann.toc.length > 0) {
+      annFolder.children.push(...this.buildNestedComFolders(ann.toc, annId,"Announcement"));
+    }
+    announcementFolder.children.push(annFolder);
+  });
+  // Attach main sections to root
+  rootFolder.children.push(regulationFolder);
+  rootFolder.children.push(orgFolder);
+  rootFolder.children.push(announcementFolder);
+  // Return full tree
+  return [rootFolder];
+}
+
+
+
+ //end
 }

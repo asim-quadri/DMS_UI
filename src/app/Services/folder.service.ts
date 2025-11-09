@@ -77,15 +77,18 @@ export class FolderService {
   getAllFolders() {
     return this.http.get<Array<FolderModel>>(this.BASEURL + '/FolderManagement/FoldersByEntity', this.getAuthHeadersJSON());
   }
+  getcompleteFolderList() {
+    return this.http.get(this.BASEURL + '/FileUpload/GetComseq', this.getAuthHeadersJSON());
+  }
   getGetFolderTree(selectedEntityId: number, currentUserId: any) {
     return this.http.get<Array<FolderModel>>(
       `${this.BASEURL}/FolderManagement/tree?intityId=${selectedEntityId}&userId=${currentUserId}`,
       this.getAuthHeadersJSON()
   );
   }
-  getFilesbyFolderId(id: any) {
+  getFilesbyFolderId(id: any,type:any='Dms') {
     return this.http.get<Array<FolderModel>>(
-        `${this.BASEURL}/FileUpload/getFiles?folderId=${id}`,
+        `${this.BASEURL}/FileUpload/getFiles?folderId=${id}&mtype=${type}`,
         this.getAuthHeadersJSON()
     );
 }

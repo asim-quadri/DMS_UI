@@ -221,10 +221,10 @@
   background-color: #f8f9fa;
 }
 
-.tree-item.selected .tree-node {
+/* .tree-item.selected .tree-node {
   background-color: #e3f2fd;
   color: #1976d2;
-}
+} */
 
 .tree-node-content {
   display: flex;
@@ -259,9 +259,9 @@
   font-size: 16px;
 }
 
-.tree-item.selected .folder-icon {
+/* .tree-item.selected .folder-icon {
   color: #1976d2;
-}
+} */
 
 .folder-name {
   font-size: 14px;

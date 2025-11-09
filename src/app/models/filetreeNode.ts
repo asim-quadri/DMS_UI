@@ -3,5 +3,7 @@ export interface FolderTreeNode {
   label: string;
   parentId: number;
   expanded?: boolean;
+  foldertitle?: string;
   children?: FolderTreeNode[];
+  parent?: FolderTreeNode; // ✅ perfect
 }

@@ -107,7 +107,7 @@
                   </div>
                   
                   <!-- Third level -->
-                  <ul class="tree-list nested" *ngIf="child.expanded && child.children?.length">
+                  <!-- <ul class="tree-list nested" *ngIf="child.expanded && child.children?.length">
                     <li class="tree-item" *ngFor="let grandchild of child.children" [class.selected]="isSelected(grandchild)">
                       <div class="tree-node" (click)="selectItem(grandchild, $event)">
                         <div class="tree-node-content nested-content-deep">
@@ -116,13 +116,92 @@
                         </div>
                       </div>
                     </li>
+                  </ul> -->
+
+                  <ul class="tree-list nested" *ngIf="child.expanded && child.children?.length">
+  <ng-container *ngFor="let grandchild of child.children">
+    <li class="tree-item" [class.selected]="isSelected(grandchild)">
+      <div class="tree-node" (click)="selectItem(grandchild, $event)">
+        <div class="tree-node-content nested-content-deep">
+          <span class="tree-toggle" *ngIf="grandchild.children?.length" (click)="toggle(grandchild, $event)">
+            <i class="bi" [class.bi-chevron-right]="!grandchild.expanded" [class.bi-chevron-down]="grandchild.expanded"></i>
+          </span>
+          <i class="bi bi-folder folder-icon"></i>
+          <span class="folder-name">{{ grandchild.label }}</span>
+        </div>
+      </div>
+
+      <!-- 👇 Recursive call -->
+      <ul class="tree-list nested" *ngIf="grandchild.expanded && grandchild.children?.length">
+        <ng-container *ngFor="let sub of grandchild.children">
+          <li class="tree-item" [class.selected]="isSelected(sub)">
+            <div class="tree-node" (click)="selectItem(sub, $event)">
+              <div class="tree-node-content nested-content-deep">
+                <span class="tree-toggle" *ngIf="sub.children?.length" (click)="toggle(sub, $event)">
+                  <i class="bi" [class.bi-chevron-right]="!sub.expanded" [class.bi-chevron-down]="sub.expanded"></i>
+                </span>
+                <i class="bi bi-folder folder-icon"></i>
+                <span class="folder-name">{{ sub.label }}</span>
+              </div>
+            </div>
+
+            <!-- 🌀 Keep nesting this same block for unlimited depth -->
+            <ul class="tree-list nested" *ngIf="sub.expanded && sub.children?.length">
+              <ng-container *ngFor="let deeper of sub.children">
+                <li class="tree-item" [class.selected]="isSelected(deeper)">
+                  <div class="tree-node" (click)="selectItem(deeper, $event)">
+                    <div class="tree-node-content nested-content-deep">
+                      <span class="tree-toggle" *ngIf="deeper.children?.length" (click)="toggle(deeper, $event)">
+                        <i class="bi" [class.bi-chevron-right]="!deeper.expanded" [class.bi-chevron-down]="deeper.expanded"></i>
+                      </span>
+                      <i class="bi bi-folder folder-icon"></i>
+                      <span class="folder-name">{{ deeper.label }}</span>
+                    </div>
+                  </div>
+
+                  <!-- recursive structure continues -->
+                  <ul class="tree-list nested" *ngIf="deeper.expanded && deeper.children?.length">
+                    <ng-container *ngTemplateOutlet="recursiveBlock; context: { $implicit: deeper.children }"></ng-container>
                   </ul>
+                </li>
+              </ng-container>
+            </ul>
+          </li>
+        </ng-container>
+      </ul>
+    </li>
+  </ng-container>
+</ul>
+
+<!-- define a recursive template block -->
+<ng-template #recursiveBlock let-items>
+  <ng-container *ngFor="let item of items">
+    <li class="tree-item" [class.selected]="isSelected(item)">
+      <div class="tree-node" (click)="selectItem(item, $event)">
+        <div class="tree-node-content nested-content-deep">
+          <span class="tree-toggle" *ngIf="item.children?.length" (click)="toggle(item, $event)">
+            <i class="bi" [class.bi-chevron-right]="!item.expanded" [class.bi-chevron-down]="item.expanded"></i>
+          </span>
+          <i class="bi bi-folder folder-icon"></i>
+          <span class="folder-name">{{ item.label }}</span>
+        </div>
+      </div>
+      <ul class="tree-list nested" *ngIf="item.expanded && item.children?.length">
+        <ng-container *ngTemplateOutlet="recursiveBlock; context: { $implicit: item.children }"></ng-container>
+      </ul>
+    </li>
+  </ng-container>
+</ng-template>
+
+
                 </li>
               </ul>
             </li>
           </ul>
         </div>
       </div>
+
+
     </div>
 
     <!-- Content Area -->
