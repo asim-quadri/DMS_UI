@@ -5,5 +5,7 @@ export interface FolderTreeNode {
   expanded?: boolean;
   foldertitle?: string;
   children?: FolderTreeNode[];
-  parent?: FolderTreeNode; // ✅ perfect
+  parent?: FolderTreeNode;
+  path?: string[];
+  treeType?: 'DMS' | 'COMPSEQR360'; // ✅ add this
 }

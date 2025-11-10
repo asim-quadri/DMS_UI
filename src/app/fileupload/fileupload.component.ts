@@ -16,9 +16,10 @@ interface ComFolder {
   id: number;
   parentId: number;
   expanded: boolean;
-  foldertitle?:string;
+  foldertitle?: string;
   children: ComFolder[];
-  
+  isCompseqrRoot?: boolean;
+  path?: string[]; // Add this line
 }
 
 @Component({
@@ -269,6 +270,11 @@ export class FileuploadComponent implements OnInit {
   }
 
   triggerFileInput() {
+     var path = this.selectedFolderTreeNodeItem?.path;
+    if(path && path.includes("COMPSEQR360")){
+     alert("Cannot create or upload files to COMPSEQR360 folder.");
+     return;
+    }
     this.fileInput.nativeElement.click();
   }
 
@@ -323,16 +329,76 @@ export class FileuploadComponent implements OnInit {
 
  
 
-  getcompdata(){
-    this.folders = [];
-    this.folderService.getcompleteFolderList().subscribe((result: any) => {
-      const comFolderTree = this.buildComFolderTree(result);
-          this.treeData = comFolderTree;
+  // getcompdata(){
+  //   this.folders = [];
+  //   this.folderService.getcompleteFolderList().subscribe((result: any) => {
+  //     const comFolderTree = this.buildComFolderTree(result);
+  //         this.treeData = comFolderTree;
           
-       this.getGetFolderTree(this.selectedEntityId,this.currentUserId);
-    });
+  //      this.getGetFolderTree(this.selectedEntityId,this.currentUserId);
+  //   });
    
+  // }
+
+getcompdata() {
+  this.folderService.getcompleteFolderList().subscribe((result: any) => {
+    const compseqrTree = this.buildComFolderTree(result);
+    const normalizedCompNodes = this.normalizeNodes(compseqrTree as any, null, 'COMPSEQR360');
+
+    // ✅ Tag each node
+    this.markTreeType(normalizedCompNodes, 'COMPSEQR360');
+
+    this.folderService.getGetFolderTree(this.selectedEntityId, this.currentUserId)
+      .subscribe((dmsResult: any) => {
+        const normalizedDmsNodes = this.normalizeNodes(dmsResult, null, 'DMS');
+
+        const dmsRoot: FolderTreeNode = {
+          id: Math.floor(Math.random() * 1e9),
+          label: 'DMS',
+          expanded: true,
+          children: normalizedDmsNodes,
+          parentId: 0,
+          foldertitle: 'DMS',
+          treeType: 'DMS'  // ✅ root also tagged
+        };
+
+        this.markTreeType([dmsRoot], 'DMS');
+
+        this.attachParentReferences(normalizedCompNodes);
+        this.attachParentReferences([dmsRoot]);
+
+        this.treeData = [...normalizedCompNodes, dmsRoot];
+
+        if (this.treeData.length > 0) {
+          this.selectedFolderTreeNodeItem = this.treeData[0];
+          this.buildBreadcrumbPath(this.treeData[0]);
+        }
+      });
+  });
+}
+
+markTreeType(nodes: FolderTreeNode[], type: 'DMS' | 'COMPSEQR360') {
+  for (const node of nodes) {
+    node.treeType = type;
+    if (node.children && node.children.length > 0) {
+      this.markTreeType(node.children, type);
+    }
   }
+}
+
+/** Ensure every node has `.parent` set for breadcrumb traversal */
+attachParentReferences(nodes: FolderTreeNode[], parent: FolderTreeNode | null = null) {
+  if (!nodes) return;
+  for (const n of nodes) {
+    n.parent = parent || undefined;
+    // If parentId also needed, ensure it's set
+    if (parent) n.parentId = parent.id;
+    if (n.children && n.children.length > 0) {
+      this.attachParentReferences(n.children, n);
+    }
+  }
+}
+
 
   
   getAllFilesbyFolderId(folderId: number,type:any='Dms'){
@@ -429,7 +495,11 @@ export class FileuploadComponent implements OnInit {
   }
 
   openSm(content: TemplateRef<any>) {
-    
+    var path = this.selectedFolderTreeNodeItem?.path;
+    if(path && path.includes("COMPSEQR360")){
+     alert("Cannot create or upload files to COMPSEQR360 folder.");
+     return;
+    }
     this.modalService.open(content, { centered: true, size: 'sm'  });
   }
   open(content: TemplateRef<any>) {
@@ -443,23 +513,51 @@ export class FileuploadComponent implements OnInit {
     item.expanded = !item.expanded;
   }
 
-  selectItem(item: FolderTreeNode, event: MouseEvent): void {
-    event.stopPropagation();
-    this.selectedFolderTreeNodeItem = item;
-    
-    this.buildBreadcrumbPath(item);
-    this.getAllFilesbyFolderId(item.id,this.getModuleType(item.foldertitle||''));
-  }
+selectItem(item: FolderTreeNode, event: MouseEvent): void {
+  event.stopPropagation();
+  // ✅ Use treeType to ensure we find the correct node in correct tree
+  const realNode = this.findNodeById(this.treeData, item.id, item.treeType) || item;
 
-  getModuleType(label: string): string {
-  const lower = (label || '').toLowerCase();
-  
-  if (['regulation', 'organization', 'announcement','compseqr360'].includes(lower)) {
-    return lower;
-  } else {
-    return 'Dms';
-  }
+  this.selectedFolderTreeNodeItem = realNode;
+  this.buildBreadcrumbPath(realNode);
+  this.getAllFilesbyFolderId(realNode.id, this.getModuleType(realNode.path || ''));
 }
+
+
+
+  getModuleType(label: any): string {
+   if (label.includes("COMPSEQR360") && label.length > 1) {
+  return label[1]?.toLowerCase();
+} else if (label.includes("COMPSEQR360") && label.length === 1) {
+  return label[0]?.toLowerCase();
+} else {
+  return label[0]?.toLowerCase();
+}
+
+  // if (label.includes(lower)) {
+  //   return lower;
+  // } else {
+  //   return 'Dms';
+  // }
+}
+
+findNodeById(nodes: FolderTreeNode[], id: number, treeType?: 'DMS' | 'COMPSEQR360'): FolderTreeNode | null {
+  if (!nodes) return null;
+  for (const n of nodes) {
+    // ✅ Match both ID and treeType if provided
+    if (n.id === id && (!treeType || n.treeType === treeType)) {
+      return n;
+    }
+
+    if (n.children && n.children.length) {
+      const found = this.findNodeById(n.children, id, treeType);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+
 
 buildBreadcrumbPath(selectedNode: FolderTreeNode): void {
   if (!selectedNode) {
@@ -467,40 +565,69 @@ buildBreadcrumbPath(selectedNode: FolderTreeNode): void {
     return;
   }
 
+  const node: any = selectedNode;
+  this.breadcrumbPath = [];
+
+  // For COMPSEQR360 nodes with pre-built paths
+  if (node.path && Array.isArray(node.path)) {
+    this.breadcrumbPath = node.path.map((label: string, i: number) => ({
+      label,
+      node: i === node.path.length - 1 ? selectedNode : undefined
+    }));
+    return;
+  }
+
+  // For DMS and other nodes
   const path: FolderTreeNode[] = [];
   let current: FolderTreeNode | undefined = selectedNode;
 
-  // climb up the parent references
+  // Build path from current node to root
   while (current) {
     path.unshift(current);
     current = current.parent;
   }
 
-  // remove duplicates
-  const uniquePath = path.filter(
-    (node, i, arr) => i === 0 || node.label !== arr[i - 1].label
+  // Determine if this is a DMS path
+  const isDmsPath = !path.some(n => 
+    (n.foldertitle || '').toLowerCase() === 'compseqr360' ||
+    n.label.toLowerCase() === 'compseqr360'
   );
 
-  // detect if top node is COMPSEQR360
-  const top = uniquePath[0];
-  const isCompseqrRoot =
-    (top.label || '').toLowerCase() === 'compseqr360' ||
-    (top.foldertitle || '').toLowerCase() === 'compseqr360';
+  if (isDmsPath) {
+    // For DMS paths, add DMS as root if not already present
+    const hasDmsRoot = path.some(n => n.label.toLowerCase() === 'dms');
+    if (!hasDmsRoot) {
+      const dmsRoot = this.findDmsRoot();
+      if (dmsRoot) {
+        this.breadcrumbPath.push({ 
+          label: 'DMS', 
+          node: dmsRoot 
+        });
+      } else {
+        this.breadcrumbPath.push({ label: 'DMS' });
+      }
+    }
 
-  if (isCompseqrRoot) {
-    this.breadcrumbPath = uniquePath.map((n) => ({
-      label: n.label,
-      node: n,
-    }));
+    // Add all folders in path except duplicate DMS entries
+    path.forEach(n => {
+      if (n.label.toLowerCase() !== 'dms' || path.indexOf(n) === 0) {
+        this.breadcrumbPath.push({
+          label: n.label,
+          node: n
+        });
+      }
+    });
   } else {
-    this.breadcrumbPath = [{ label: 'DMS' }].concat(
-      uniquePath.map((n) => ({
-        label: n.label,
-        node: n,
-      }))
-    );
+    // For COMPSEQR360 related paths, add all nodes as is
+    path.forEach(n => this.breadcrumbPath.push({
+      label: n.label,
+      node: n
+    }));
   }
 }
+
+
+
 
 
 normalizeNodes(
@@ -511,13 +638,11 @@ normalizeNodes(
   const out: FolderTreeNode[] = [];
 
   for (const item of items || []) {
-    // Ensure a valid ID for every node
     const id =
       typeof item.id === 'number' && item.id > 0
         ? item.id
         : Math.floor(Math.random() * 1e9);
 
-    // Choose readable label name
     const label =
       item.label ||
       item.folderName ||
@@ -526,18 +651,31 @@ normalizeNodes(
       item.entityName ||
       `Item_${id}`;
 
-    // ✅ Create node and attach parent reference
     const node: FolderTreeNode = {
       id,
       label,
       expanded: !!item.expanded,
       children: [],
       parentId: parent ? parent.id : 0,
-      parent: parent || undefined,  // 👈 This is the key line
-      foldertitle: item.foldertitle || foldertitle,
+      parent: parent || undefined,
+      foldertitle: foldertitle || item.foldertitle,
+      path: []
     };
 
-    // Recurse into children (and assign parent reference)
+    // 🟢 Build proper breadcrumb path for both DMS & COMPSEQR360
+    const parentPath = parent?.path || [];
+    if ((foldertitle || '').toLowerCase() === 'dms') {
+      // Ensure path starts with DMS
+      node.path = parentPath.length > 0 ? [...parentPath, label] : ['DMS', label];
+    } else if (item.path && Array.isArray(item.path)) {
+      // COMPSEQR360 path from API
+      node.path = [...item.path];
+    } else {
+      // Fallback (like DMS children)
+      node.path = parentPath.length > 0 ? [...parentPath, label] : [label];
+    }
+
+    // Recurse into children
     const children =
       item.children || item.compliance || item.toc || item.entityList || [];
     if (children && children.length > 0) {
@@ -551,16 +689,38 @@ normalizeNodes(
 }
 
 
+
+
 /** ✅ Navigate to breadcrumb click */
 navigateToBreadcrumb(breadcrumb: { label: string; node?: FolderTreeNode }): void {
-  if (!breadcrumb.node) return;
+  // If no node (like root DMS), reset to initial DMS view
+  if (!breadcrumb.node) {
+    const dmsRoot = this.findDmsRoot();
+    if (dmsRoot) {
+      this.selectedFolderTreeNodeItem = dmsRoot;
+      this.buildBreadcrumbPath(dmsRoot);
+      this.getAllFilesbyFolderId(dmsRoot.id, 'Dms');
+    }
+    return;
+  }
 
-  this.selectedFolderTreeNodeItem = breadcrumb.node;
-  this.buildBreadcrumbPath(breadcrumb.node);
+  // Find the actual node in our tree structure
+  const actualNode = this.findNodeById(this.treeData, breadcrumb.node.id) || breadcrumb.node;
+  
+  this.selectedFolderTreeNodeItem = actualNode;
+  this.buildBreadcrumbPath(actualNode);
   this.getAllFilesbyFolderId(
-    breadcrumb.node.id,
-    this.getModuleType(breadcrumb.node.foldertitle || '')
+    actualNode.id,
+    this.getModuleType(actualNode.foldertitle || '')
   );
+}
+
+// Helper method to find DMS root node
+findDmsRoot(): FolderTreeNode | null {
+  return this.treeData.find(node => 
+    node.label.toLowerCase() === 'dms' || 
+    (node.foldertitle || '').toLowerCase() === 'dms'
+  ) || null;
 }
 
 
@@ -569,27 +729,31 @@ navigateToBreadcrumb(breadcrumb: { label: string; node?: FolderTreeNode }): void
  comfolders: ComFolder[] = [];
  folderId = 1;
  
-  buildNestedComFolders(items: any[], parentId: number,foldertitle:any): ComFolder[] {
+  buildNestedComFolders(items: any[], parentId: number, foldertitle: any, parentPath: string[] = []): ComFolder[] {
   const result: ComFolder[] = [];
 
-    items.forEach(item => {
-      const currentId = this.folderId++;
-      const folder: ComFolder = {
-      label: item.complianceName || item.tocName || item.regulationName || item.typeOfComplianceName|| `Item_${item.id}`,
+  items.forEach(item => {
+    const currentId = this.folderId++;
+    const label = item.complianceName || item.tocName || item.regulationName || item.typeOfComplianceName || `Item_${item.id}`;
+    const currentPath = [...parentPath, label];
+    
+    const folder: ComFolder = {
+      label,
       id: currentId,
       parentId,
       expanded: false,
       children: [],
-      foldertitle:foldertitle
+      foldertitle: foldertitle,
+      path: currentPath
     };
 
     // Recursively process deeper levels (compliance/toc)
     if (Array.isArray(item.compliance) && item.compliance.length > 0) {
-      folder.children.push(...this.buildNestedComFolders(item.compliance, currentId,foldertitle));
+      folder.children.push(...this.buildNestedComFolders(item.compliance, currentId, foldertitle, currentPath));
     }
 
     if (Array.isArray(item.toc) && item.toc.length > 0) {
-      folder.children.push(...this.buildNestedComFolders(item.toc, currentId,foldertitle));
+      folder.children.push(...this.buildNestedComFolders(item.toc, currentId, foldertitle, currentPath));
     }
 
     result.push(folder);
@@ -601,7 +765,7 @@ navigateToBreadcrumb(breadcrumb: { label: string; node?: FolderTreeNode }): void
 /**
  * Builds the full nested structure as a tree.
  */
- buildComFolderTree(data: any) {
+  buildComFolderTree(data: any) {
   const rootId = this.folderId++;
 
   const rootFolder: ComFolder = {
@@ -610,10 +774,9 @@ navigateToBreadcrumb(breadcrumb: { label: string; node?: FolderTreeNode }): void
     parentId: 0,
     expanded: false,
     foldertitle: "COMPSEQR360",
-    children: []
-  };
-
-  // Regulation Root
+    children: [],
+    path: ["COMPSEQR360"]
+  };  // Regulation Root
   const regulationId = this.folderId++;
   const regulationFolder: ComFolder = {
     label: "Regulation",
@@ -621,7 +784,8 @@ navigateToBreadcrumb(breadcrumb: { label: string; node?: FolderTreeNode }): void
     parentId: rootId,
     expanded: false,
     children: [],
-    foldertitle: "Regulation" 
+    foldertitle: "Regulation",
+    path: ["COMPSEQR360", "Regulation"]
   };
 
   // Add regulations
