@@ -1,0 +1,24 @@
+@use 'src/assets/scss/_colors.scss';
+
+select.form-control[multiple] {
+  height: 120px !important;
+  min-height: 120px !important;
+}
+.custom-multiselect {
+  height: 120px !important;
+  min-height: 120px !important;
+}
+
+.access-control-tabs {
+  .nav-item {
+    text-align: center;
+    .nav-link {
+      margin: 6px;
+      color: colors.$dark-gray;
+      &:hover{
+        background-color: colors.$primary-orange;
+        color: colors.$white;
+      }
+    }
+  }
+}

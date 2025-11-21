@@ -3,8 +3,8 @@ import { HttpClient } from '@angular/common/http'
 import { AppConfig } from '../app.config'
 
 import { forkJoin } from 'rxjs';
-import { accessModel } from '../models/pendingapproval';
-import { EntityTypeModel } from '../models/entityTypeModel';
+import { accessModel } from '../Models/pendingapproval';
+import { EntityTypeModel } from '../Models/entityTypeModel';
 
 
 @Injectable({
@@ -86,6 +86,14 @@ export class EntityTypeService{
     return this.http.get<Array<EntityTypeModel>>(this.BASEURL + '/EntityType/GetEntityTypeApprovalList/'+UserUID, this.getAuthHeadersJSON());
   }
 
+  getAllEntityTypeApprovalList() {
+    return this.http.get<Array<EntityTypeModel>>(this.BASEURL + '/EntityType/GetAllEntityTypeApprovalList/', this.getAuthHeadersJSON());
+  }
+
+  getAllCountryEntityTypeMappingApproval() {
+    return this.http.get<Array<EntityTypeModel>>(this.BASEURL + '/EntityType/GetCountryEntityTypeMappingApproval/', this.getAuthHeadersJSON());
+  }
+
   getCountryEntityTypeMappingApproval(UserUID:any) {
     return this.http.get<Array<EntityTypeModel>>(this.BASEURL + '/EntityType/GetCountryEntityTypeMappingApproval/'+UserUID, this.getAuthHeadersJSON());
   }
@@ -118,5 +126,8 @@ export class EntityTypeService{
 
   multipleAPIRequests(request:any){
     return forkJoin(request);
+  }
+  getNextEntityTypeReferenceCode() {
+    return this.http.get<string>(this.BASEURL + '/EntityType/GetNextEntityTypeReferenceCode', this.getAuthHeadersJSON());
   }
 }

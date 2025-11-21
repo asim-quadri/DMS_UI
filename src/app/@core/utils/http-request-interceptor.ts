@@ -9,18 +9,18 @@ import {
 import { Observable } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 // import { LocalStorage } from './local-storage';
+import { environment } from 'src/environments/environment';
 import { url } from './url';
 import { find } from 'underscore';
-import { LoaderService } from '../../Services/loader.service';
-import { AppConfig } from '../../app.config';
+import { LoaderService } from 'src/app/Services/loader.service';
+import { AppConfig } from 'src/app/app.config';
 
 @Injectable()
 export class HttpRequestInterceptor implements HttpInterceptor {
   private arrDownloadApi = [] as Array<string>;
-  private appConfig = new AppConfig();
   // private arrUnauthApi = [url.auth.login, url.auth.logout] as Array<string>;
   // constructor(private localStorage: LocalStorage) {}
-  constructor(private loaderService: LoaderService) { }
+  constructor(private loaderService: LoaderService,private config:AppConfig) { }
   intercept(
     request: HttpRequest<any>,
     next: HttpHandler
@@ -52,7 +52,7 @@ export class HttpRequestInterceptor implements HttpInterceptor {
     }
 
     if (!/^(http|https):/i.test(request.url)) {
-      request = request.clone({ url: this.appConfig.ServiceUrl + request.url });
+      request = request.clone({ url: this.config.BaseUrl+"/" + request.url });
     }
     return next.handle(request).pipe(
       catchError((error: HttpErrorResponse) => {

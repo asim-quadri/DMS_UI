@@ -1,0 +1,361 @@
+<div class="modal-header">
+  <h4 class="modal-title" id="modal-basic-title">
+    {{
+      isPendingMode
+        ? "Review Announcement"
+        : ActionType === "Edit"
+        ? "Edit Announcement"
+        : "Add New Announcement"
+    }}
+  </h4>
+  <button
+    type="button"
+    class="btn-close"
+    aria-label="Close"
+    (click)="activeModal.dismiss('Cross click')"
+  ></button>
+</div>
+<div class="modal-body product-steup-modal">
+  <form [formGroup]="formgroup">
+    <div class="row justify-content-center">
+      <div class="col-8">
+        <div class="row mt-20" *ngIf="selectionType === 'regulation'">
+          <div class="col-6">
+            <label>Regulations</label>
+            <app-input-dropdown
+              [formGroup]="formgroup"
+              [name]="'regulationId'"
+              [object]="this.regulations"
+              [key]="'regulationName'"
+              [value]="'id'"
+              [disabled]="isPendingMode"
+            >
+            </app-input-dropdown>
+          </div>
+
+          <div class="col-6">
+            <label for="">Announcement Reference Code</label>
+            <app-input-text
+              [formGroup]="formgroup"
+              [name]="'announcementReferencecode'"
+              readonly="readonly"
+              [placeholder]="'Announcement reference code'"
+            ></app-input-text>
+          </div>
+          <!-- <div class="col-4" style="display: none;"></div> -->
+        </div>
+
+        <div class="row mt-20" *ngIf="selectionType === 'compliance'">
+          <div class="col-6">
+            <label>Compliance</label>
+            <app-input-dropdown
+              [formGroup]="formgroup"
+              [name]="'complianceId'"
+              [object]="this.compliances"
+              [key]="'complianceName'"
+              [value]="'id'"
+              [disabled]="ActionType == 'Edit' || isPendingMode"
+            >
+            </app-input-dropdown>
+          </div>
+
+          <div class="col-6">
+            <label for="">Announcement Reference Code</label>
+            <app-input-text
+              [formGroup]="formgroup"
+              [name]="'announcementReferencecode'"
+              readonly="readonly"
+              [placeholder]="'Announcement reference code'"
+            ></app-input-text>
+          </div>
+        </div>
+
+        <!-- TOC Selection Type -->
+        <div class="row mt-20" *ngIf="selectionType === 'toc'">
+          <div class="col-6">
+            <label>Type of Compliance</label>
+            <app-input-dropdown
+              [formGroup]="formgroup"
+              [name]="'tocId'"
+              [object]="this.tocDues"
+              [key]="'displayName'"
+              [value]="'id'"
+              [disabled]="ActionType == 'Edit' || isPendingMode"
+            >
+            </app-input-dropdown>
+          </div>
+
+          <div class="col-6">
+            <label for="">Announcement Reference Code</label>
+            <app-input-text
+              [formGroup]="formgroup"
+              [name]="'announcementReferencecode'"
+              readonly="readonly"
+              [placeholder]="'Announcement reference code'"
+            ></app-input-text>
+          </div>
+        </div>
+
+        <!-- Registration Selection Type -->
+        <div class="row mt-20" *ngIf="selectionType === 'registration'">
+          <div class="col-6">
+            <label>Registrations</label>
+            <app-input-dropdown
+              [formGroup]="formgroup"
+              [name]="'registerId'"
+              [object]="this.registrations"
+              [key]="'displayName'"
+              [value]="'id'"
+              [disabled]="ActionType == 'Edit' || isPendingMode"
+            >
+            </app-input-dropdown>
+          </div>
+
+          <div class="col-6">
+            <label for="">Announcement Reference Code</label>
+            <app-input-text
+              [formGroup]="formgroup"
+              [name]="'announcementReferencecode'"
+              readonly="readonly"
+              [placeholder]="'Announcement reference code'"
+            ></app-input-text>
+          </div>
+        </div>
+
+        <div class="row mt-20">
+          <div class="col-6">
+            <!-- <label>Created Date</label>
+        <input
+          type="text"
+          formControlName="createdDate"
+          class="form-control"
+          readonly
+        /> -->
+            <label>Created Date</label>
+            <div class="input-group text-start">
+              <app-input-text
+                [formGroup]="formgroup"
+                [name]="'createdDate'"
+                [placeholder]="'created Date'"
+              ></app-input-text>
+            </div>
+          </div>
+          <div class="col-6">
+            <!-- <label>Created By</label>
+        <input
+          type="text"
+          formControlName="createdByName"
+          class="form-control"
+          readonly
+        /> -->
+            <label>Created By</label>
+            <div class="input-group text-start">
+              <app-input-text
+                [formGroup]="formgroup"
+                [name]="'createdByName'"
+                [placeholder]="'CreatedBy Name'"
+              ></app-input-text>
+            </div>
+          </div>
+        </div>
+        <div class="row mt-20">
+          <div class="col-6">
+            <label>Subject <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              formControlName="subject"
+              class="form-control"
+              [readonly]="isPendingMode"
+              (input)="generateAnnouncementReferenceCode($event)"
+              [class.is-invalid]="
+                formgroup.get('subject')?.invalid &&
+                formgroup.get('subject')?.touched
+              "
+            />
+            <div
+              class="invalid-feedback"
+              *ngIf="
+                formgroup.get('subject')?.invalid &&
+                formgroup.get('subject')?.touched
+              "
+            >
+              Subject is required.
+            </div>
+          </div>
+          <div class="col-6">
+            <label for=""
+              >Applicable Date <span class="text-danger">*</span></label
+            >
+            <div class="input-group text-start">
+              <app-input-date
+                [formGroup]="formgroup"
+                [name]="'applicableDate'"
+                [placeholder]="'Applicable Date'"
+                [class.is-invalid]="
+                  formgroup.get('applicableDate')?.invalid &&
+                  formgroup.get('applicableDate')?.touched
+                "
+              ></app-input-date>
+            </div>
+            <div
+              class="invalid-feedback"
+              *ngIf="
+                formgroup.get('applicableDate')?.invalid &&
+                formgroup.get('applicableDate')?.touched
+              "
+            >
+              Applicable Date is required.
+            </div>
+            <!-- <label></label>
+        <input
+          type="date"
+          *ngIf="ActionType == 'Create'"
+          formControlName=""
+          class="form-control"
+        /> -->
+            <!-- <input
+          type="text"
+          *ngIf="ActionType == 'Edit'"
+          formControlName="applicableDate"
+          class="form-control"
+          readonly
+        /> -->
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-12">
+            <div class="form-group">
+              <div class="d-flex align-items-center mb-2 gap-2">
+                <label for=""
+                  >Description <span class="text-danger">*</span></label
+                >
+                <button
+                  type="button"
+                  class="view-more-btn"
+                  (click)="openDescriptionModal()"
+                  *ngIf="formgroup.get('description')?.value"
+                >
+                  View More Content
+                </button>
+              </div>
+              <textarea
+                class="form-control text-start h-75"
+                formControlName="description"
+                rows="8"
+                placeholder="Description"
+                [readonly]="isPendingMode"
+                [class.is-invalid]="
+                  formgroup.get('description')?.invalid &&
+                  formgroup.get('description')?.touched
+                "
+              >
+              </textarea>
+              <div
+                class="invalid-feedback"
+                *ngIf="
+                  formgroup.get('description')?.invalid &&
+                  formgroup.get('description')?.touched
+                "
+              >
+                <small
+                  class="form-text text-danger"
+                  *ngIf="formgroup.get('description')?.errors?.required"
+                >
+                  Description is required
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row mt-20">
+          <div class="col-6">
+            <label>File Name</label>
+            <input
+              type="text"
+              formControlName="fileName"
+              class="form-control"
+              [readonly]="isPendingMode"
+              placeholder="File Name"
+            />
+          </div>
+          <div class="col-6">
+            <label>File Upload</label>
+            <input
+              type="file"
+              class="form-control"
+              (change)="onFileChange($event)"
+              [disabled]="isPendingMode"
+            />
+            <p *ngIf="filetempname!=null">{{ filetempname }}</p>
+          </div>
+        </div>
+        <div class="row mt-3 gx-2 gy-3 mb-4 justify-content-center">
+          <div class="col-5" *ngIf="!isPendingMode">
+            <button
+              type="submit"
+              class="btn btn-save btn-success"
+              (click)="onSubmit()"
+            >
+              Submit
+            </button>
+          </div>
+          <div
+            class="col-10 d-flex justify-content-center gap-3"
+            *ngIf="isPendingMode"
+          >
+            <button
+              type="button"
+              class="btn btn-accept d-flex align-items-center gap-1"
+              (click)="onAccept()"
+              [disabled]="!(historyId || RegulationSetupUID)"
+            >
+              <i class="bi bi-check2-circle"></i> <span>Accept</span>
+            </button>
+            <button
+              type="button"
+              class="btn btn-reject d-flex align-items-center gap-1"
+              (click)="onReject()"
+              [disabled]="!(historyId || RegulationSetupUID)"
+            >
+              <i class="bi bi-x-circle"></i> <span>Reject</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Description Modal Template -->
+<ng-template #descriptionModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">Full Description</h4>
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close"
+      (click)="modal.dismiss('Cross click')"
+    ></button>
+  </div>
+  <div class="modal-body">
+    <div class="form-group">
+      <div class="fw-bold mb-3">Description Content:</div>
+      <div class="p-3 border rounded bg-light">
+        <p class="mb-0 text-break">
+          {{
+            formgroup.get("description")?.value || "No description available"
+          }}
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer d-flex text-align-center justify-content-center">
+    <button
+      type="button"
+      class="btn btn-border primary-orange-btn"
+      (click)="modal.close('close')"
+    >
+      Close
+    </button>
+  </div>
+</ng-template>

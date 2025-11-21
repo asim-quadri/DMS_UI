@@ -1,0 +1,494 @@
+<div class="main-container">
+  <app-header-menus [active]="active"></app-header-menus>
+  <div class="home-content user-table product-setup">
+    <div class="row py-4 mb-2">
+      <div class="col-md-9">
+        <form action="">
+          <div class="row">
+            <div class="col-4">
+              <!-- <label for="">Select Parameter:</label>
+                    <select class="form-select">
+                      <option value="Number of Employees">
+                        Number of Employees
+                      </option>
+                    </select> -->
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="col-3 mt-25 pl-70">
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+          <button
+            class="btn btn-color"
+            (click)="open(parameter)"
+            *ngIf="showAddNewParameterButton"
+          >
+            <i class="fa-solid fa-sliders"></i> &nbsp; Add New Parameter
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="product-panel">
+        <div class="product-panel-header">
+          <div class="row">
+            <div class="col-md-4">
+              <div class="input-group text-center mb-1">
+                <label for="Country" class="mt-10"
+                  >Parameter: &nbsp; &nbsp;
+                </label>
+                <input
+                  type="search"
+                  class="form-control"
+                  placeholder="Search by keywords ..."
+                  (keyup)="searchParameter($event)"
+                />
+                <div class="input-group-prepend">
+                  <button class="btn btn-white" type="button">
+                    <i class="bi bi-search"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="product-panel-body">
+          <div class="row">
+            <div class="col-6">
+              <div class="panel-gray uppercase">
+                <ul>
+                  <li
+                    *ngFor="let item of parameters"
+                    (click)="getParameterById(item.id)"
+                    [class.selected]="
+                      isSelected(item.parameterName?.toString()!)
+                    "
+                    (click)="toggleSelection(item.parameterName?.toString()!)"
+                    [hidden]="item.hide"
+                  >
+                    {{ item.parameterName }}
+                  </li>
+                </ul>
+                <div class="clearfix"></div>
+              </div>
+              <button
+                class="btn btn-approve mt-20"
+                (click)="openParameterApproverModal()"
+              >
+                <i class="fa-solid fa-arrow-right-arrow-left"></i> &nbsp;
+                APPROVALS &nbsp;
+                <span>{{ parameterApprovalCount }}</span>
+              </button>
+            </div>
+            <div class="col-6">
+              <div class="panel-gray uppercase">
+                <ul>
+                  <li
+                    *ngFor="let item of getSelectedParameter()"
+                    [class.selected]="
+                      isSelected(item.parameterName?.toString()!)
+                    "
+                  >
+                    {{ item.parameterType }}
+                  </li>
+                  <!-- <li>No. of Employees</li>
+                        <li>Turnover</li> -->
+                </ul>
+                <div class="clearfix"></div>
+              </div>
+              <!-- <div class="panel-gray uppercase">
+                      <button class="btn btn-trash">
+                        <i class="fa-solid fa-trash-can"></i>
+                      </button>
+                      <ul>
+                        <li *ngFor="let item of parameterbyId">
+                          {{item.parameterType}}
+                      </li>
+                        <li>No. of Employees</li>
+                        <li>Turnover</li> 
+                      </ul>
+                      <div class="clearfix"></div>
+                    </div> -->
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</div>
+<!-- <ng-template #content let-modal>
+  <app-parameter-approval [modal]="modal" (openParameterReview)=openParameterReview($event)
+    (openParameterAccessReview)=openParameterAccessReview($event)></app-parameter-approval>
+</ng-template> -->
+<ng-template #parameter let-modal>
+  <app-add-parameter-setup
+    [modal]="modal"
+    (reloadPage)="reloadPage($event)"
+  ></app-add-parameter-setup>
+</ng-template>
+<!-- new state-->
+
+<!-- new country-->
+<ng-template #country let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title text-center" id="modal-basic-title">
+      Add New Parameter
+    </h4>
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close"
+      (click)="modal.dismiss('Cross click')"
+    ></button>
+  </div>
+  <div class="modal-body product-steup-modal">
+    <form>
+      <div class="mb-3 text-center">
+        <label for="">Parameter Name</label>
+        <div class="input-group text-center">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Enter Parameter Name"
+            name="prametername"
+            ngModel
+          />
+        </div>
+      </div>
+
+      <div class="mb-3 text-center">
+        <label for="">Select Parameter Type:</label>
+        <div class="row">
+          <div class="col">
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Numeric"
+              name="numeric"
+              ngModel
+            />
+          </div>
+          <div class="col">
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Yes/No"
+              name="yesno"
+              ngModel
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-20 text-center">
+        <button class="btn btn-color btn-block">
+          &nbsp; Add Parameter &nbsp;
+        </button>
+      </div>
+    </form>
+  </div>
+</ng-template>
+
+<ng-template #mappingApprovals let-modal>
+  <div class="modal-header">
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close"
+      (click)="modal.dismiss('Cross click')"
+    ></button>
+  </div>
+  <div class="modal-body product-steup-modal">
+    <ul ngbNav class="nav-tabs justify-content-center approval-modal">
+      <li ngbNavItem>
+        <a ngbNavLink
+          ><i class="bi bi-arrow-down-up"></i> &nbsp; Approvals for Mapping
+          &nbsp; <span>20</span></a
+        >
+        <ng-template ngbNavContent>
+          <div class="row mt-40">
+            <div class="col-md-8">
+              <div class="stauts-list">
+                <ul>
+                  <li class="mt-03 mr-10">
+                    <i class="bi bi-arrow-down-up"></i>&nbsp;Approvals
+                  </li>
+                  <li class="status-circle green-status"></li>
+                  <li class="status-text">1 Approved</li>
+
+                  <li class="status-circle oragne-status"></li>
+                  <li class="status-text">0 Pending</li>
+
+                  <li class="status-circle red-status"></li>
+                  <li class="status-text">0 Rejected</li>
+                </ul>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <form action="">
+                <div class="input-group">
+                  <input
+                    type="text"
+                    class="form-control"
+                    placeholder="Search by keyword  ..."
+                  />
+                  <div class="input-group-append">
+                    <button class="btn btn-search h45" type="submit">
+                      <i class="fas fa-search"></i>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div class="row">
+            <div class="table-responsive modal-table">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col"></th>
+                    <th scope="col">S.No</th>
+                    <th scope="col">Parameter</th>
+                    <th scope="col">Point of Contact</th>
+                    <th scope="col">Status</th>
+                    <th scope="col"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td scope="row" class="bg-white">
+                      <input type="checkbox" />
+                    </td>
+                    <td scope="row" class="status-pending">2</td>
+                    <td scope="row">Employees</td>
+
+                    <td scope="row">Hari Babu</td>
+                    <td scope="row">Approval Sent</td>
+                    <td scope="row">
+                      Forward <i class="fa-regular fa-circle-right"></i>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td scope="row" class="bg-white">
+                      <input type="checkbox" />
+                    </td>
+                    <td scope="row" class="status-reject">3</td>
+                    <td scope="row">Employees</td>
+
+                    <td scope="row">Hari Babu</td>
+                    <td scope="row" class="reject">
+                      <span>Approval Rejected</span> <br />
+                      by Haribabu
+                    </td>
+                    <td scope="row">
+                      Forward <i class="fa-regular fa-circle-right"></i>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td scope="row" class="bg-white">
+                      <input type="checkbox" />
+                    </td>
+                    <td scope="row" class="status-pending">1</td>
+                    <td scope="row">Turnover</td>
+
+                    <td scope="row">Hari Babu</td>
+                    <td scope="row">N/A</td>
+                    <td scope="row">
+                      Forward <i class="fa-regular fa-circle-right"></i>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td scope="row" class="bg-white">
+                      <input type="checkbox" />
+                    </td>
+                    <td scope="row" class="status-pending">2</td>
+                    <td scope="row">Employees</td>
+
+                    <td scope="row">Hari Babu</td>
+                    <td scope="row">Approval Sent</td>
+                    <td scope="row">
+                      Forward <i class="fa-regular fa-circle-right"></i>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="row">
+                <div class="col-8"></div>
+                <div class="col-4">
+                  <button class="btn btn-accept">
+                    <i class="bi bi-check2-circle"></i> &nbsp; ACCEPT
+                  </button>
+                  &nbsp;
+                  <button class="btn btn-reject">
+                    <i class="bi bi-x-circle"></i> &nbsp;REJECT
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-template>
+      </li>
+      <li ngbNavItem>
+        <a ngbNavLink
+          ><i class="bi bi-arrow-down-up"></i> &nbsp; Approvals for Insertion
+          &nbsp; <span>09</span></a
+        >
+        <ng-template ngbNavContent>
+          <div class="row mt-40">
+            <div class="col-md-8">
+              <div class="stauts-list">
+                <ul>
+                  <li class="mt-03 mr-10">
+                    <i class="bi bi-arrow-down-up"></i>&nbsp;Approvals
+                  </li>
+                  <li class="status-circle green-status"></li>
+                  <li class="status-text">1 Approved</li>
+
+                  <li class="status-circle oragne-status"></li>
+                  <li class="status-text">0 Pending</li>
+
+                  <li class="status-circle red-status"></li>
+                  <li class="status-text">0 Rejected</li>
+                </ul>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <form action="">
+                <div class="input-group">
+                  <input
+                    type="text"
+                    class="form-control"
+                    placeholder="Search by keyword  ..."
+                  />
+                  <div class="input-group-append">
+                    <button class="btn btn-search h45" type="submit">
+                      <i class="fas fa-search"></i>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div class="row">
+            <div class="table-responsive modal-table">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col"></th>
+                    <th scope="col">S.No</th>
+                    <th scope="col">Parameter</th>
+                    <th scope="col">Parameter Type</th>
+
+                    <th scope="col">Point of Contact</th>
+                    <th scope="col">Status</th>
+                    <th scope="col"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td scope="row" class="bg-white">
+                      <input type="checkbox" />
+                    </td>
+                    <td scope="row" class="status-pending">1</td>
+                    <td scope="row">Employees</td>
+
+                    <td scope="row">N/A</td>
+                    <td scope="row">Hari Babu</td>
+                    <td scope="row">N/A</td>
+                    <td scope="row">
+                      Forward <i class="fa-regular fa-circle-right"></i>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td scope="row" class="bg-white">
+                      <input type="checkbox" />
+                    </td>
+                    <td scope="row" class="status-pending">2</td>
+                    <td scope="row">Employees</td>
+
+                    <td scope="row">N/A</td>
+                    <td scope="row">Hari Babu</td>
+                    <td scope="row" class="approvesent">Approval Sent</td>
+                    <td scope="row">
+                      Forward <i class="fa-regular fa-circle-right"></i>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td scope="row" class="bg-white">
+                      <input type="checkbox" />
+                    </td>
+                    <td scope="row" class="status-reject">3</td>
+                    <td scope="row">Employees</td>
+
+                    <td scope="row">N/A</td>
+                    <td scope="row">Hari Babu</td>
+                    <td scope="row" class="reject">
+                      <span>Approval Rejected</span> <br />
+                      by Haribabu
+                    </td>
+                    <td scope="row">
+                      Forward <i class="fa-regular fa-circle-right"></i>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td scope="row" class="bg-white">
+                      <input type="checkbox" />
+                    </td>
+                    <td scope="row" class="status-pending">1</td>
+                    <td scope="row">Employees</td>
+
+                    <td scope="row">N/A</td>
+                    <td scope="row">Hari Babu</td>
+                    <td scope="row">N/A</td>
+                    <td scope="row">
+                      Forward <i class="fa-regular fa-circle-right"></i>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td scope="row" class="bg-white">
+                      <input type="checkbox" />
+                    </td>
+                    <td scope="row" class="status-pending">2</td>
+                    <td scope="row">Employees</td>
+
+                    <td scope="row">N/A</td>
+                    <td scope="row">Hari Babu</td>
+                    <td scope="row" class="approvesent">Approval Sent</td>
+                    <td scope="row">
+                      Forward <i class="fa-regular fa-circle-right"></i>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="row">
+                <div class="col-8"></div>
+                <div class="col-4">
+                  <button class="btn btn-accept">
+                    <i class="bi bi-check2-circle"></i> &nbsp; ACCEPT
+                  </button>
+                  &nbsp;
+                  <button class="btn btn-reject">
+                    <i class="bi bi-x-circle"></i> &nbsp;REJECT
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-template>
+      </li>
+    </ul>
+    <div></div>
+  </div>
+</ng-template>
+
+<!-- Major Industry Approval-->
+<ng-template #addParameterApporoval let-modal>
+  <app-review-parameter
+    [modal]="modal"
+    [parametersList]="rowData"
+    [pendingParameterApproval]="pendingApproval"
+    (reloadPage)="reloadPage($event)"
+  >
+  </app-review-parameter>
+</ng-template>

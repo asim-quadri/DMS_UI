@@ -1,0 +1,426 @@
+<div class="main-container">
+  <div class="home-content user-table product-setup">
+    <div class="row mt-20">
+      <div class="col-5">
+        <app-organization-verticalnav></app-organization-verticalnav>
+      </div>
+      <div class="col-7">
+        <div class="product-panel">
+          <div class="product-panel-header text-center">
+            <div class="row">
+              <div class="col-3">
+                <span>{{ this.organizationName }}</span>
+              </div>
+              <div class="col-6">
+                <h4>{{ this.entityName }}</h4>
+              </div>
+              <div class="col-3"></div>
+            </div>
+          </div>
+          <div class="product-panel-body new-regulation text-center">
+            <div class="row mt-20 justify-content-center">
+              <div class="col-11 organization-tabs">
+                <nav
+                  ngbNav
+                  #nav="ngbNav"
+                  class="nav-tabs justify-content-center pb-3"
+                >
+                  <ng-container [ngbNavItem]="1" ngbNavItem>
+                    <a ngbNavLink>Entity Details</a>
+                    <ng-template ngbNavContent>
+                      <form
+                        [formGroup]="formgroup"
+                        class="row justify-content-center"
+                      >
+                        <!-- {{ myform.value | json }} -->
+                        <div class="col-10">
+                          <div class="row mt-20">
+                            <div class="col-6 text-start">
+                              <label for="entityName">Entity Name</label>
+                              <app-input-text
+                                [formGroup]="formgroup"
+                                [name]="'entityName'"
+                                [placeholder]="'Entity Name'"
+                              ></app-input-text>
+                              <div
+                                class="invalid-feedback"
+                                *ngIf="
+                                  formgroup.get('entityName')?.invalid &&
+                                  formgroup.get('entityName')?.touched
+                                "
+                              >
+                                <small
+                                  class="form-text text-danger"
+                                  *ngIf="
+                                    formgroup.get('entityName')?.errors
+                                      ?.required
+                                  "
+                                >
+                                  Entity name is required
+                                </small>
+                              </div>
+                            </div>
+                            <div class="col-6 text-start">
+                              <label for="countryId">Country</label>
+                              <app-input-dropdown
+                                [formGroup]="formgroup"
+                                [name]="'countryId'"
+                                [object]="this.countries"
+                                [key]="'countryName'"
+                                [value]="'id'"
+                                (change)="onCountryChange($event)"
+                              >
+                              </app-input-dropdown>
+
+                              <div
+                                class="invalid-feedback"
+                                *ngIf="
+                                  formgroup.get('countryId')?.invalid &&
+                                  formgroup.get('countryId')?.touched
+                                "
+                              >
+                                <small
+                                  class="form-text text-danger"
+                                  *ngIf="
+                                    formgroup.get('countryId')?.errors?.required
+                                  "
+                                >
+                                  Country is required
+                                </small>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="row mt-20">
+                            <div class="col-4 text-start">
+                              <label for="entityType">Entity Type</label>
+                              <app-input-dropdown
+                                [formGroup]="formgroup"
+                                [name]="'entityType'"
+                                [object]="this.selectedEntityList"
+                                [key]="'entityType'"
+                                [value]="'entityTypeId'"
+                              >
+                              </app-input-dropdown>
+                              <div
+                                class="invalid-feedback"
+                                *ngIf="
+                                  formgroup.get('entityType')?.invalid &&
+                                  formgroup.get('entityType')?.touched
+                                "
+                              >
+                                <small
+                                  class="form-text text-danger"
+                                  *ngIf="
+                                    formgroup.get('entityType')?.errors
+                                      ?.required
+                                  "
+                                >
+                                  Entity type is required
+                                </small>
+                              </div>
+                            </div>
+                            <div class="col-4 text-start">
+                              <label for="stateId">State</label>
+                              <app-input-dropdown
+                                [formGroup]="formgroup"
+                                [name]="'stateId'"
+                                [object]="this.stateList"
+                                [key]="'stateName'"
+                                [value]="'id'"
+                              >
+                              </app-input-dropdown>
+
+                              <div
+                                class="invalid-feedback"
+                                *ngIf="
+                                  formgroup.get('stateId')?.invalid &&
+                                  formgroup.get('stateId')?.touched
+                                "
+                              >
+                                <small
+                                  class="form-text text-danger"
+                                  *ngIf="
+                                    formgroup.get('stateId')?.errors?.required
+                                  "
+                                >
+                                  State is required
+                                </small>
+                              </div>
+                            </div>
+                            <div class="col-4 text-start">
+                              <label for="city">City:</label>
+                              <app-input-text
+                                [formGroup]="formgroup"
+                                [name]="'city'"
+                                [placeholder]="'City'"
+                              ></app-input-text>
+                              <div
+                                class="invalid-feedback"
+                                *ngIf="
+                                  formgroup.get('city')?.invalid &&
+                                  formgroup.get('city')?.touched
+                                "
+                              >
+                                <small
+                                  class="form-text text-danger"
+                                  *ngIf="
+                                    formgroup.get('city')?.errors?.required
+                                  "
+                                >
+                                  City is required
+                                </small>
+                              </div>
+                            </div>
+                            <div class="col-4 mt-20 text-start">
+                              <label for="pin">Pin</label>
+                              <app-input-text
+                                [formGroup]="formgroup"
+                                [name]="'pin'"
+                                [placeholder]="'Pin'"
+                              ></app-input-text>
+                              <div
+                                class="invalid-feedback"
+                                *ngIf="
+                                  formgroup.get('pin')?.invalid &&
+                                  formgroup.get('pin')?.touched
+                                "
+                              >
+                                <small
+                                  class="form-text text-danger"
+                                  *ngIf="formgroup.get('pin')?.errors?.required"
+                                >
+                                  PIN is required
+                                </small>
+                                <small
+                                  class="form-text text-danger"
+                                  *ngIf="formgroup.get('pin')?.errors?.pattern"
+                                >
+                                  Invalid PIN
+                                </small>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="row mt-20 justify-content-center">
+                            <div class="col-6 text-start">
+                              <label for="majorIndustry">Major Industry</label>
+                              <app-input-dropdown
+                                [formGroup]="formgroup"
+                                [name]="'majorIndustry'"
+                                [object]="this.selectedMajorIndustryList"
+                                [key]="'majorIndustryName'"
+                                [value]="'id'"
+                                (change)="GetMinorIndustrybyMajorID()"
+                              >
+                              </app-input-dropdown>
+                              <div
+                                class="invalid-feedback"
+                                *ngIf="
+                                  formgroup.get('majorIndustry')?.invalid &&
+                                  formgroup.get('majorIndustry')?.touched
+                                "
+                              >
+                                <small
+                                  class="form-text text-danger"
+                                  *ngIf="
+                                    formgroup.get('majorIndustry')?.errors
+                                      ?.required
+                                  "
+                                >
+                                  Major industry is required
+                                </small>
+                              </div>
+                            </div>
+                            <div class="col-6 text-start">
+                              <label for="minorIndustry">Minor Industry</label>
+                              <app-input-dropdown
+                                [formGroup]="formgroup"
+                                [name]="'minorIndustry'"
+                                [object]="this.majorMinorMapping"
+                                [key]="'minorIndustryName'"
+                                [value]="'id'"
+                              >
+                              </app-input-dropdown>
+                              <div
+                                class="invalid-feedback"
+                                *ngIf="
+                                  formgroup.get('minorIndustry')?.invalid &&
+                                  formgroup.get('minorIndustry')?.touched
+                                "
+                              >
+                                <small
+                                  class="form-text text-danger"
+                                  *ngIf="
+                                    formgroup.get('minorIndustry')?.errors
+                                      ?.required
+                                  "
+                                >
+                                  Minor industry is required
+                                </small>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="row mt-20 justify-content-center">
+                            <div class="col-12 text-start">
+                              <label for="address">Address</label>
+                              <textarea
+                                class="form-control h-75"
+                                placeholder="Add Address Here"
+                                formControlName="address"
+                                required
+                              ></textarea>
+                              <div
+                                class="invalid-feedback"
+                                *ngIf="
+                                  formgroup.get('address')?.invalid &&
+                                  formgroup.get('address')?.touched
+                                "
+                              >
+                                <small
+                                  class="form-text text-danger"
+                                  *ngIf="
+                                    formgroup.get('address')?.errors?.required
+                                  "
+                                >
+                                  Address is required
+                                </small>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="row mt-20 justify-content-center">
+                            <div class="col-6 text-start">
+                              <label for="fromMonth">From Month</label>
+                              <!-- <input type="text" [name]="'fromMonth'" [placeholder]="'From Month'" [value]="this.months.fromMonth" readonly> -->
+                              <app-input-text
+                                [formGroup]="formgroup"
+                                [name]="'fromMonth'"
+                                [placeholder]="'From Month'"
+                              ></app-input-text>
+
+                              <!-- <div class="invalid-feedback" *ngIf="formgroup.get('fromMonth')?.invalid && formgroup.get('fromMonth')?.touched">
+                              <small class="form-text text-danger" *ngIf="formgroup.get('fromMonth')?.errors?.required">
+                                FromMonth is required
+                              </small>
+                            </div> -->
+                            </div>
+
+                            <div class="col-6 text-start">
+                              <label for="toMonth">To Month</label>
+                              <app-input-text
+                                [formGroup]="formgroup"
+                                [name]="'toMonth'"
+                                [placeholder]="'To Month'"
+                              ></app-input-text>
+                              <div
+                                class="invalid-feedback"
+                                *ngIf="
+                                  formgroup.get('toMonth')?.invalid &&
+                                  formgroup.get('toMonth')?.touched
+                                "
+                              >
+                                <small
+                                  class="form-text text-danger"
+                                  *ngIf="
+                                    formgroup.get('toMonth')?.errors?.required
+                                  "
+                                >
+                                  ToMonth is required
+                                </small>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="row mt-20 justify-content-center">
+                            <div class="col-6 text-start">
+                              <label for="financialYearStart"
+                                >Starting FY</label
+                              >
+                              <app-input-dropdown
+                                [formGroup]="formgroup"
+                                [name]="'financialYearStart'"
+                                [object]="this.years"
+                                [key]="'year'"
+                                [value]="'id'"
+                                (change)="getEndYear($event)"
+                              >
+                              </app-input-dropdown>
+                              <!-- <select>
+                              <option *ngFor="let year of years" [value]="year">{{ year }}</option> 
+                            </select> -->
+                              <div
+                                class="invalid-feedback"
+                                *ngIf="
+                                  formgroup.get('FinancialYearStart')
+                                    ?.invalid &&
+                                  formgroup.get('FinancialYearStart')?.touched
+                                "
+                              >
+                                <small
+                                  class="form-text text-danger"
+                                  *ngIf="
+                                    formgroup.get('FinancialYearStart')?.errors
+                                      ?.required
+                                  "
+                                >
+                                  Starting FY is required
+                                </small>
+                              </div>
+                            </div>
+
+                            <div class="col-6 text-start">
+                              <label for="financialYearEnd">To Year</label>
+                              <app-input-text
+                                [formGroup]="formgroup"
+                                [name]="'financialYearEnd'"
+                                [placeholder]="'To Year'"
+                              ></app-input-text>
+                              <div
+                                class="invalid-feedback"
+                                *ngIf="
+                                  formgroup.get('financialYearEnd')?.invalid &&
+                                  formgroup.get('financialYearEnd')?.touched
+                                "
+                              >
+                                <small
+                                  class="form-text text-danger"
+                                  *ngIf="
+                                    formgroup.get('financialYearEnd')?.errors
+                                      ?.required
+                                  "
+                                >
+                                  To Year is required
+                                </small>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="row mt-20 mb-4 justify-content-center">
+                            <div class="col-5">
+                              <button
+                                type="button"
+                                class="btn btn-color btn-block"
+                                (click)="onSubmit()"
+                                [disabled]="formgroup.pristine"
+                                *ngIf="showUpdateButton"
+                              >
+                                &nbsp; Update &nbsp;
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </form>
+                    </ng-template>
+                  </ng-container>
+                </nav>
+                <div [ngbNavOutlet]="nav" class="mt-2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="clearfix"></div>

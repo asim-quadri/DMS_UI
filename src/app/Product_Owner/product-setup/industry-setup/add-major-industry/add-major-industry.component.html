@@ -1,0 +1,33 @@
+<div class="modal-header">
+  <h4 class="modal-title" id="modal-basic-title">Add New Major</h4>
+  <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+</div>
+<div class="modal-body product-steup-modal">
+  <form [formGroup]="formgroup" class="row justify-content-center">
+
+       <div class="col-10 mt-3">
+          <label for="">Major Industry Reference Code</label>
+          <div class="input-group">
+            <app-input-text [formGroup]="formgroup" [name]="'majorIndustryReferenceCode'" [placeholder]="'Major Industry Reference Code'" readonly="true" aria-disabled="true"></app-input-text>
+          </div>
+      </div> 
+      <div class="col-10 mt-3">
+          <label for="">Major Industry</label>
+          <div class="input-group">
+            <app-input-text [formGroup]="formgroup" [name]="'majorIndustryName'" [placeholder]="'Major Industry Name'"></app-input-text>
+          </div>
+      </div>
+
+      <div class="col-10 mt-3">
+          <label for="">Major Industry Code (Alpha)</label>
+          <div class="input-group">
+              <app-input-text [formGroup]="formgroup" [name]="'majorIndustryCode'" [placeholder]="'Major Industry Code'"></app-input-text>
+          </div>
+      </div>
+      <div class="col-10 mt-20 text-center">
+          <button type="button" class="btn btn-color btn-block primary-blue-btn w-100" (click)="onSubmit()" [disabled]="!formgroup.valid">
+              &nbsp; Add Major Industry &nbsp;
+          </button>
+      </div>
+  </form>
+</div>

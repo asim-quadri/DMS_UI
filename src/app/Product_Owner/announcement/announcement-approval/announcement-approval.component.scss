@@ -1,0 +1,23 @@
+.description-cell {
+  &.truncated {
+    cursor: help;
+    position: relative;
+  }
+  
+  &.truncated::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    background: linear-gradient(to right, transparent, white);
+    pointer-events: none;
+  }
+}
+
+.ag-tooltip {
+  max-width: 400px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}

@@ -1,0 +1,61 @@
+mat-tree {
+    padding: 10px;
+  }
+  
+  .parent-node {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  mat-checkbox {
+    margin-right: 10px;
+  }
+  
+  button[mat-icon-button] {
+    margin-left: auto;
+  }
+  
+
+  .dropdown-button {
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    min-width: 180px;
+    justify-content: space-between; /* Ensures icon is always on the right */
+    gap: 6px;
+    width: 100% !important;
+  }
+  
+  .dropdown-content {
+    display: flex;
+    align-items: center;
+    flex-grow: 1; /* Ensures the content takes all available space */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .selected-item {
+    background: #1976d2;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 14px;
+    margin-right: 6px;
+    white-space: nowrap;
+  }
+  
+  .more-items {
+    font-size: 14px;
+    color: #555;
+  }
+  
+  .dropdown-icon {
+    font-size: 20px;
+    color: #555;
+  }

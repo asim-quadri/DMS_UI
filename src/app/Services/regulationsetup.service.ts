@@ -1,14 +1,15 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { AppConfig } from '../app.config';
-import { ParameterModel } from '../models/parameter';
-import { RegSetupComplianceModel, RegulationDetailsByCountryIdModel, RegulationSetupDetailsModel, RegulationSetupParameterModel, ReuglationListModle } from '../models/regulationsetupModel';
-import { RegulationGroupModel } from '../models/regulationGroupModel';
-import { accessModel, pendingApproval } from '../models/pendingapproval';
-import { TOC, TOCRegistration, TOCRules } from '../models/TOC';
-import { Observable } from 'rxjs';
-import { CountryStateMapping } from '../models/countryModel';
-import { IndustryMapping } from '../models/industrysetupModel';
+import { ParameterModel } from '../Models/parameter';
+import { RegSetupComplianceModel, RegulationDetailsByCountryIdModel, RegulationSetupDetailsModel, RegulationSetupParameterModel, ReuglationListModle, TOBMinorIndustryRequest } from '../Models/regulationsetupModel';
+import { RegulationGroupModel } from '../Models/regulationGroupModel';
+import { accessModel, pendingApproval } from '../Models/pendingapproval';
+import { TOC, TOCRegistration, TOCRules } from '../Models/TOC';
+import { forkJoin, Observable } from 'rxjs';
+import { CountryStateMapping } from '../Models/countryModel';
+import { IndustryMapping, MajorMinorMapping } from '../Models/industrysetupModel';
+import { TocRegistrationComponent } from '../Product_Owner/product-setup/regulation-setup/TOC/toc-registration/toc-registration.component';
 
 @Injectable({
   providedIn: 'root'
@@ -64,12 +65,16 @@ export class RegulationSetupService {
     return { headers: { 'Content-Type': 'application/json' } }
   }
 
-  getAllRegulationSetupDetails(regSetupuid : any) {
+  getAllRegulationSetupDetails(regSetupuid: any) {
     return this.http.get<Array<RegulationSetupDetailsModel>>(this.BASEURL + '/RegulationSetup/GetRegulationSetupDetails/' + regSetupuid, this.getAuthHeadersJSON());
   }
 
-  getRegulationSetupHistory() {
-    return this.http.get<Array<ReuglationListModle>>(this.BASEURL + '/RegulationSetup/GetRegSetupHistory', this.getAuthHeadersJSON());
+  getRegulationSetupHistory(userId?: number | null) {
+    let url = this.BASEURL + '/RegulationSetup/GetRegSetupHistory';
+    if (userId) {
+      url += `?userId=${encodeURIComponent(userId)}`;
+    }
+    return this.http.get<Array<ReuglationListModle>>(url, this.getAuthHeadersJSON());
   }
 
   getHistoryRegulationSetupByID(uid: any) {
@@ -97,6 +102,10 @@ export class RegulationSetupService {
 
   getAllRegulationSetupParameters() {
     return this.http.get<Array<RegulationSetupParameterModel>>(this.BASEURL + '/RegulationSetup/GetRegulationSetupParameters', this.getAuthHeadersJSON());
+  }
+
+  getRegulationSetupDetails() {
+    return this.http.get<Array<RegulationSetupDetailsModel>>(this.BASEURL + '/RegulationSetup/GetAllRegulationSetupDetails', this.getAuthHeadersJSON());
   }
 
   addRegulationSetupDetails(regulationDetails: RegulationSetupDetailsModel) {
@@ -131,6 +140,21 @@ export class RegulationSetupService {
     return this.http.get<Array<pendingApproval>>(this.BASEURL + '/RegulationSetup/GetPendingRegulationSetupApproval/' + uid, this.getAuthHeadersJSON());
   }
 
+  GetMinorIndustrybyMajorID(countryId: any) {
+    return this.http.get<Array<MajorMinorMapping>>(this.BASEURL + '/RegulationSetup/GetMinorIndustrybyMajorID?majorIndustoryId=' + countryId, this.getAuthHeadersJSON());
+  }
+
+  GetMinorIndustrybyMajorIDMap(majorIndustryIds: Array<number>, countryId: number) {
+    // Add the required headers
+    const headers = new HttpHeaders(this.getAuthHeadersJSON().headers);
+    return this.http.post<Array<MajorMinorMapping>>(
+      `${this.BASEURL}/RegulationSetup/GetMinorIndustrybyMajorIDMap?countryId=` + countryId,
+      majorIndustryIds, // Send the array in the request body
+      { headers: headers }
+    );
+  }
+
+
   GetRegSetupComplianceHistory(uid: any) {
     return this.http.get<Array<RegSetupComplianceModel>>(this.BASEURL + '/RegulationSetup/GetRegSetupComplianceHistory/' + uid, this.getAuthHeadersJSON());
   }
@@ -144,16 +168,16 @@ export class RegulationSetupService {
     return this.http.post<any>(this.BASEURL + '/RegulationSetup/RejectRegSetupCompliance', access, this.getAuthHeadersJSON())
   }
 
-  GetTOCRules(complianceId: any, regulationid:any,ruleType: any)  {
-    return this.http.get<Array<TOCRules>>(`${this.BASEURL}/RegulationSetup/GetTOCRulesAsync/${complianceId}/${regulationid}/${ruleType}`, this.getAuthHeadersJSON());
+  GetTOCRules(tocId: any, regulationid: any, ruleType: any) {
+    return this.http.get<Array<TOCRules>>(`${this.BASEURL}/RegulationSetup/GetTOCRulesAsync/${tocId}/${regulationid}/${ruleType}`, this.getAuthHeadersJSON());
   }
 
   addTOCRules(tOCRules: TOCRules) {
     return this.http.post<any>(this.BASEURL + '/RegulationSetup/PostTOCRules', tOCRules, this.getAuthHeadersJSON())
   }
 
-  GetTOCRegistration(complianceId: any,regulationid:any, ruleType: any) {
-    return this.http.get<Array<TOCRegistration>>(`${this.BASEURL}/RegulationSetup/GetTOCRegistration/${complianceId}/${regulationid}/${ruleType}`, this.getAuthHeadersJSON());
+  GetTOCRegistration(tocRegId: any, complianceId: any, regulationid: any, ruleType: any) {
+    return this.http.get<Array<TOCRegistration>>(`${this.BASEURL}/RegulationSetup/GetTOCRegistration/${tocRegId}/${complianceId}/${regulationid}/${ruleType}`, this.getAuthHeadersJSON());
   }
 
   addTOCRegistration(regulationDetails: TOCRegistration) {
@@ -175,5 +199,34 @@ export class RegulationSetupService {
 
   TOCRulesApproved(access: accessModel) {
     return this.http.post<any>(this.BASEURL + '/RegulationSetup/ApproveTOCRule', access, this.getAuthHeadersJSON())
+  }
+
+  getTOBMinorIndustryMapping(request: TOBMinorIndustryRequest): Observable<MajorMinorMapping[]> {
+    return this.http.post<MajorMinorMapping[]>(`${this.BASEURL}/RegulationSetup/GetTOBMinorIndustrybyMajorIDMap`, request, this.getAuthHeadersJSON());
+  }
+
+  multipleAPIRequests(request: any) {
+    return forkJoin(request);
+  }
+  getNextRegulationSetupCode(){
+    return this.http.get<string>(this.BASEURL + '/RegulationSetup/GetNextRegulationSetupCode', this.getAuthHeadersJSON());
+  }
+  getNextRegulationSetupComplianceCode() {
+    return this.http.get<string>(this.BASEURL + '/RegulationSetup/GetNextRegulationSetupComplianceCode', this.getAuthHeadersJSON());
+  }
+  getNextRegulationSetupTypeOfComplianceRegisterCode(){
+    return this.http.get<string>(this.BASEURL + '/RegulationSetup/GetNextRegulationSetupTypeOfComplianceRegisterCode', this.getAuthHeadersJSON());
+  }
+
+  getNextRegulationSetupTypeOfComplianceDuesCode() {
+    return this.http.get<string>(this.BASEURL + '/RegulationSetup/GetNextRegulationSetupTypeOfComplianceDuesCode', this.getAuthHeadersJSON());
+  }
+
+  getAllRegisteration() {
+    return this.http.get<Array<TOCRegistration>>(this.BASEURL + '/RegulationSetup/GetAllRegisteration', this.getAuthHeadersJSON());
+  }
+
+  getAllTOCDues() {
+    return this.http.get<Array<any>>(this.BASEURL + '/RegulationSetup/GetAllTOCDues', this.getAuthHeadersJSON());
   }
 }

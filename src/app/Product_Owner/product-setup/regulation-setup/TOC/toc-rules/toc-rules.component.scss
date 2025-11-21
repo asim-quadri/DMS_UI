@@ -1,0 +1,255 @@
+@use 'src/assets/scss/_colors.scss';
+
+.progress-tracker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+  width: 80%;
+  margin: 0 auto;
+  border: 2px solid colors.$primary-orange;
+  border-radius: 20px;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  padding: 8px 10px;
+  width: 25%;
+  text-align: center;
+}
+
+.step:first-child {
+  border-radius: 20px 0 0 20px;
+}
+.step:last-child {
+  border-radius: 0px 20px 20px 0px;
+}
+
+.label {
+  font-size: 12px;
+  color: colors.$text-black;
+  text-align: center;
+  font-weight: 600;
+}
+
+.active {
+  background-color: colors.$primary-blue;
+  color: #fff;
+  height: -webkit-fill-available;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  .label {
+    color: #fff !important;
+  }
+}
+
+.due-date-card {
+  display: inline-block;
+  margin: 5px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 150px;
+  text-align: center;
+  background-color: #fff;
+  float: left;
+  position: relative;
+}
+
+.due-date-card div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.due-date-card strong {
+  margin-right: 10px;
+  font-size: 14px;
+}
+
+.due-date-card button {
+  background: none;
+  border: none;
+  color: red;
+  cursor: pointer;
+}
+
+.btn-add {
+  background-color: #3f51b5;
+  color: #fff;
+  width: 100%;
+  margin-top: 29px;
+}
+
+.cutom-radio-button {
+  margin: 15px 0px;
+}
+
+// --------------------------------------------
+/* Table Container */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  font-size: 14px;
+  padding: 20px;
+}
+
+/* Table Header */
+th {
+  background-color: colors.$primary-blue;
+  padding: 10px;
+  color: #fff;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Table Cells */
+td {
+  padding: 5px;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+  background-color: #ECF8FF;
+}
+
+/* Inputs and Selects */
+input[type="text"],
+select {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  box-sizing: border-box;
+  ::placeholder {
+    color: #999;
+    font-size: 13px;
+  }
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 3px rgba(74, 144, 226, 0.5);
+}
+
+/* Link buttons */
+a {
+  background-color: colors.$primary-blue;
+  color: #fff;
+  text-decoration: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  font-size: 13px;
+  display: inline-block;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Expand/Collapse Button */
+button {
+  background-color: transparent;
+  border: none;
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Row Hover */
+tr:hover {
+  background-color: #f9f9f9;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  table,
+  thead,
+  tbody,
+  th,
+  td,
+  tr {
+    display: block;
+  }
+
+  th {
+    display: none;
+  }
+
+  td {
+    position: relative;
+    padding-left: 50%;
+  }
+
+  td::before {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 45%;
+    white-space: nowrap;
+    font-weight: bold;
+  }
+
+  td:nth-of-type(1)::before {
+    content: "Textbox 1";
+  }
+  td:nth-of-type(2)::before {
+    content: "Textbox 2";
+  }
+  td:nth-of-type(3)::before {
+    content: "Dropdown";
+  }
+  td:nth-of-type(4)::before {
+    content: "Link";
+  }
+  td:nth-of-type(5)::before {
+    content: "Expand";
+  }
+}
+
+.btn-new {
+  background-color: colors.$primary-blue;
+  color: #fff;
+  padding: 8px 30px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.btn-expand{
+  background-color: colors.$primary-orange;
+  color: #fff;
+  padding: 6px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.user-table tbody tr td a{
+  color: #fff!important;
+}
+
+.btn-remove-date{
+  position: absolute;
+  top: -15px;
+  right: -15px;
+  background: none;
+}
+
+.btn-next{
+    background-color: colors.$primary-blue!important;
+    color: #fff;
+    width: 100%;
+    margin-top: 5px;
+    &:hover{
+      color: colors.$white!important;
+    }
+}

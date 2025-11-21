@@ -1,0 +1,39 @@
+@use "src/assets/scss/_colors.scss";
+
+.nav-tabs .nav-link.active,
+.nav-tabs .nav-item.show .nav-link {
+  background-color: colors.$primary-orange !important;
+  color: colors.$white !important;
+  border: none;
+  font-size: 14px;
+  padding: 10px 35px;
+}
+
+.next-Btn {
+  background-color: colors.$primary-blue !important;
+  color: colors.$white !important;
+  border: colors.$primary-blue;
+}
+
+.new-regulation .nav-tabs .nav-link {
+  border-radius: 5px !important;
+}
+
+.add-compliance {
+  textarea {
+    min-height: 80px !important;
+  }
+}
+
+.complianceTab {
+  .nav-link {
+    span {
+      padding: 3px 5px !important;
+    }
+
+    &:hover {
+      background-color: colors.$primary-orange !important;
+      color: colors.$white !important;
+    }
+  }
+}

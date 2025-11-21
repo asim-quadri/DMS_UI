@@ -1,0 +1,11 @@
+.panel-gray ul li{
+    float: none!important;
+    width: 100%!important;
+    border-radius: 5px;
+   font-size: 13px;
+   padding: 10px 15px;
+   color: #707070;
+}
+.panel-gray ul li.selected{
+    color: #fff!important;
+}

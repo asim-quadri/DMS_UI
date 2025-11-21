@@ -1,0 +1,36 @@
+@use "../../../assets/scss/colors";
+
+.text-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.text-wrapper p {
+  margin: 0;
+  word-break: break-all;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  -webkit-line-clamp: var(--lines);
+  line-clamp: var(--lines);
+  transition: all 0.3s ease;
+}
+
+.text-wrapper.expanded p {
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  display: block;
+}
+
+.toggle-link {
+  color: colors.$primary-blue;
+  cursor: pointer;
+  font-size: 0.9em;
+  text-decoration: underline;
+  margin-top: 4px;
+  display: inline-block;
+
+  &:hover {
+    color: colors.$primary-orange;
+  }
+}

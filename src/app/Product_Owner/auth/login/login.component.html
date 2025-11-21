@@ -1,0 +1,80 @@
+<div class="login-bg">
+  <div class="auth-body">
+    <div class="row">
+      <div class="col-md-6 text-center">
+        <div class="auth-left">
+          <img src="./assets/images/logo.svg" alt="" />
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="auth-form">
+          <h1>Login</h1>
+          <form [formGroup]="formgroup" (ngSubmit)="onSubmit()" class="mb-6">
+            <div class="mb-4 form-group">
+              <!-- <span class="input-group-text">
+                  <img src="./assets/images/icons/user.svg" alt="" />
+                </span> -->
+              <app-input-text
+                [formGroup]="formgroup"
+                [name]="'userId'"
+                (keydown.enter)="onSubmit()"
+                [placeholder]="'Enter User ID / Mobile Number'"
+              ></app-input-text>
+              <!-- <input type="text" class="form-control" name="Username" required="" formControlName="userId" placeholder="Employee ID / Email Address"/> -->
+            </div>
+            <div class="mb-3 form-group">
+              <!--input-group mb-3-->
+              <!-- <span class="input-group-text">
+                  <img src="./assets/images/icons/lock.svg" alt="" />
+                </span> -->
+              <app-input-password
+                [formGroup]="formgroup"
+                [name]="'password'"
+                (keydown.enter)="onSubmit()"
+                [placeholder]="'Password'"
+              >
+                
+              </app-input-password>
+              <!-- <input type="password" class="form-control border-0" name="password" required="" formControlName="password" placeholder="Password"/> -->
+
+              <!-- <span class="input-group-text">
+                  <img src="./assets/images/icons/eye.svg" alt="" />
+                </span> -->
+            </div>
+            <!-- <div>
+                <div class="input-group mb-3">
+                  <span class="input-group-text">
+                    <img src="./assets/images/icons/password.svg" alt="" />
+                  </span>
+  
+                  <input type="password" class="form-control border-0" name="OTP" placeholder="OTP" id="otp"/>
+                  <span class="input-group-text otp-btn"> Send OTP </span>
+                </div>
+                <p>
+                  OTP sent to your registered email address
+                  <span>Resend: 30 Secs</span>
+                </p>
+              </div> -->
+            <button
+              class="btn btn-submit"
+              type="submit"
+              [disabled]="!formgroup.valid"
+            >
+              LOGIN
+            </button>
+            <!-- (click)="submit()" -->
+          </form>
+          <div class="text-center mt-5">
+            <a
+              routerLink="/forget"
+              class="genlink text-white text-decoration-none mt-5"
+            >
+              Forgot Password?
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="cover-spin"></div>

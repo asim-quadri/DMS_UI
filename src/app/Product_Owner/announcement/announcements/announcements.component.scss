@@ -1,0 +1,306 @@
+@use "src/assets/scss/_colors.scss";
+
+.bg-white-new {
+  background-color: colors.$white !important;
+  padding: 25px !important;
+  border-radius: 15px !important;
+  /* box-shadow: 0px 0px 10px #00000029; */
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px !important;
+}
+
+.bg-white-new li {
+  list-style: none !important;
+  border: 1.5px solid colors.$primary-blue !important;
+  padding: 7px 1px !important;
+  width: 100% !important;
+  font-size: 13px !important;
+  color: colors.$primary-blue !important;
+  border-radius: 5px !important;
+  font-weight: 500 !important;
+  position: relative !important;
+}
+
+.bg-white-new label {
+  font-weight: 600 !important;
+  color: colors.$primary-blue !important;
+  font-size: 15px !important;
+}
+
+.close-icons {
+  width: 18px !important;
+  height: 18px !important;
+  position: absolute !important;
+  right: -8px !important;
+  top: -8px !important;
+  z-index: 1 !important;
+  background-color: colors.$white !important;
+}
+
+.close-icons i {
+  color: colors.$primary-blue !important;
+  font-size: 18px !important;
+}
+
+.btn-section-select {
+  background-color: colors.$primary-blue !important;
+  color: colors.$white !important;
+  font-size: 14px !important;
+  padding: 5px 25px !important;
+  margin: 1px 5px !important;
+}
+
+.btn-section {
+  background-color: colors.$white !important;
+  border: 1px solid colors.$primary-blue !important;
+  color: colors.$primary-blue !important;
+  font-size: 14px !important;
+  padding: 5px 25px !important;
+  margin: 1px 5px !important;
+}
+
+.context-menu {
+  position: fixed;
+  z-index: 1000;
+  background: colors.$white;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  width: 250px;
+}
+.context-menu div {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.context-menu div:hover {
+  background-color: #f0f0f0;
+}
+
+.regulation h4 {
+  font-size: 15px;
+}
+
+.regulation ul li {
+  padding: 10px !important;
+}
+
+.expendated-panel {
+  background-color: #f0f0f0;
+  padding: 5px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+}
+
+.accordion-body h5 {
+  background-color: colors.$white;
+  color: colors.$primary-blue;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 10px;
+  width: 100%;
+  border-radius: 10px;
+
+  &:hover {
+    background-color: colors.$primary-orange !important;
+    color: colors.$white !important;
+  }
+}
+.nasted-panel {
+  background-color: #fff;
+  padding: 15px;
+  width: 100%;
+  border-radius: 4px;
+  margin-bottom: 5px;
+  h6 {
+    font-size: 13px;
+    color: #000;
+  }
+}
+.btn-save {
+  background-color: colors.$primary-blue;
+  color: colors.$white;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.add-New-btn {
+  width: 100%;
+  background-color: colors.$primary-blue;
+  color: colors.$white;
+  border: none;
+  padding: 12px;
+  text-align: center;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+  margin: 10px 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.announcement-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: colors.$white;
+  border-radius: 6px;
+}
+
+.announcement-item span {
+  flex: 1;
+  text-align: left;
+}
+
+.desc {
+  font-weight: 500;
+}
+
+.date {
+  text-align: center;
+}
+
+.creator {
+  text-align: right;
+}
+.accordionMain-body {
+  padding-bottom: 10px;
+  border-radius: 0px 0px 5px 5px;
+  padding: 0.1rem !important;
+  margin: 10px;
+  border-radius: 6px;
+  color: colors.$primary-blue;
+}
+
+.accord-item {
+  border-radius: 6px;
+  margin: 0px;
+  background: colors.$white;
+
+  &:has(.accordion-expand-body) {
+    background-color: colors.$primary-blue;
+    .accordion-header {
+      color: colors.$white;
+    }
+
+    &:hover {
+      background-color: colors.$primary-blue !important;
+    }
+  }
+
+  &:hover {
+    background-color: colors.$primary-orange;
+    .accordion-header {
+      color: colors.$white !important;
+    }
+  }
+}
+
+.accordion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: colors.$text-black;
+}
+
+.accordion-expand-body {
+  margin-top: 10px;
+  padding: 10px;
+  background: colors.$white;
+  border-top: 1px solid #ddd;
+  border-radius: 4px;
+
+  p {
+    color: colors.$text-black;
+  }
+}
+
+.action-buttons {
+  margin-top: 10px;
+}
+
+.action-buttons button {
+  margin-right: 10px;
+  padding: 6px 12px;
+  border: none;
+  background-color: colors.$primary-blue;
+  color: colors.$white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.action-buttons button:hover {
+  background-color: colors.$primary-blue;
+}
+
+.toggle-btn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: colors.$primary-blue;
+  cursor: pointer;
+  padding: 2px 6px;
+
+  i {
+    color: colors.$text-black;
+  }
+}
+
+.description {
+  overflow: hidden;
+
+  .see-more-btn {
+    &:hover {
+      text-decoration: underline !important;
+      color: colors.$primary-blue !important;
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    }
+
+    &:active {
+      transform: translateY(1px);
+    }
+  }
+}
+
+.home-header h3 {
+  color: colors.$white;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0px;
+  text-align: center;
+}
+
+.accordion-item:has(.accordion-collapse.show) {
+  background-color: colors.$primary-blue;
+  border-radius: 10px !important;
+  overflow: hidden;
+
+  .accordion-button {
+    background-color: transparent !important;
+    color: colors.$white;
+  }
+}
+
+.toggle-carrot-icon {
+  width: 16px;
+  height: 16px;
+  transform-origin: center;
+  transform: rotateX(0deg);
+
+  &.rotated {
+    transform: rotateX(180deg);
+  }
+}
+
+.compliance-inner-title {
+  &:hover{
+    .compliance-sub-title {
+      color: colors.$text-black !important;
+    }
+  }
+}

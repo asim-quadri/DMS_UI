@@ -1,0 +1,37 @@
+<div class="home-header">
+    <div class="row">
+        <div class="col-md-12">
+            <button
+                *ngFor="let item of menuItems"
+                class="btn m-1"
+                [ngClass]="{'active-tab-btn': active == item.sortOrder, 'btn-border': active !== item.sortOrder}"
+                [routerLink]="item.route">
+                <i *ngIf="item.icon" [class]="item.icon"></i>
+                {{ item.title }}
+            </button>
+        </div>
+        <!--<div class="col-md-12">
+            <button class="btn " [ngClass]="{'btn-color': active == 1, 'btn-border': active !== 1}" routerLink="/product-setup/country">
+                Country Setup
+            </button>
+            <button class="btn ml-10" [ngClass]="{'btn-color': active == 2, 'btn-border': active !== 2}" routerLink="/product-setup/industry">
+                Industry Setup
+            </button>
+            <button class="btn ml-10" [ngClass]="{'btn-color': active == 3, 'btn-border': active !== 3}" routerLink="/product-setup/branchsetup">
+                Branch Setup
+            </button>
+            <button class="btn ml-10" [ngClass]="{'btn-color': active == 4, 'btn-border': active !== 4}" routerLink="/product-setup/entity">
+                Entity Type Setup
+            </button>
+            <button class="btn btn-border ml-10" [ngClass]="{'btn-color': active == 6, 'btn-border': active !== 6}" routerLink="/product-setup/parameter">
+                Parameter Setup
+            </button>
+            <button class="btn  ml-10" [ngClass]="{'btn-color': active == 5, 'btn-border': active !== 5}" routerLink="/product-setup/regulation">
+                Regulation Grouping Setup
+            </button>
+            <button class="btn btn-border ml-10" [ngClass]="{'btn-color': active == 7, 'btn-border': active !== 7}" routerLink="/product-setup/regulationsetup">
+                Regulation Setup
+            </button>
+        </div>-->
+    </div>
+</div>

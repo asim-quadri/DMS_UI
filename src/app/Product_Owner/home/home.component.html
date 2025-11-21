@@ -1,0 +1,412 @@
+<div class="main-container">
+  <div class="home-header" *ngIf="showMapViewButton || showListViewButton">
+    <div class="row">
+      <div class="col-md-8 d-flex gap-3">
+        <button
+          class="btn mapViewBtn ml-10"
+          *ngIf="showMapViewButton"
+          [ngClass]="{ 'btn-border': !isMapView, 'active-tab-btn': isMapView }"
+          (click)="switchToMapView()"
+        >
+          Map View
+        </button>
+
+        <button
+          class="btn listViewBtn"
+          *ngIf="showListViewButton"
+          [ngClass]="{ 'btn-border': isMapView, 'active-tab-btn': !isMapView }"
+          (click)="switchToListView()"
+        >
+          List View
+        </button>
+      </div>
+      <div class="col-md-4">
+        <form action="">
+          <div class="input-group">
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Search Here ..."
+            />
+            <div class="input-group-append">
+              <button class="btn btn-search" type="submit">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div
+    class="map home-country-map"
+    *ngIf="showMapViewButton || showListViewButton"
+    [class.hide-after-arrow]="!selectedMarkerInfo"
+  >
+    <div class="row m-0">
+      <div class="dropdown-main-container">
+        <div class="col-3 statusContainer">
+          <p class="statusTitle">Status:</p>
+          <button
+            class="btn btn-outline-danger radio redColor"
+            [class.selected]="selectedStatus === 2"
+            (click)="onStatusClick(2)"
+          ></button>
+          <button
+            class="btn btn-outline-warning radio orangeColor"
+            [class.selected]="selectedStatus === 1"
+            (click)="onStatusClick(1)"
+          ></button>
+          <button
+            class="btn btn-outline-success radio greenColor"
+            [class.selected]="selectedStatus === 3"
+            (click)="onStatusClick(3)"
+          ></button>
+        </div>
+        <div class="d-flex justify-content-end align-items-center col-8">
+          <div class="dropdown-container">
+            <label class="form-label">Category</label>
+            <select
+              #select
+              class="form-select width-100"
+              name="category"
+              [(ngModel)]="selectedCategory"
+              (ngModelChange)="onCategoryChange()"
+            >
+              <option value="1" selected>All</option>
+              <option value="2">Service Request</option>
+              <option value="3">Billing Details</option>
+            </select>
+          </div>
+          <div class="dropdown-container">
+            <label class="form-label">Select Country</label>
+            <select
+              class="form-select width-100"
+              name="country"
+              [(ngModel)]="selectedCountry"
+              (change)="onchangeCountry(selectedCountry)"
+            >
+              <option value="All" selected>All</option>
+              <option
+                [value]="item.key"
+                *ngFor="let item of countryList; index as i"
+              >
+                {{ item.value }}
+              </option>
+            </select>
+          </div>
+          <div class="dropdown-container">
+            <label class="form-label">Select State</label>
+            <select
+              class="form-select width-100"
+              name="state"
+              [(ngModel)]="selectedState"
+              (change)="onchangeState(selectedState)"
+            >
+              <option value="" selected>All</option>
+              <option
+                [value]="item.key"
+                *ngFor="let item of stateList; index as i"
+              >
+                {{ item.value }}
+              </option>
+            </select>
+            <div *ngIf="stateErrorMsg" class="text-danger mt-1">
+              {{ stateErrorMsg }}
+            </div>
+          </div>
+        </div>
+      </div>
+      <google-map
+        *ngIf="isMapView"
+        #map
+        class="google-map"
+        [center]="center"
+        [zoom]="zoom"
+        [options]="mapOptions"
+        (zoomChanged)="onMapChanged()"
+        (mapDrag)="onMapChanged()"
+        (mapClick)="selectedMarkerInfo = null"
+      >
+        <map-marker
+          *ngFor="
+            let marker of visibleMarkers | mapColor : selectedStatus : 'status'
+          "
+          #markerRef="mapMarker"
+          [position]="marker"
+          [icon]="marker.icon"
+          [draggable]="false"
+          (mapRightclick)="onMarkerClick(marker, markerRef)"
+        >
+        </map-marker>
+        <map-info-window #infoWindow="mapInfoWindow">
+          <div class="map-tooltip-container" *ngIf="selectedMarkerInfo">
+            <mat-tab-group>
+              <mat-tab
+                label="Service Request"
+                *ngIf="selectedCategory === '1' || selectedCategory === '2'"
+              >
+                <div class="p-4 gap-4 mx-auto d-flex">
+                  <div class="line-container">
+                    <div class="line red"></div>
+                    <div class="circle red">
+                      {{ markerStatusCount.serviceRequestRed }}
+                    </div>
+                  </div>
+                  <div class="line-container">
+                    <div class="line green"></div>
+                    <div class="circle green">
+                      {{ markerStatusCount.serviceRequestGreen }}
+                    </div>
+                  </div>
+                  <div class="line-container">
+                    <div class="line orange"></div>
+                    <div class="circle orange">
+                      {{ markerStatusCount.serviceRequestAmber }}
+                    </div>
+                  </div>
+                </div>
+              </mat-tab>
+              <mat-tab
+                label="Billing Details"
+                *ngIf="selectedCategory === '1' || selectedCategory === '3'"
+              >
+                <div class="p-4 gap-4 mx-auto d-flex">
+                  <div class="line-container">
+                    <div class="line red"></div>
+                    <div class="circle red">
+                      {{ markerStatusCount.billingDetailsRed }}
+                    </div>
+                  </div>
+                  <div class="line-container">
+                    <div class="line green"></div>
+                    <div class="circle green">
+                      {{ markerStatusCount.billingDetailsGreen }}
+                    </div>
+                  </div>
+                  <div class="line-container">
+                    <div class="line orange"></div>
+                    <div class="circle orange">
+                      {{ markerStatusCount.billingDetailsAmber }}
+                    </div>
+                  </div>
+                </div>
+              </mat-tab>
+            </mat-tab-group>
+            <div class="country-name" (click)="viewCountryDetails()">
+              {{ selectedMarkerInfo.stateName }}
+            </div>
+          </div>
+        </map-info-window>
+      </google-map>
+      <div *ngIf="!isMapView" class="list-view-container">
+        <div class="country-sidebar">
+          <div
+            class="country-item"
+            *ngIf="selectedCountry === 'All'"
+            [class.active]="selectedCountryInList === 'All'"
+            (click)="selectedCountryData('All', true)"
+          >
+            <p>🌐 All</p>
+          </div>
+          <!-- Countries from API -->
+          <ng-container *ngFor="let country of countries">
+            <div
+              class="country-item"
+              *ngIf="country.id == selectedCountry || selectedCountry === 'All'"
+              [class.active]="selectedCountryInList == country.id"
+              (click)="selectedCountryData(country, true)"
+            >
+              <p>
+                {{ country.countryName }}
+              </p>
+            </div>
+          </ng-container>
+        </div>
+        <!-- Organization Accordion -->
+        <div class="org-container">
+          <mat-accordion>
+            <!-- Top-level: Organizations -->
+            <mat-expansion-panel
+              *ngFor="let org of selectedOrgs"
+              class="org-panel p-0"
+              (opened)="onOrgPanelOpened(org, selectedCountryInList)"
+            >
+              <mat-expansion-panel-header class="org-panel-header country-list-header">
+                <mat-panel-title>{{ org.organizationName }}</mat-panel-title>
+              </mat-expansion-panel-header>
+              <!-- Second-level: Products (MS Azure, etc.) -->
+              <mat-accordion>
+                <ng-container *ngFor="let product of selectedEntities">
+                  <mat-expansion-panel
+                    class="product-panel"
+                    *ngIf="
+                      selectedState === '' || product.stateId == selectedState
+                    "
+                  >
+                    <mat-expansion-panel-header>
+                      <mat-panel-title>
+                        ↳ {{ product.entityName }}
+                      </mat-panel-title>
+                      <mat-panel-title>
+                        {{ product.stateName }}
+                      </mat-panel-title>
+                      <mat-panel-title>
+                        {{ product.city }}
+                      </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <!-- Third-level: Service Request & Billing -->
+                    <mat-accordion>
+                      <mat-expansion-panel
+                        *ngIf="
+                          product.hasServiceRequests &&
+                          (selectedCategory === '1' || selectedCategory === '2')
+                        "
+                        class="service-panel"
+                        (opened)="getServiceRequestByEntityId(product.id)"
+                      >
+                        <mat-expansion-panel-header>
+                          <mat-panel-title>↳ Service Request</mat-panel-title>
+                        </mat-expansion-panel-header>
+                        <ng-container
+                          *ngIf="
+                            (serviceRequests?.length || 0) > 0;
+                            else noRequests
+                          "
+                        >
+                          <ng-container
+                            *ngFor="
+                              let serviceRequest of serviceRequests
+                                | mapColor : selectedStatus : 'status'
+                            "
+                          >
+                            <div
+                              class="service-row"
+                              routerLink="/service-request"
+                              [ngClass]="{
+                                'status-red': serviceRequest.status === 2,
+                                'status-orange': serviceRequest.status === 1,
+                                'status-green': serviceRequest.status === 3
+                              }"
+                              *ngIf="
+                                selectedStatus === -1 ||
+                                serviceRequest.status === selectedStatus
+                              "
+                            >
+                              <div class="service-id">
+                                {{ serviceRequest.id }}
+                              </div>
+                              <div class="service-subject">
+                                <i class="fa-solid fa-envelope-open-text pe-1"></i>
+                                {{ serviceRequest.subject }}
+                              </div>
+                              <div class="service-description">
+                                <i class="fa-solid fa-file-lines pe-1"></i>
+                                {{ serviceRequest.description }}
+                              </div>
+                              <div class="service-date">
+                                <i class="fa-solid fa-calendar-days pe-1  pe-1"></i>
+                                {{
+                                  serviceRequest.expectedDate
+                                    | date : "dd-MM-yyyy"
+                                }}
+                              </div>
+                              <div class="service-user">
+                                <i class="fa-solid fa-user pe-1"></i>
+                                {{ serviceRequest.userName }}
+                              </div>
+                            </div>
+                          </ng-container>
+                        </ng-container>
+                        <ng-template #noRequests>
+                          <p class="child-content">
+                            No service requests available.
+                          </p>
+                        </ng-template>
+                      </mat-expansion-panel>
+                      <mat-expansion-panel
+                        *ngIf="
+                          product.hasBillingDetails &&
+                          (selectedCategory === '1' || selectedCategory === '3')
+                        "
+                        class="service-panel"
+                        (opened)="getBillingDetailsByEntityId(product.id)"
+                      >
+                        <mat-expansion-panel-header>
+                          <mat-panel-title>↳ Billing Details</mat-panel-title>
+                        </mat-expansion-panel-header>
+                        <ng-container
+                          *ngIf="
+                            (billingDetails?.length || 0) > 0;
+                            else noRequests
+                          "
+                        >
+                          <ng-container
+                            *ngFor="
+                              let billingDetail of billingDetails
+                                | mapColor : selectedStatus : 'colorCode'
+                            "
+                          >
+                            <div
+                              class="service-row"
+                              routerLink="/organization-setup/organization"
+                              [queryParams]="{ checkBilling: true }"
+                              [ngClass]="{
+                                'status-red': billingDetail.colorCode === 2,
+                                'status-orange': billingDetail.colorCode === 1,
+                                'status-green': billingDetail.colorCode === 3
+                              }"
+                              *ngIf="
+                                selectedStatus === -1 ||
+                                billingDetail.colorCode === selectedStatus
+                              "
+                            >
+                              <div class="service-id">
+                                {{ billingDetail.entityId }}
+                              </div>
+                              <div class="service-subject">
+                                <i class="fa-solid fa-coins pe-1"></i>
+                                Due Amount: ${{ billingDetail.receivedAmount }}
+                              </div>
+                              <div class="service-date">
+                                <i class="fa-solid fa-calendar-days pe-1"></i>
+                                Due Date:
+                                {{
+                                  billingDetail.dueDate | date : "dd-MM-yyyy"
+                                }}
+                              </div>
+                              <div class="service-user">
+                                <i class="fa-solid fa-user-gear pe-1"></i>
+                                {{ billingDetail.roleName }}
+                              </div>
+                              <div class="service-user">
+                                <i class="fa-solid fa-user pe-1"></i>
+                                {{ billingDetail.createdByName }}
+                              </div>
+                            </div>
+                          </ng-container>
+                        </ng-container>
+                        <ng-template #noRequests>
+                          <p class="child-content">
+                            No billing details available.
+                          </p>
+                        </ng-template>
+                      </mat-expansion-panel>
+                    </mat-accordion>
+                  </mat-expansion-panel>
+                </ng-container>
+              </mat-accordion>
+            </mat-expansion-panel>
+          </mat-accordion>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="home-header" *ngIf="!(showMapViewButton && showListViewButton)">
+    <ng-container *ngIf="showNoAccess; else noAccessDelay">
+      <app-no-access></app-no-access>
+    </ng-container>
+    <ng-template #noAccessDelay></ng-template>
+  </div>
+  <div class="clearfix"></div>
+</div>

@@ -1,0 +1,313 @@
+    <div class="modal-header">
+      <h4 class="modal-title" id="modal-basic-title">Review Regulation Setup</h4>
+      <button type="button" class="btn-close" aria-label="Close" (click)="closeReviewRegulationSetup()"></button>
+    </div>
+    <div class="modal-body approval">
+      <!-- <div class="row">
+        <div class="col-3">
+          <button class="btn btn-status">Approval Pending</button>
+        </div>
+        <div class="col-8 text-center user-info">
+          <ul>
+            <li>Employee: <span>{{pendingRegulationSetupApproval?.createdBy}}</span></li>
+            <li>Role: <span>{{pendingParameterApproval?.roleDisplayName}}</span></li>
+            <li>Point of Contact: <span>{{pendingRegulationSetupApproval?.pointofContact}}</span></li>
+          </ul>
+        </div>
+      </div> -->
+      <div class="row justify-content-center">
+        <div class="col-8 justify-content-center align-self-center mt-2">
+          <form [formGroup]="formgroup">
+            <div class="container mt-4">
+            <ul class="nav nav-tabs">
+  <li class="nav-item">
+    <button
+      class="nav-link"
+      [class.active]="activeTabId === 'review-basic-details'"
+      (click)="showTab('review-basic-details')"
+    >
+      Basic Details
+    </button>
+  </li>
+  <li class="nav-item">
+    <button
+      class="nav-link"
+      [class.active]="activeTabId === 'review-setup'"
+      (click)="showTab('review-setup')"
+    >
+      Setup
+    </button>
+  </li>
+</ul>
+
+
+              <!-- Tab Content -->
+              <div class="tab-content mt-3">
+                <!-- Basic Details -->
+                <div class="tab-pane" id="review-basic-details" [class.show]="activeTabId === 'review-basic-details'"
+    [class.active]="activeTabId === 'review-basic-details'">
+                  <div class="row mt-25 justify-content-center">
+                    <div class="col-4">
+                      <label for="">Type</label> <br />
+                      <!-- <select class="form-select" name="type"
+                      required="">
+                        <option value="">Select</option>
+                        <option value="Regulation" selected>Regulation</option>
+                      </select> -->
+                      <app-input-text [formGroup]="formgroup" [name]="'regulationType'"
+                      [placeholder]="'Regulation Type'" [readonly]="'readonly'"></app-input-text>
+                    </div>
+                    <div class="col-4">
+                      <label for="">County</label> <br />
+                      <app-input-text [formGroup]="formgroup" [name]="'countryName'"
+                      [placeholder]="'Country Name'" [readonly]="'readonly'"></app-input-text>
+                      <!-- <app-input-dropdown
+                      [formGroup]="formgroup"
+                      [name]="'countryId'"
+                      [object]="this.regulationSetup"
+                      [key]="'countryName'"
+                      [value]="'id'">
+                    </app-input-dropdown> -->
+                    </div>
+                    <div class="col-4" *ngIf = "this.formgroup.get('regulationType')?.value === 'State'" >
+                      <label for="">State</label> <br />
+                      <app-input-text [formGroup]="formgroup" [name]="'stateName'"
+                      [placeholder]="'Country Name'" [readonly]="'readonly'"></app-input-text>
+                      <!-- <app-input-dropdown
+                      [formGroup]="formgroup"
+                      [name]="'stateId'"
+                      [object]="this.regulationSetup"
+                      [key]="'stateName'"
+                      [value]="'id'">
+                    </app-input-dropdown> -->
+                    </div>
+                  </div>
+                  <div class="row justify-content-center mt-25">
+                    <div class="col-4">
+                      <label for="">Regulation Name</label> <br />
+                      <app-input-text [formGroup]="formgroup" [name]="'regulationName'"
+                      [placeholder]="'Regulation Name'" [readonly]="'readonly'"></app-input-text>
+                      <!-- <select class="form-select" name="regulationname" formControlName="regulationType"
+                      required="">
+                        <option selected disabled>Please Select</option>
+                        <option value="Laws">Laws</option>
+                        <option value="Self">Self</option>
+                        <option value="Economic">Economic</option>
+                        <option value="Public">Public</option>
+                      </select> -->
+                    </div>
+                    <div class="col-4">
+                      <label for="">Regulation Group</label> <br />
+                      <app-input-text [formGroup]="formgroup" [name]="'regulationGroupName'"
+                      [placeholder]="'Regularion Group Name'" [readonly]="'readonly'"></app-input-text>
+                      <!-- <app-input-dropdown
+                      [formGroup]="formgroup"
+                      [name]="'regulationGroupId'"
+                      [object]="this.regulationSetup"
+                      [key]="'regulationGroupName'"
+                      [value]="'id'">
+                    </app-input-dropdown> -->
+                    </div>
+                  </div>
+                  <div class="row justify-content-center mt-25">
+                    <div class="col-8">
+                      <label for="">Description</label> <br />
+                      <textarea name="" class="form-control height-100" formControlName="description" readonly></textarea>
+                    </div>
+                  </div>
+                  <div class="row mt-25 mb-3 justify-content-center mt-25">
+                    <div class="col-4">
+                      <button class="btn btn-save" (click)="showTab('review-setup')">
+                        Next >>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <!-- Setup -->
+                <div class="tab-pane" id="review-setup"     [class.show]="activeTabId === 'review-setup'"
+    [class.active]="activeTabId === 'review-setup'">
+                <div class="row">
+                  <div class="col-4">
+                    <label for="">Major Industry</label>
+                      <label for="majorIndustryId">Major Industry</label>
+                      <!-- <app-input-multiselect [formGroup]="formgroup" [name]="'majorIndustryId'"
+                        [object]="selectedMajorIndustryList" [key]="'id'" 
+                        [value]="'majorIndustryName'"
+                        (getSelectedItems)="GetMinorIndustrybyMajorIDMap($event)">
+                      </app-input-multiselect> -->
+                      <app-input-multiselect [formGroup]="formgroup" [name]="'majorIndustryId'"
+                        [object]="this.selectedMajorIndustryList" [key]="'majorIndustryId'"
+                        [value]="'majorIndustryName'" (getSelectedItems)="GetMinorIndustrybyMajorIDMap($event)"
+                       
+                        >
+                      </app-input-multiselect>
+                    <!-- <app-input-dropdown
+                    [formGroup]="formgroup"
+                    [name]="'majorIndustryId'"
+                    [object]="this.regulationSetup"
+                    [key]="'majorIndustryName'"
+                    [value]="'id'">
+                  </app-input-dropdown> -->
+                  </div>
+                  <div class="col-4">
+                    <label for="">Minor Industry</label>
+                    <div>
+                      <app-treeview [treeData]="minorIndustoryTreeNode" (nodeSelectionChange)="onNodeSelect($event)"
+                        [label]="'Minor Industory'">
+                        ></app-treeview>
+                    </div>
+                    <!-- <app-input-text [formGroup]="formgroup" [name]="'minorIndustryName'"
+                    [placeholder]="'Country Name'" [readonly]="'readonly'"></app-input-text> -->
+                  </div>
+                  <div class="col-4">
+                    <label for="">Legal Entity Type</label>
+                   <app-input-multiselect [formGroup]="formgroup" [name]="'entityTypeId'"
+                        [object]="this.selectedEntityList" [key]="'entityTypeId'"
+                        [value]="'entityType'">
+                      </app-input-multiselect>
+                      <div class="invalid-feedback"
+                        *ngIf="formgroup.get('entityTypeId')?.invalid && formgroup.get('entityTypeId')?.touched">
+                        <small class="form-text text-danger" *ngIf="formgroup.get('entityTypeId')?.errors?.required">
+                          Entity type is required
+                        </small>
+                      </div>
+                    <!-- <app-input-dropdown
+                    [formGroup]="formgroup"
+                    [name]="'entityTypeId'"
+                    [object]="this.regulationSetup"
+                    [key]="'entityTypeName'"
+                    [value]="'id'">
+                  </app-input-dropdown> -->
+                  </div>
+                  <div class="col-4">
+                    <label for="">Type of Branch</label>
+                    <app-treeview [treeData]="TOBTreeNode" (nodeSelectionChange)="onTOBNodeSelect($event)"
+                        [label]="'Type Of Branch'">
+                        ></app-treeview>
+                  </div>
+                    <div class="row mt-3 mb-3 align-items-center">
+                     <div class="col-auto">
+                        <input
+                          type="checkbox"
+                          [formGroup]="formgroup"
+                          formControlName="isConcernedAndAuthorityChecked"
+                          class="form-check-input"
+                          id="concernedAuthorityCheckbox"
+                        />
+                       </div>
+                      <div class="col ps-0">
+                        <label for="concernedAuthorityCheckbox" class="form-check-label mb-0">
+                          I accept the applicable authority and ministry guidelines for parent-child compliance.
+                        </label>
+                      </div>
+                      
+                    </div>
+                    <div class="col-4">
+                      <label for="">Concerned Ministry</label>
+                      <app-input-dropdown
+                        [formGroup]="formgroup"
+                        [name]="'concernedMinistryId'"
+                        [object]="this.concernedMinistry"
+                        [key]="'concernedMinistryName'"
+                        [value]="'id'"
+                      >
+                      </app-input-dropdown>
+                      <div
+                        class="invalid-feedback"
+                        *ngIf="
+                          formgroup.get('concernedMinistryId')?.invalid &&
+                          formgroup.get('concernedMinistryId')?.touched
+                        "
+                      >
+                        <small
+                          class="form-text text-danger"
+                          *ngIf="
+                            formgroup.get('concernedMinistryId')?.errors
+                              ?.required
+                          "
+                        >
+                          Concerned Ministry is required
+                        </small>
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <label for="">Regulatory Authority</label>
+                      <app-input-dropdown
+                        [formGroup]="formgroup"
+                        [name]="'regulatoryAuthorityId'"
+                        [object]="this.regulatoryAuthority"
+                        [key]="'regulatoryAuthorityName'"
+                        [value]="'id'"
+                      >
+                      </app-input-dropdown>
+                      <div
+                        class="invalid-feedback"
+                        *ngIf="
+                          formgroup.get('regulatoryAuthorityId')?.invalid &&
+                          formgroup.get('regulatoryAuthorityId')?.touched
+                        "
+                      >
+                        <small
+                          class="form-text text-danger"
+                          *ngIf="
+                            formgroup.get('regulatoryAuthorityId')?.errors
+                              ?.required
+                          "
+                        >
+                          regulatory Authority is required
+                        </small>
+                      </div>
+                    </div>
+                </div>
+                <div class="row justify-content-center mt-25">
+                  <app-parameter [parameterObject]="regulationSetup?.regulationSetupParameters!" [inReview]="true" ></app-parameter>
+                  <!-- <div class="col-3">
+                    <select class="form-select" name="parameter"
+                    required="">
+                      <option value="">No.of Employees</option>
+                    </select>
+                  </div>
+                  <div class="col-3">
+                    <input
+                      type="text"
+                      value="Ex: 200"
+                      class="form-control h-500"
+                    />
+                  </div> -->
+                  <!-- <div class="col-3 mt-10">
+                    <button class="btn btn-and">AND&</button>
+                    <button class="btn btn-or">OR/</button>
+                  </div> -->
+                </div>
+                <div class="row mt-25 mb-3 justify-content-center mt-25">
+                  <div class="col-4">
+                    <button class="btn btn-save" (click)="showTab('review-basic-details')">
+                      <i class="fa-solid fa-angles-left"></i> previous
+                    </button>
+                  </div>
+                  <div class="col-4">
+                    <!-- <button class="btn btn-save" (click)="onSubmit()">
+                      Submit
+                    </button> -->
+                  </div>
+                </div>
+                <div class="row mb-5 justify-content-center mt-25">
+                  <div class="col-6">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end" *ngIf="this.roleName != 'User'">
+                      <button class="btn btn-accept" (click)="submitApproved()">
+                        <i class="bi bi-check2-circle"></i> &nbsp; ACCEPT
+                      </button>
+                      &nbsp;
+                      <button class="btn btn-reject" (click)="submitReject()">
+                        <i class="bi bi-x-circle"></i> &nbsp;REJECT
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                </div>
+            </div>
+            </div>  
+        </form>
+        </div>
+      </div>
+    </div>

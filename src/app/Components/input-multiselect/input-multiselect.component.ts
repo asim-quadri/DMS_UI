@@ -1,5 +1,5 @@
-import { Component, EventEmitter, Input, Output,OnInit } from '@angular/core';
-import {  IDropdownSettings } from 'ng-multiselect-dropdown';
+import { Component, EventEmitter, Input, Output, OnInit, AfterViewInit } from '@angular/core';
+import { IDropdownSettings } from 'ng-multiselect-dropdown';
 
 @Component({
   selector: 'app-input-multiselect',
@@ -7,9 +7,11 @@ import {  IDropdownSettings } from 'ng-multiselect-dropdown';
   styleUrls: ['./input-multiselect.component.scss']
 })
 export class InputMultiselectComponent implements OnInit {
-  dropdownList:any = [];
-  selectedItems:any = [];
-  dropdownSettings:IDropdownSettings = {};
+
+  dropdownList: any = [];
+  @Input()
+  selectedItems: any = [];
+  dropdownSettings: IDropdownSettings = {};
 
   @Input()
   formGroup: any;
@@ -30,15 +32,17 @@ export class InputMultiselectComponent implements OnInit {
   object: any;
 
 
+
+
   @Output()
   change: EventEmitter<any> = new EventEmitter<any>();
 
   @Output()
   getSelectedItems: EventEmitter<any> = new EventEmitter<any>();
 
-  
+
   ngOnInit() {
-   
+
     this.dropdownSettings = {
       singleSelection: false,
       idField: this.key,
@@ -50,30 +54,31 @@ export class InputMultiselectComponent implements OnInit {
     };
   }
   onItemSelect(item: any) {
-   
-    this.selectedItems.push(item);
+
+    //this.selectedItems.push(item);
     this.getSelectedItems.emit(this.selectedItems);
   }
   onSelectAll(items: any) {
-   
+
     this.selectedItems = items;
     this.getSelectedItems.emit(this.selectedItems);
   }
 
-  onItemDeSelect(item: any){
-    
-    const index = this.selectedItems.findIndex((i:any) => i[this.key] === item[this.key]);;
+  onItemDeSelect(item: any) {
+
+    const index = this.selectedItems.findIndex((i: any) => i[this.key] === item[this.key]);;
     if (index !== -1) {
       this.selectedItems.splice(index, 1);
-      this.getSelectedItems.emit(this.selectedItems);
+      
     }
+    this.getSelectedItems.emit(this.selectedItems);
   }
-  onItemsDeSelect(items: any){
-   
+  onItemsDeSelect(items: any) {
+
     this.getSelectedItems.emit([])
   }
 
-  onchange(event:any){
+  onchange(event: any) {
     this.change.emit(event);
   }
 }

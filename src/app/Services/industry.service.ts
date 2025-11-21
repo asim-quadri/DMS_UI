@@ -1,9 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { AppConfig } from '../app.config';
-import { CountryMajorMapping, MajorMinorMapping ,MajorIndustryModel, MinorIndustrypModel, MajorMinorIndustryApproval, IndustryApproval, IndustryMapping } from '../models/industrysetupModel';
+import { CountryMajorMapping, MajorMinorMapping ,MajorIndustryModel, MinorIndustrypModel, MajorMinorIndustryApproval, IndustryApproval, IndustryMapping } from '../Models/industrysetupModel';
 import { forkJoin } from 'rxjs';
-import { accessModel } from '../models/pendingapproval';
+import { accessModel } from '../Models/pendingapproval';
 
 @Injectable({
   providedIn: 'root'
@@ -19,7 +19,7 @@ export class IndustryService {
   friends: Array<any> = [];
   public headers: Array<any> = [];
 
-  constructor(public http: HttpClient, private config: AppConfig) {
+  constructor(public http: HttpClient, private config: AppConfig) { 
     this.BASEURL = this.config.ServiceUrl;
     this.http = http;
     this.headers = [];
@@ -76,7 +76,7 @@ export class IndustryService {
   getMinorIndustryById(majorIndustryId:any) {
     return this.http.get<Array<MinorIndustrypModel>>(this.BASEURL + '/Industry/GetMinorIndustryById/' + majorIndustryId, this.getAuthHeadersJSON());
   }
-
+  
   postMajorIndustry(majorIndustry: MajorIndustryModel) {
     return this.http.post<any>(this.BASEURL + '/Industry/PostMajorIndustry', majorIndustry, this.getAuthHeadersJSON())
   }
@@ -133,6 +133,18 @@ export class IndustryService {
     return this.http.get<Array<IndustryMapping>>(this.BASEURL + '/Industry/GetIndustryMapping', this.getAuthHeadersJSON());
   }
 
+  getIndustryMappingByMajor(MajorIndustryId:any, CountryId:any) {
+    return this.http.get<Array<IndustryApproval>>(this.BASEURL + '/Industry/GetIndustryMappingByMajor?majorInudustryId='+MajorIndustryId + '&countryId='+CountryId, this.getAuthHeadersJSON());
+  }
+
+    getIndustryMappingByCountry(CountryId:any) {
+    return this.http.get<Array<MajorMinorMapping>>(this.BASEURL + '/Industry/GetIndustryMappingByCountry?countryId='+ CountryId, this.getAuthHeadersJSON());
+  }
+
+  getIndustryMappingcountryId(countryId: any) {
+    return this.http.get<Array<IndustryMapping>>(this.BASEURL + '/RegulationSetup/GetIndustryMapping?countryId'+ countryId, this.getAuthHeadersJSON());
+  }
+
   getMajorMinorApprovalList(UserUID:any) {
     return this.http.get<Array<MajorMinorIndustryApproval>>(this.BASEURL + '/Industry/GetIndustryApproval/'+UserUID, this.getAuthHeadersJSON());
   }
@@ -175,5 +187,12 @@ export class IndustryService {
 
   multipleAPIRequests(request:any){
     return forkJoin(request);
+  }
+
+   getNextMinorIndustryCode() {
+    return this.http.get<number>(
+      this.BASEURL + '/Industry/GetNextMinorIndustryCode',
+      this.getAuthHeadersJSON()
+    );
   }
 }

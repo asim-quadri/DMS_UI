@@ -1,0 +1,35 @@
+<div class="modal-header">
+  <h4 class="modal-title text-center" id="modal-basic-title">Add New Regulation Group</h4>
+  <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+</div>
+<div class="modal-body product-steup-modal">
+  <form [formGroup]="formgroup" class="row justify-content-center">
+      <div class="col-10 mt-3">
+      <label for="">Regulation Group Reference Code</label>
+      <div class="input-group">
+        <app-input-text [formGroup]="formgroup" [name]="'regulationGroupReferenceCode'"
+          [placeholder]="'Regulation Group Name'"></app-input-text>
+      </div>
+    </div>
+    <div class="col-10 mt-3">
+      <label for="">Regulation Group</label>
+      <div class="input-group">
+        <app-input-text [formGroup]="formgroup" [name]="'regulationGroupName'"
+          [placeholder]="'Regulation Group Name'" (change)="generateRefCode($event)"
+          ></app-input-text>
+      </div>
+    </div>
+    <div class="col-10 mt-3">
+      <label for="">Regulation Group Code</label>
+      <div class="input-group">
+        <app-input-text [formGroup]="formgroup" [name]="'regulationGroupCode'"
+          [placeholder]="'Regulation Group Code'"></app-input-text>
+
+      </div>
+    </div>
+    <div class="col-10 mt-20 text-center">
+      <button type="button" class="btn btn-color btn-block primary-blue-btn w-100" (click)="onSubmit()" [disabled]="!formgroup.valid">&nbsp;
+        Add Regulation Group &nbsp;</button>
+    </div>
+  </form>
+</div>

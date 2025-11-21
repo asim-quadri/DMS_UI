@@ -1,0 +1,28 @@
+@use "/src/assets/scss/colors";
+
+.compliance-sub-header {
+  background-color: transparent !important;
+  padding-top: 25px !important;
+  .compliance-sub-menu {
+    width: auto;
+    margin: auto;
+    border: 2px solid colors.$primary-orange !important;
+    padding: 0;
+    border-radius: 5px;
+    .btn-color {
+      border-radius: 0;
+      padding: 8px 20px !important;
+      font-size: 14px !important;
+    }
+    .btn-border {
+      background-color: transparent !important;
+      border: none !important;
+    }
+
+    .btn {
+      &:hover {
+        border-radius: 0 !important;
+      }
+    }
+  }
+}

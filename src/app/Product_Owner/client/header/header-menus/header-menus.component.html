@@ -1,0 +1,30 @@
+<div class="home-header">
+    <div class="row">
+        <div class="col-md-12">
+            <button class="btn " [ngClass]="{'btn-color': active == 1, 'btn-border': active !== 1}" routerLink="/client-setup/compliance-tracker">
+                Dashboard
+            </button>
+            <button class="btn ml-10" [ngClass]="{'btn-color': active == 2, 'btn-border': active !== 2}" routerLink="/client-setup/compliance-tracker">
+                Compliance Tracker
+            </button>
+            <button class="btn ml-10" [ngClass]="{'btn-color': active == 3, 'btn-border': active !== 3}" >
+                Notices
+            </button>
+            <button class="btn  ml-10" [ngClass]="{'btn-color': active == 4, 'btn-border': active !== 4}" >
+                Reports
+            </button>
+            <button class="btn btn-border ml-10" [ngClass]="{'btn-color': active == 5, 'btn-border': active !== 5}" >
+                Updates
+            </button>
+            <button class="btn btn-border ml-10" [ngClass]="{'btn-color': active == 6, 'btn-border': active !== 6}" >
+                Templates
+            </button>
+            <button class="btn btn-border ml-10">
+                Knowledge Repository
+            </button>
+            <button class="btn btn-border ml-10">
+                DMS
+            </button>
+        </div>
+    </div>
+</div>

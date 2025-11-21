@@ -1,0 +1,718 @@
+<div class="modal-header text-center">
+  <h4 class="modal-title">User Access Control</h4>
+  <button
+    type="button"
+    class="btn-close"
+    aria-label="Close"
+    (click)="modal.dismiss('Cross click')"
+  ></button>
+</div>
+<div class="modal-body">
+  <div class="row">
+    <div class="col-md-2"></div>
+    <!--Employee Details-->
+    <div class="col-md-8 text-center user-info">
+      <form action="">
+        <div class="row">
+          <div class="col-6">
+            <div class="row">
+              <div class="col-4 mt-10">
+                <label for="">Employee ID:</label>
+              </div>
+              <div class="col-8">
+                <p>{{ user.empId }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="row">
+              <div class="col-6 mt-10">
+                <label for="">Employee Name:</label>
+              </div>
+              <div class="col-6">
+                <p>{{ user.fullName }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="row mt-20">
+    <div class="col-md-10 m-auto">
+      <ul
+        ngbNav
+        #nav="ngbNav"
+        [(activeId)]="active"
+        class="nav-tabs nav-pills access-control-tabs"
+      >
+        <!--Home-->
+        <li [ngbNavItem]="1">
+          <a ngbNavLink>Home</a>
+          <ng-template ngbNavContent>
+            <div class="row">
+              <div class="col-md-6 m-auto">
+                <div class="row mt-20 modal-form">
+                  <div
+                    *ngFor="let option of homeOptions"
+                    class="icheck-primary mt-20"
+                  >
+                    <input
+                      type="checkbox"
+                      [id]="option.id"
+                      [(ngModel)]="option.canView"
+                      [name]="'canView' + option.id"
+                    />
+                    <label [for]="option.id">{{ option.title }}</label>
+                  </div>
+                  <div class="mt-20">
+                    <button
+                      class="btn btn-color width-100"
+                      (click)="
+                        this.submitScreenAccess(
+                          this.homeOptions,
+                          homeSuccessMsg,
+                          homeErrorMsg
+                        )
+                      "
+                      *ngIf="!isReveiw"
+                    >
+                      SAVE
+                    </button>
+                    <div class="row">
+                      <div class="col-md-4">
+                        <button
+                          class="btn btn-approved width-100"
+                          (click)="approve()"
+                          *ngIf="isReveiw"
+                        >
+                          Approve
+                        </button>
+                      </div>
+                      <div class="col-md-4">
+                        <button
+                          class="btn btn-reject width-100"
+                          (click)="reject()"
+                          *ngIf="isReveiw"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ng-template>
+        </li>
+        <!--Product Configuration-->
+        <li [ngbNavItem]="2">
+          <a ngbNavLink>Product Configuration</a>
+          <ng-template ngbNavContent>
+            <!--access to country and product options-->
+            <div class="row mt-20 modal-form">
+              <div class="col-4">
+                <div class="row">
+                  <label for="">Select Country :</label>
+                  <ng-multiselect-dropdown
+                    name="country"
+                    id="country"
+                    placeholder="Select Country"
+                    [settings]="orgCountry.countryDD"
+                    [data]="orgCountry.countryDD.data"
+                    [(ngModel)]="selectedCountries"
+                  >
+                  </ng-multiselect-dropdown>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="icheck-primary">
+                  <input
+                    type="checkbox"
+                    id="selectAll"
+                    [(ngModel)]="selectAllChecked"
+                    (change)="onSelectAllChange()"
+                    name="selectAll"
+                  />
+                  <label for="selectAll">Select All</label>
+                </div>
+                <div
+                  *ngFor="let option of menuOptions"
+                  class="icheck-primary mt-20"
+                >
+                  <input
+                    type="checkbox"
+                    [id]="option.id"
+                    [(ngModel)]="option.canView"
+                    [name]="'canView' + option.id"
+                  />
+                  <label [for]="option.id">{{ option.title }}</label>
+                </div>
+              </div>
+            </div>
+            <!--Nested Tabs for Regulation Control-->
+            <div class="row mt-30 modal-form nasted-tabs">
+              <ul
+                ngbNav
+                #nav="ngbNav"
+                class="nav-tabs nav-pills nav-fill mt-20"
+              >
+                <!--Access for Regulation-->
+                <li [ngbNavItem]="4">
+                  <a ngbNavLink>Access for Regulation</a>
+                  <ng-template ngbNavContent>
+                    <div class="row mt-30">
+                      <div class="col-12">
+                        <div class="row">
+                          <div class="col-4">
+                            <div class="row">
+                              <label for="">Select Country :</label>
+                              <ng-multiselect-dropdown
+                                name="CountryForRegulation"
+                                placeholder="Select Country"
+                                [settings]="orgCountry.countryDD"
+                                [data]="orgCountry.countryDD.data"
+                                [(ngModel)]="selectedCountriesForRegulation"
+                                (onDeSelect)="
+                                  onRegulationCountryDeSelect($event)
+                                "
+                                (onDeSelectAll)="
+                                  selectedStatesForRegulation = []
+                                "
+                                (onSelect)="
+                                  onCountryForRegulationSelect($event)
+                                "
+                              >
+                              </ng-multiselect-dropdown>
+                            </div>
+                          </div>
+                          <div class="col-4">
+                            <div class="row">
+                              <label for="">Select State :</label>
+                              <ng-multiselect-dropdown
+                                name="StateForRegulation"
+                                placeholder="Select State"
+                                [settings]="stateMapping.stateDD"
+                                [data]="stateMapping.stateDD.data"
+                                [(ngModel)]="selectedStatesForRegulation"
+                              >
+                              </ng-multiselect-dropdown>
+                            </div>
+                          </div>
+                          <div class="col-4">
+                            <div
+                              *ngFor="let option of regulationMenuOptions"
+                              class="icheck-primary mt-20"
+                            >
+                              <input
+                                type="checkbox"
+                                [id]="option.id"
+                                [(ngModel)]="option.canView"
+                                [name]="'canView' + option.id"
+                              />
+                              <label [for]="option.id">{{
+                                option.title
+                              }}</label>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-4">
+                          <div class="row">
+                            <label for="">Select Regulation :</label>
+                            <ng-multiselect-dropdown
+                              name="regulationMapping"
+                              placeholder="Select Regulation"
+                              [settings]="regulationMapping.regulationDD"
+                              [(ngModel)]="selectedRegulation"
+                              (onDeSelect)="onRegulationDeSelect($event)"
+                              (onDeSelectAll)="selectedCompliance = []"
+                              [data]="regulationMapping.regulationDD.data"
+                              (onSelect)="onRegulationSelect($event)"
+                            >
+                            </ng-multiselect-dropdown>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </ng-template>
+                </li>
+                <!--Access for Compliance-->
+                <li [ngbNavItem]="5">
+                  <a ngbNavLink>Access for Compliance</a>
+                  <ng-template ngbNavContent>
+                    <div class="row">
+                      <div class="col-8">
+                        <div class="row mt-30">
+                          <div class="col-6">
+                            <div class="row">
+                              <label for="">Select Regulation :</label>
+                              <ng-multiselect-dropdown
+                                name="regulationMapping"
+                                placeholder="Select Regulation"
+                                [settings]="regulationMapping.regulationDD"
+                                [(ngModel)]="selectedRegulation"
+                                (onDeSelect)="onRegulationDeSelect($event)"
+                                (onDeSelectAll)="
+                                  selectedCompliance = [];
+                                  selectedComplianceType = []
+                                "
+                                [data]="regulationMapping.regulationDD.data"
+                                (onSelect)="onRegulationSelect($event)"
+                                [disabled]="true"
+                              >
+                              </ng-multiselect-dropdown>
+                            </div>
+                          </div>
+                          <div class="col-6">
+                            <div class="row">
+                              <label for="">Select Compliances :</label>
+                              <ng-multiselect-dropdown
+                                name="Compliancesdropdown"
+                                placeholder="Select Compliances"
+                                [settings]="complianceMapping.complianceDD"
+                                [(ngModel)]="selectedCompliance"
+                                [data]="complianceMapping.complianceDD.data"
+                                (onDeSelect)="onComplianceDeSelect($event)"
+                                (onSelect)="
+                                  onComplianceRegulationSelect($event)
+                                "
+                              >
+                              </ng-multiselect-dropdown>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </ng-template>
+                </li>
+                <!--Access for Type of Compliance-->
+                <!-- <li [ngbNavItem]="6">
+                  <a ngbNavLink>Access for Type of Compliance</a>
+                  <ng-template ngbNavContent>
+                    <div class="row mt-30">
+                      <div class="col-8">
+                        <div class="row mt-30">
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 mt-10 pr-0">
+                                <label for="">Select Regulation :</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <ng-multiselect-dropdown name="regulationMapping" placeholder="Select Regulation"
+                                  [settings]="regulationMapping.regulationDD" [(ngModel)]="selectedRegulation"
+                                  (onDeSelect)="onRegulationDeSelect($event)" (onDeSelectAll)="selectedCompliance = []"
+                                  [data]="regulationMapping.regulationDD.data" (onSelect)="onRegulationSelect($event)"
+                                  [disabled]="true">
+                                </ng-multiselect-dropdown>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 mt-10 pr-0">
+                                <label for="">Select Compliance :</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <ng-multiselect-dropdown name="ComplianceDropdown" placeholder="Select Compliance"
+                                  [settings]="complianceMapping.complianceDD" [(ngModel)]="selectedCompliance"
+                                  [data]="complianceMapping.complianceDD.data" [disabled]="true">
+                                </ng-multiselect-dropdown>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-6">
+                            <div class="row">
+                              <div class="col-5 pr-0">
+                                <label for="">Select Type of Compliance:</label>
+                              </div>
+                              <div class="col-7 pl-5">
+                                <ng-multiselect-dropdown name="ComplianceTypeDropdown"
+                                  placeholder="Select Compliance Type"
+                                  [settings]="ComplianceTypeMapping.regulationGroupDD"
+                                  [data]="ComplianceTypeMapping.regulationGroupDD.data"
+                                  [(ngModel)]="selectedComplianceType" (onSelect)="onStateForRegulationSelect($event)">
+                                </ng-multiselect-dropdown>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+                  </ng-template>
+                </li> -->
+              </ul>
+              <div [ngbNavOutlet]="nav" class="mt-2"></div>
+            </div>
+            <!--Action buttons-->
+            <div class="row mt-30 justify-content-center">
+              <div class="col-3">
+                <button
+                  class="btn btn-color width-100"
+                  *ngIf="!isReveiw"
+                  (click)="onSave()"
+                >
+                  SAVE
+                </button>
+                <button
+                  class="btn btn-color width-100"
+                  *ngIf="isReveiw"
+                  (click)="next()"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+            <div class="mt-30"></div>
+          </ng-template>
+        </li>
+        <!--Employee Details-->
+        <li [ngbNavItem]="3">
+          <a ngbNavLink>Organization Details</a>
+          <ng-template ngbNavContent>
+            <div class="row mt-20 modal-form">
+              <div
+                *ngFor="let option of organizationMenuOptions"
+                class="icheck-primary mt-20"
+              >
+                <input
+                  type="checkbox"
+                  [id]="option.id"
+                  [(ngModel)]="option.canView"
+                  [name]="'canView' + option.id"
+                />
+                <label [for]="option.id">{{ option.title }}</label>
+              </div>
+            </div>
+            <div class="row mt-30 modal-form">
+              <div class="col-4">
+                <div class="row">
+                  <label for="">Select Organisation:</label>
+                  <ng-multiselect-dropdown
+                    name="Organizations"
+                    placeholder="Select Organization"
+                    [settings]="addMapping.orgDD"
+                    [data]="addMapping.orgDD.data"
+                    (onSelect)="onOrgSelect($event)"
+                    (onDeSelect)="onOrgDeSelect($event)"
+                    (onSelectAll)="onSelectAllOrganizations($event)"
+                  >
+                  </ng-multiselect-dropdown>
+                </div>
+              </div>
+            </div>
+            <div class="row mt-30 modal-form nasted-tabs">
+              <ul
+                ngbNav
+                #nav="ngbNav"
+                class="nav-tabs nav-pills nav-fill mt-20"
+              >
+                <li [ngbNavItem]="4">
+                  <a ngbNavLink>For Organisation</a>
+                  <ng-template ngbNavContent>
+                    <div class="row mt-30">
+                      <div class="col-8">
+                        <div class="row">
+                          <div class="col-6">
+                            <label for="">Select Country :</label>
+                            <ng-multiselect-dropdown
+                              name="OrgCountry"
+                              placeholder="Select Country"
+                              [settings]="orgCountry.countryDD"
+                              [data]="orgCountry.countryDD.data"
+                              (onSelect)="onCountrySelect($event)"
+                              (onDeSelect)="onCountryDeSelect($event)"
+                              (onSelectAll)="onSelectAllCountries($event)"
+                            >
+                            </ng-multiselect-dropdown>
+                          </div>
+                          <div class="col-6">
+                            <div class="row">
+                              <label for="">Select Organisation:</label>
+                              <ng-multiselect-dropdown
+                                name="Organizations2"
+                                placeholder="Select Organization"
+                                [settings]="addMapping.orgDD"
+                                [data]="addMapping.orgDD.data"
+                                (onSelect)="onOrgSelect($event)"
+                                (onDeSelect)="onOrgDeSelect($event)"
+                                (onSelectAll)="onSelectAllOrganizations($event)"
+                              >
+                              </ng-multiselect-dropdown>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-4 d-flex align-items-end">
+                        <div class="icheck-primary">
+                          <input type="checkbox" id="overviewscreen" />
+                          <label for="overviewscreen">Overview Screen</label>
+                        </div>
+                      </div>
+                    </div>
+                  </ng-template>
+                </li>
+                <li [ngbNavItem]="5">
+                  <a ngbNavLink>For Entity</a>
+                  <ng-template ngbNavContent>
+                    <div class="row mt-30">
+                      <div class="col-4">
+                        <div class="row">
+                          <label for="">Select Country :</label>
+                          <ng-multiselect-dropdown
+                            name="OrgCountryForEntity"
+                            placeholder="Select Country"
+                            [settings]="orgCountry.countryDD"
+                            [data]="orgCountry.countryDD.data"
+                            (onSelect)="onCountrySelect($event)"
+                            (onDeSelect)="onCountryDeSelect($event)"
+                            (onSelectAll)="onSelectAllCountries($event)"
+                          >
+                          </ng-multiselect-dropdown>
+                        </div>
+                      </div>
+                      <div class="col-4">
+                        <div class="row">
+                          <label for="">Select Organisation:</label>
+                          <ng-multiselect-dropdown
+                            name="OrganizationsForEntity"
+                            placeholder="Select Organization"
+                            [settings]="addMapping.orgDD"
+                            [data]="addMapping.orgDD.data"
+                            (onSelect)="onOrganizationsForEntitySelect($event)"
+                            (onDeSelect)="onOrgDeSelect($event)"
+                            (onSelectAll)="onSelectAllOrganizations($event)"
+                          >
+                          </ng-multiselect-dropdown>
+                        </div>
+                      </div>
+                      <div class="col-4">
+                        <div class="row">
+                          <label for="">Select Entites :</label>
+                          <ng-multiselect-dropdown
+                            name="Entities"
+                            placeholder="Select Entities"
+                            [settings]="entityMapping.entityDD"
+                            [data]="entityMapping.entityDD.data"
+                            (onSelect)="onOrgSelect($event)"
+                            (onDeSelect)="onOrgDeSelect($event)"
+                            (onSelectAll)="onSelectAllOrganizations($event)"
+                          >
+                          </ng-multiselect-dropdown>
+                        </div>
+                      </div>
+                    </div>
+                  </ng-template>
+                </li>
+              </ul>
+
+              <div [ngbNavOutlet]="nav" class="mt-2"></div>
+            </div>
+            <div class="row mt-30 justify-content-center">
+              <div class="col-3">
+                <button
+                  class="btn btn-color width-100"
+                  *ngIf="!isReveiw"
+                  (click)="saveOrgAccess()"
+                >
+                  SAVE
+                </button>
+                <button
+                  class="btn btn-color width-100"
+                  *ngIf="isReveiw"
+                  (click)="next()"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+            <div class="mt-30"></div>
+          </ng-template>
+        </li>
+        <!-- Announcements -->
+        <li [ngbNavItem]="4">
+          <a ngbNavLink>Announcements</a>
+          <ng-template ngbNavContent>
+            <div class="row">
+              <div class="col-md-3"></div>
+              <div class="col-md-6">
+                <div class="row mt-20 modal-form">
+                  <div
+                    *ngFor="let option of announcementOptions"
+                    class="icheck-primary mt-20"
+                  >
+                    <input
+                      type="checkbox"
+                      [id]="option.id"
+                      [(ngModel)]="option.canView"
+                      [name]="'canView' + option.id"
+                    />
+                    <label [for]="option.id">{{ option.title }}</label>
+                  </div>
+                  <div class="mt-20">
+                    <button
+                      class="btn btn-color width-100"
+                      (click)="
+                        this.submitScreenAccess(
+                          this.announcementOptions,
+                          announcementSuccessMsg,
+                          announcementErrorMsg
+                        )
+                      "
+                      *ngIf="!isReveiw"
+                    >
+                      SAVE
+                    </button>
+                    <div class="row">
+                      <div class="col-md-4">
+                        <button
+                          class="btn btn-approved width-100"
+                          (click)="approve()"
+                          *ngIf="isReveiw"
+                        >
+                          Approve
+                        </button>
+                      </div>
+                      <div class="col-md-4">
+                        <button
+                          class="btn btn-reject width-100"
+                          (click)="reject()"
+                          *ngIf="isReveiw"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ng-template>
+        </li>
+        <!--User Management-->
+        <li [ngbNavItem]="5">
+          <a ngbNavLink>User Management</a>
+          <ng-template ngbNavContent>
+            <div class="row">
+              <div class="col-md-3"></div>
+              <div class="col-md-6">
+                <div class="row mt-20 modal-form">
+                  <div
+                    *ngFor="let option of userManagementOptions"
+                    class="icheck-primary mt-20"
+                  >
+                    <input
+                      type="checkbox"
+                      [id]="option.id"
+                      [(ngModel)]="option.canView"
+                      [name]="'canView' + option.id"
+                    />
+                    <label [for]="option.id">{{ option.title }}</label>
+                  </div>
+                  <div class="mt-20">
+                    <button
+                      class="btn btn-color width-100"
+                      (click)="
+                        this.submitScreenAccess(
+                          this.userManagementOptions,
+                          userManagementSuccessMsg,
+                          userManagementErrorMsg
+                        )
+                      "
+                      *ngIf="!isReveiw"
+                    >
+                      SAVE
+                    </button>
+                    <div class="row">
+                      <div class="col-md-4">
+                        <button
+                          class="btn btn-approved width-100"
+                          (click)="approve()"
+                          *ngIf="isReveiw"
+                        >
+                          Approve
+                        </button>
+                      </div>
+                      <div class="col-md-4">
+                        <button
+                          class="btn btn-reject width-100"
+                          (click)="reject()"
+                          *ngIf="isReveiw"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ng-template>
+        </li>
+        <!-- Service Request -->
+        <li [ngbNavItem]="6">
+          <a ngbNavLink>Service Request</a>
+          <ng-template ngbNavContent>
+            <div class="row">
+              <div class="col-md-3"></div>
+              <div class="col-md-6">
+                <div class="row mt-20 modal-form">
+                  <div
+                    *ngFor="let option of serviceRequestOptions; let i = index"
+                    class="icheck-primary mt-20"
+                  >
+                    <input
+                      type="checkbox"
+                      [id]="option.id"
+                      [(ngModel)]="option.canView"
+                      [name]="'canView' + option.id"
+                      (change)="onServiceRequestOptionChange(i)"
+                    />
+                    <label [for]="option.id">{{ option.title }}</label>
+                  </div>
+                  <div class="mt-20">
+                    <button
+                      class="btn btn-color width-100"
+                      (click)="
+                        this.submitScreenAccess(
+                          this.serviceRequestOptions,
+                          serviceRequestSuccessMsg,
+                          serviceRequestErrorMsg
+                        )
+                      "
+                      *ngIf="!isReveiw"
+                    >
+                      SAVE
+                    </button>
+                    <div class="row">
+                      <div class="col-md-4">
+                        <button
+                          class="btn btn-approved width-100"
+                          (click)="approve()"
+                          *ngIf="isReveiw"
+                        >
+                          Approve
+                        </button>
+                      </div>
+                      <div class="col-md-4">
+                        <button
+                          class="btn btn-reject width-100"
+                          (click)="reject()"
+                          *ngIf="isReveiw"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ng-template>
+        </li>
+      </ul>
+
+      <div [ngbNavOutlet]="nav" class="mt-2"></div>
+    </div>
+  </div>
+</div>

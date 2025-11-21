@@ -1,0 +1,299 @@
+<div class="col-12">
+  <div class="product-panel">
+    <div class="product-panel-header text-center">
+      <h4>Add New Compliance</h4>
+    </div>
+    <div class="product-panel-body new-regulation text-center p-20">
+      <div class="row justify-content-center">
+        <div class="col-12">
+          <ul
+            class="nav nav-tabs justify-content-center gap-2 complianceTab"
+            id="complianceTab"
+          >
+            <button
+              class="nav-link btnNav"
+              [class.active]="activeStep === 1"
+              id="basic-details-tab"
+              type="button"
+              role="tab"
+              (click)="goToTab(1)"
+            >
+              <i class="fas fa-info-circle me-2"></i>Basic Details
+              <span class="badge bg-success ms-2" *ngIf="formgroup.valid"
+                >✓</span
+              >
+            </button>
+            <button
+              class="nav-link btnNav"
+              [class.active]="activeStep === 2"
+              [class.disabled]="!formgroup.valid"
+              id="parameter-setup-tab"
+              type="button"
+              role="tab"
+              (click)="goToTab(2)"
+              [disabled]="!formgroup.valid"
+            >
+              <i class="fas fa-cogs me-2"></i>Parameter Setup
+              <span class="badge bg-success ms-2" *ngIf="formIsValid">✓</span>
+            </button>
+          </ul>
+        </div>
+        <div class="col-10">
+          <div class="tab-content" id="complianceTabContent">
+            <!-- Basic Details Tab -->
+            <div [hidden]="activeStep !== 1" id="basic-details" role="tabpanel">
+              <form [formGroup]="formgroup" class="add-compliance">
+                <div class="row justify-content-center gx-2">
+                  <div class="col-6">
+                    <div class="form-group text-start">
+                      <label for="">Compliance Reference Code</label>
+                      <app-input-text
+                        [formGroup]="formgroup"
+                        [name]="'regulationSetupComplianceReferenceCode'"
+                        readonly="readonly"
+                        [placeholder]="'Compliance Reference Code'"
+                      >
+                      </app-input-text>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="form-group text-start">
+                      <label for="">Section Name</label>
+                      <app-input-text
+                        [formGroup]="formgroup"
+                        [name]="'sectionName'"
+                        [placeholder]="'Section Name'"
+                      >
+                      </app-input-text>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row justify-content-center gx-2">
+                  <div class="col-6">
+                    <div class="form-group text-start">
+                      <label for="">Parent Name</label>
+                      <app-input-text
+                        [formGroup]="formgroup"
+                        [name]="'regulationName'"
+                        readonly="readonly"
+                        [placeholder]="'Regulation Name'"
+                      >
+                      </app-input-text>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="form-group text-start">
+                      <label for="">Compliance Name</label>
+                      <app-input-text
+                        [formGroup]="formgroup"
+                        [name]="'complianceName'"
+                        [placeholder]="'Compliance Name'"
+                        (change)="generateComplianceRefCode($event)"
+                      >
+                      </app-input-text>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row justify-content-center">
+                  <div class="col-12">
+                    <div class="form-group text-start">
+                      <label for="">Description</label>
+                      <textarea
+                        class="form-control text-start"
+                        formControlName="description"
+                        rows="8"
+                        placeholder="Description"
+                      >
+                      </textarea>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row justify-content-center mt-20 gx-2">
+                  <div class="col-4 text-start">
+                    <label for="majorIndustryId">Major Industry</label>
+                    <app-input-multiselect
+                      [formGroup]="formgroup"
+                      [name]="'majorIndustryId'"
+                      [object]="selectedMajorIndustryList"
+                      [key]="'majorIndustryId'"
+                      [value]="'majorIndustryName'"
+                      (getSelectedItems)="GetMinorIndustrybyMajorIDMap($event)"
+                    >
+                    </app-input-multiselect>
+                  </div>
+                  <div class="col-4 text-start">
+                    <div>
+                      <label for="">Minor Industry</label>
+                      <div>
+                        <app-treeview
+                          [treeData]="minorIndustoryTreeNode"
+                          (nodeSelectionChange)="onNodeSelect($event)"
+                          [label]="'Minor Industry'"
+                        >
+                        </app-treeview>
+                      </div>
+                    </div>
+                    <div
+                      class="invalid-feedback"
+                      *ngIf="
+                        formgroup.get('minorIndustryId')?.invalid &&
+                        formgroup.get('minorIndustryId')?.touched
+                      "
+                    >
+                      <small
+                        class="form-text text-danger"
+                        *ngIf="
+                          formgroup.get('minorIndustryId')?.errors?.required
+                        "
+                      >
+                        Minor industry is required
+                      </small>
+                    </div>
+                  </div>
+                  <div class="col-4 text-start">
+                    <label for="legalEntityType">Legal Entity Type</label>
+                    <app-input-multiselect
+                      [formGroup]="formgroup"
+                      [name]="'entityTypeId'"
+                      [object]="selectedBindlegalEntityType"
+                      [key]="'legalEntityType'"
+                      [value]="'entityName'"
+                    >
+                    </app-input-multiselect>
+                  </div>
+                </div>
+
+                <div class="row justify-content-start gx-2">
+                  <div class="col-4 text-start">
+                    <label for="">Type of Branch</label>
+                    <app-treeview
+                      [treeData]="TOBTreeNode"
+                      (nodeSelectionChange)="onTOBNodeSelect($event)"
+                      [label]="'Type of Branch'"
+                    >
+                    </app-treeview>
+                  </div>
+                </div>
+
+                <div class="row justify-content-center gx-2">
+                  <div class="col-6 text-start">
+                    <label for="">Concerned Ministry</label>
+                    <app-input-dropdown
+                      [formGroup]="formgroup"
+                      [name]="'concernedMinistryId'"
+                      [object]="this.concernedMinistry"
+                      [key]="'concernedMinistryName'"
+                      [value]="'id'"
+                    >
+                    </app-input-dropdown>
+                    <div
+                      class="invalid-feedback"
+                      *ngIf="
+                        formgroup.get('concernedMinistryId')?.invalid &&
+                        formgroup.get('concernedMinistryId')?.touched
+                      "
+                    >
+                      <small
+                        class="form-text text-danger"
+                        *ngIf="
+                          formgroup.get('concernedMinistryId')?.errors?.required
+                        "
+                      >
+                        Concerned Ministry is required
+                      </small>
+                    </div>
+                  </div>
+                  <div class="col-6 text-start">
+                    <label for="">Regulatory Authority</label>
+                    <app-input-dropdown
+                      [formGroup]="formgroup"
+                      [name]="'regulatoryAuthorityId'"
+                      [object]="this.regulatoryAuthority"
+                      [key]="'regulatoryAuthorityName'"
+                      [value]="'id'"
+                    >
+                    </app-input-dropdown>
+                    <div
+                      class="invalid-feedback"
+                      *ngIf="
+                        formgroup.get('regulatoryAuthorityId')?.invalid &&
+                        formgroup.get('regulatoryAuthorityId')?.touched
+                      "
+                    >
+                      <small
+                        class="form-text text-danger"
+                        *ngIf="
+                          formgroup.get('regulatoryAuthorityId')?.errors
+                            ?.required
+                        "
+                      >
+                        regulatory Authority is required
+                      </small>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row justify-content-center mt-4">
+                    <button
+                      type="button"
+                      class="btn btn-color btn-lg next-Btn w-auto"
+                      [disabled]="!formgroup.valid"
+                      (click)="goToTab(2)"
+                    >
+                      <i class="fas fa-arrow-right me-2"></i>Next: Parameters
+                    </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Parameter Setup Tab -->
+            <div
+              [hidden]="activeStep !== 2"
+              id="parameter-setup"
+              role="tabpanel"
+            >
+              <div class="row justify-content-center">
+                <div class="col-12">
+                  <app-parameter
+                    (parametersChange)="
+                      onRegParametersChange($event); onParametersChange($event)
+                    "
+                    [parameterObject]="parametersvalues"
+                    (formValidityChange)="onFormValidityChange($event)"
+                    [isParameterchecked]="true"
+                  >
+                  </app-parameter>
+                </div>
+              </div>
+
+              <div class="row justify-content-center mt-4">
+                <div class="col-3">
+                  <button
+                    type="button"
+                    class="btn btn-color btn-lg next-Btn"
+                    (click)="goToTab(1)"
+                  >
+                    <i class="fas fa-arrow-left me-2"></i>Back
+                  </button>
+                </div>
+                <div class="col-3">
+                  <button
+                    type="submit"
+                    class="btn btn-color btn-lg next-Btn d-flex align-items-center"
+                    [disabled]="!formgroup.valid"
+                    (click)="onSubmit()"
+                  >
+                    <i class="fas fa-save me-2"></i>Submit
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

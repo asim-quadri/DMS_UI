@@ -1,0 +1,801 @@
+<div class="main-container">
+  <app-header-menus [active]="active"></app-header-menus>
+  <div class="home-content user-table product-setup">
+    <div class="row gx-5 my-2 pb-2">
+      <div class="col-md-8">
+        <form action="">
+          <div class="row gx-2">
+            <div class="col-2">
+              <label for="">Country :</label>
+              <app-input-dropdown
+                [formGroup]="formgroup"
+                [name]="'countryId'"
+                [object]="this.countries"
+                [key]="'countryName'"
+                [value]="'id'"
+                (change)="getMajorIndustries($event)"
+              >
+              </app-input-dropdown>
+              <!-- <select class="form-select">
+                                <option value="India">India</option>
+                                <option value="India">India</option>
+                                <option value="India">India</option>
+                            </select> -->
+            </div>
+            <div class="col-2">
+              <label for="">Major Industry:</label>
+              <app-input-dropdown
+                [formGroup]="formgroup"
+                [name]="'majorIndustryId'"
+                [object]="this.majorIndustries"
+                [key]="'majorIndustryName'"
+                [value]="'majorIndustryId'"
+                (change)="getMinorIndustriesById($event)"
+              >
+              </app-input-dropdown>
+              <!-- <select class="form-select">
+                                <option value="India">India</option>
+                                <option value="India">India</option>
+                                <option value="India">India</option>
+                            </select> -->
+            </div>
+            <div class="col-4">
+              <label for="">Minor Industry:</label>
+              <app-input-multiselect
+                [formGroup]="formgroup"
+                [name]="'minorIndustryId'"
+                [object]="this.minorindustry"
+                [key]="'id'"
+                [value]="'minorIndustryName'"
+              >
+              </app-input-multiselect>
+              <!-- <select class="form-select">
+                                <option value="India">India</option>
+                                <option value="India">India</option>
+                                <option value="India">India</option>
+                            </select> -->
+            </div>
+            <div class="col-4">
+              <label for="">Type Of Branch:</label>
+              <app-input-multiselect
+                [formGroup]="formgroup"
+                [name]="'tobId'"
+                [object]="this.tob"
+                [key]="'id'"
+                [value]="'tobName'"
+              >
+              </app-input-multiselect>
+              <!-- <app-input-dropdown
+                            [formGroup]="formgroup"
+                            [name]="'tobId'"
+                            [object]="this.tob"
+                            [key]="'tobName'"
+                            [value]="'id'"
+                          >
+                          </app-input-dropdown> -->
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="col-1 d-flex align-items-end">
+        <button
+          class="primary-orange-btn btn btn-color me-md-2"
+          type="button"
+          (click)="addTOBCountryIndustryMapping($event)"
+          *ngIf="showAddButton"
+        >
+          ADD
+        </button>
+      </div>
+      <div class="col-3 d-flex align-items-end justify-content-end">
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+          <button
+            class="btn btn-color"
+            (click)="open(branch)"
+            *ngIf="showAddTypeOfBranchButton"
+          >
+            <i class="fa-solid fa-location-dot"></i> &nbsp; Add Type Of Branch
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="row mt-20">
+      <div class="product-panel">
+        <div class="product-panel-header">
+          <div class="row">
+            <div class="col-md-3">
+              <div class="input-group text-center">
+                <label for="Country">Country: &nbsp; &nbsp; </label>
+                <input
+                  type="search"
+                  class="form-control"
+                  placeholder="Search by keywords ..."
+                  [(ngModel)]="searchCountryText"
+                  (keyup)="searchCountry($event)"
+                />
+                <div class="input-group-prepend">
+                  <button class="btn btn-white" type="button">
+                    <i class="bi bi-search"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3 text-center">
+              <h4>Major Industry</h4>
+            </div>
+            <div class="col-md-3 text-center">
+              <h4>Minor Industry</h4>
+            </div>
+            <div class="col-md-3 text-center">
+              <h4>Type of Branch</h4>
+            </div>
+          </div>
+        </div>
+        <div class="product-panel-body">
+          <div class="row">
+            <div class="col-3">
+              <div class="panel-gray uppercase new-list p-2">
+                <ul>
+                  <li
+                    *ngFor="let item of getUniqueCountries()"
+                    [class.selected]="isSelected(item.countryName?.toString()!)"
+                    (click)="toggleSelection(item.countryId!)"
+                  >
+                    {{ item.countryName }}
+                    <span class="float-end"
+                      ><i class="fa-solid fa-chevron-right"></i
+                    ></span>
+                  </li>
+                </ul>
+
+                <div class="clearfix"></div>
+              </div>
+              <button
+                class="btn btn-approve mt-20"
+                (click)="openXl(branchApprovals)"
+              >
+                <i class="bi bi-arrow-down-up"></i> &nbsp; APPROVALS &nbsp;
+                <span>{{ branchApprovalCount }}</span>
+              </button>
+            </div>
+            <div class="col-3">
+              <div class="panel-gray">
+                <!-- <button class="btn btn-trash" (click)="open(deletestate)">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button> -->
+                <div *ngFor="let country of getGroupedIndustries()">
+                  <h5>{{ country.countryName }}</h5>
+                  <ul>
+                    <!-- (click)="toggleMajorSelection(industry.majorIndustryId!, industry.countryId!)" -->
+                    <li
+                      *ngFor="let industry of country.industries"
+                      [class.selected]="
+                        isMajorSelected(industry.majorIndustryId.toString(),industry.countryId.toString())
+                      "
+                      (click)="
+                        toggleMajorSelection(
+                          industry.majorIndustryId!,
+                          industry.countryId!
+                        )
+                      "
+                    >
+                      {{ industry.majorIndustryName }}
+                      <span class="float-end">
+                        <i class="fa-solid fa-chevron-right"></i>
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="col-3">
+              <div class="panel-gray">
+                <div *ngFor="let majorIndustry of getGroupedMajorIndustries()">
+                  <h5>
+                    {{ majorIndustry.majorIndustryName }} -
+                    {{ majorIndustry.countryName }}
+                  </h5>
+                  <ul>
+                    <li
+                      *ngFor="let minorIndustry of majorIndustry.minors"
+                      [class.selected]="
+                        isMinorSelected(minorIndustry.minorIndustryId!.toString()!, minorIndustry.majorIndustryId!.toString(),
+                          minorIndustry.countryId!.toString()!)
+                      "
+                      (click)="
+                        toggleMinorSelection(
+                          minorIndustry.minorIndustryId!,
+                          minorIndustry.majorIndustryId!,
+                          minorIndustry.countryId!
+                        )
+                      "
+                    >
+                      {{ minorIndustry.minorIndustryName }}
+                    </li>
+                  </ul>
+                </div>
+                <div class="clearfix"></div>
+              </div>
+            </div>
+            <div class="col-3">
+              <div class="panel-gray">
+                <div *ngFor="let minorIndustry of getGroupedMinorTobs()">
+                  <h5>
+                    {{ minorIndustry.countryName }} -
+                    {{ minorIndustry.majorIndustryName }} -
+                    {{ minorIndustry.minorIndustryName }}
+                  </h5>
+                  <ul>
+                    <li *ngFor="let minorIndustry of minorIndustry.tobs"
+                      [class.selected]="
+                        isTobSelected(minorIndustry.tobId!.toString()!, minorIndustry.minorIndustryId!.toString()!,
+                          minorIndustry.majorIndustryId!.toString(),
+                          minorIndustry.countryId!.toString()!)
+                      "
+                      (click)="
+                        toggleTobSelection(
+                          minorIndustry.tobId!,
+                          minorIndustry.minorIndustryId!,
+                          minorIndustry.majorIndustryId!,
+                          minorIndustry.countryId!
+                        )
+                      ">
+                      {{ minorIndustry.tobName }}
+                    </li>
+                  </ul>
+                </div>
+                <div class="clearfix"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="clearfix"></div>
+
+<!-- new branch-->
+<ng-template #branch let-modal>
+  <app-add-branch-setup
+    [modal]="modal"
+    (reloaddata)="reload($event)"
+  ></app-add-branch-setup>
+</ng-template>
+
+<!-- branch Approval-->
+<ng-template #branchApprovals let-modal>
+  <app-approval-branch-setup
+    [modal]="modal"
+    (reloaddata)="reload($event)"
+  ></app-approval-branch-setup>
+</ng-template>
+<!-- <ng-template #openBranchTypeModal let-modal>
+    <div class="modal-header">
+        <h4 class="modal-title" id="modal-basic-title">Add Type Of Branch</h4>
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+    </div>
+    <div class="modal-body p-4">
+        <form>
+            <div class="mb-3 text-center">
+                <label>Type Of Branch</label>
+                <input type="text" placeholder="Enter Type Of Branch" class="form-control">
+                <button class="btn btn-color mt-3">Add Branch</button>
+            </div>
+        </form>
+    </div>
+
+</ng-template> -->
+
+<ng-template #mappingApprovals let-modal>
+  <div class="modal-header">
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close"
+      (click)="modal.dismiss('Cross click')"
+    ></button>
+  </div>
+  <div class="modal-body product-steup-modal">
+    <ul ngbNav #nav="ngbNav" class="nav-tabs justify-content-center approval-modal">
+      <li ngbNavItem>
+        <a ngbNavLink
+          ><i class="bi bi-arrow-down-up"></i> &nbsp; Approvals for Mapping
+          &nbsp; <span>{{ branchApprovalMappingCount }}</span></a
+        >
+        <ng-template ngbNavContent>
+          <div class="row mt-40">
+            <div class="col-md-8">
+              <div class="stauts-list">
+                <ul>
+                  <li class="mt-03 mr-10">
+                    <i class="bi bi-arrow-down-up"></i>&nbsp;Approvals
+                  </li>
+                  <li class="status-circle green-status"></li>
+                  <li class="status-text">1 Approved</li>
+
+                  <li class="status-circle oragne-status"></li>
+                  <li class="status-text">0 Pending</li>
+
+                  <li class="status-circle red-status"></li>
+                  <li class="status-text">0 Rejected</li>
+                </ul>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <form action="">
+                <div class="input-group">
+                  <input
+                    type="text"
+                    class="form-control"
+                    placeholder="Search by keyword  ..."
+                  />
+                </div>
+              </form>
+            </div>
+          </div>
+          <div class="row">
+            <div class="table-responsive modal-table">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col"></th>
+                    <th scope="col">S.No</th>
+                    <th scope="col">Country</th>
+                    <th scope="col">Major Industry</th>
+                    <th scope="col">Minor Industry</th>
+                    <th scope="col">Type of Branch</th>
+                    <th scope="col">Point of Contact</th>
+                    <th scope="col">Status</th>
+                    <th scope="col"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td scope="row" class="bg-white">
+                      <input type="checkbox" />
+                    </td>
+                    <td scope="row" class="status-pending">1</td>
+
+                    <td scope="row">India</td>
+                    <td scope="row">Agriculture</td>
+                    <td scope="row">Fishing Industry</td>
+                    <td scope="row">N/A</td>
+                    <td scope="row">Hari Babu</td>
+                    <td scope="row">N/A</td>
+                    <td
+                      scope="row"
+                      (click)="openXl(maping)"
+                      (click)="modal.dismiss('mappingApprovals')"
+                    >
+                      Forward <i class="fa-regular fa-circle-right"></i>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="row">
+                <div class="col-8"></div>
+                <div class="col-4">
+                  <button class="btn btn-accept">
+                    <i class="bi bi-check2-circle"></i> &nbsp; ACCEPT
+                  </button>
+                  &nbsp;
+                  <button class="btn btn-reject">
+                    <i class="bi bi-x-circle"></i> &nbsp;REJECT
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-template>
+      </li>
+      <li ngbNavItem>
+        <a ngbNavLink
+          ><i class="bi bi-arrow-down-up"></i> &nbsp; Approvals for Insertion
+          &nbsp; <span>{{ branchApprovalInsertionCount }}</span></a
+        >
+        <ng-template ngbNavContent>
+          <div class="row mt-40">
+            <div class="col-md-8">
+              <div class="stauts-list">
+                <ul>
+                  <li class="mt-03 mr-10">
+                    <i class="bi bi-arrow-down-up"></i>&nbsp;Approvals
+                  </li>
+                  <li class="status-circle green-status"></li>
+                  <li class="status-text">1 Approved</li>
+
+                  <li class="status-circle oragne-status"></li>
+                  <li class="status-text">0 Pending</li>
+
+                  <li class="status-circle red-status"></li>
+                  <li class="status-text">0 Rejected</li>
+                </ul>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <form action="">
+                <div class="input-group">
+                  <input
+                    type="text"
+                    class="form-control"
+                    placeholder="Search by keyword  ..."
+                  />
+                </div>
+              </form>
+            </div>
+          </div>
+          <div class="row">
+            <div class="table-responsive modal-table">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col"></th>
+                    <th scope="col">S.No</th>
+                    <th scope="col">Type of Branch</th>
+
+                    <th scope="col">Point of Contact</th>
+                    <th scope="col">Status</th>
+                    <th scope="col"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td scope="row" class="bg-white">
+                      <input type="checkbox" />
+                    </td>
+                    <td scope="row" class="status-pending">1</td>
+                    <td scope="row">Ltd Company</td>
+
+                    <td scope="row">Hari Babu</td>
+                    <td scope="row">N/A</td>
+                    <td scope="row">
+                      Forward <i class="fa-regular fa-circle-right"></i>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td scope="row" class="bg-white">
+                      <input type="checkbox" />
+                    </td>
+                    <td scope="row" class="status-pending">2</td>
+                    <td scope="row">Ltd Company</td>
+
+                    <td scope="row">Hari Babu</td>
+                    <td scope="row" class="approvesent">Approval Sent</td>
+                    <td scope="row">
+                      Forward <i class="fa-regular fa-circle-right"></i>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td scope="row" class="bg-white">
+                      <input type="checkbox" />
+                    </td>
+                    <td scope="row" class="status-reject">3</td>
+                    <td scope="row">Ltd Company</td>
+
+                    <td scope="row">Hari Babu</td>
+                    <td scope="row" class="reject">
+                      <span>Approval Rejected</span> <br />
+                      by Haribabu
+                    </td>
+                    <td scope="row">
+                      Forward <i class="fa-regular fa-circle-right"></i>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td scope="row" class="bg-white">
+                      <input type="checkbox" />
+                    </td>
+                    <td scope="row" class="status-pending">1</td>
+                    <td scope="row">Ltd Company</td>
+
+                    <td scope="row">Hari Babu</td>
+                    <td scope="row">N/A</td>
+                    <td scope="row">
+                      Forward <i class="fa-regular fa-circle-right"></i>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td scope="row" class="bg-white">
+                      <input type="checkbox" />
+                    </td>
+                    <td scope="row" class="status-pending">2</td>
+                    <td scope="row">Ltd Company</td>
+
+                    <td scope="row">Hari Babu</td>
+                    <td scope="row" class="approvesent">Approval Sent</td>
+                    <td scope="row">
+                      Forward <i class="fa-regular fa-circle-right"></i>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="row">
+                <div class="col-8"></div>
+                <div class="col-4">
+                  <button class="btn btn-accept">
+                    <i class="bi bi-check2-circle"></i> &nbsp; ACCEPT
+                  </button>
+                  &nbsp;
+                  <button class="btn btn-reject">
+                    <i class="bi bi-x-circle"></i> &nbsp;REJECT
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-template>
+      </li>
+    </ul>
+    <div [ngbNavOutlet]="nav"></div>
+  </div>
+</ng-template>
+
+<!-- Major Industry Approval-->
+<ng-template #addMajorIndustry let-modal>
+  <div class="modal-header">
+    <div class="modal-title">Approvals &nbsp; Add New Major Industry</div>
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close"
+      (click)="modal.dismiss('Cross click')"
+    ></button>
+  </div>
+  <div class="modal-body product-steup-modal">
+    <div class="row">
+      <div class="col-5">
+        <button class="btn btn-status">Approval Pending</button>
+      </div>
+      <div class="col-6 text-center user-info">
+        <ul>
+          <li>Point of Contact : <span>Haribabu</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-3"></div>
+      <div class="col-6 mt-50">
+        <form>
+          <div class="mb-3 text-center">
+            <label for="">Major Industry</label>
+            <div class="input-group text-center">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Agriculture"
+                name="majorindustry"
+                ngModel
+              />
+            </div>
+          </div>
+
+          <div class="mb-3 text-center">
+            <label for="">Major Industry Code</label>
+            <div class="input-group text-center">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Agr1234"
+                name="majorindustrycode"
+                ngModel
+              />
+            </div>
+          </div>
+
+          <div class="mb-3 text-center">
+            <div class="text-center">
+              <button class="btn btn-accept">
+                <i class="bi bi-check2-circle"></i> &nbsp; ACCEPT
+              </button>
+              &nbsp;
+              <button class="btn btn-reject">
+                <i class="bi bi-x-circle"></i> &nbsp;REJECT
+              </button>
+              <div class="mt-20">
+                <br />
+                OR <br />
+                <a href="" class="forword">Forward</a>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<!-- Minor Industry Approval-->
+<ng-template #addMinorIndustry let-modal>
+  <div class="modal-header">
+    <div class="modal-title">Approvals &nbsp; Add New Entity Type</div>
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close"
+      (click)="modal.dismiss('Cross click')"
+    ></button>
+  </div>
+  <div class="modal-body product-steup-modal">
+    <div class="row">
+      <div class="col-5">
+        <button class="btn btn-status">Approval Pending</button>
+      </div>
+      <div class="col-6 text-center user-info">
+        <ul>
+          <li>Point of Contact : <span>Haribabu</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-3"></div>
+      <div class="col-6 mt-50">
+        <form>
+          <div class="mb-3 text-center">
+            <label for="">Entity Type</label>
+            <div class="input-group text-center">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Pvt Ltd Company"
+                name="entitytype"
+                ngModel
+              />
+            </div>
+          </div>
+          <div class="mb-3 text-center">
+            <label for="">Entity Type Code</label>
+            <div class="input-group text-center">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="PVT LTD"
+                name="entitytypecode"
+                ngModel
+              />
+            </div>
+          </div>
+
+          <div class="mb-3 text-center">
+            <div class="text-center">
+              <button class="btn btn-accept">
+                <i class="bi bi-check2-circle"></i> &nbsp; ACCEPT
+              </button>
+              &nbsp;
+              <button class="btn btn-reject">
+                <i class="bi bi-x-circle"></i> &nbsp;REJECT
+              </button>
+              <div class="mt-20">
+                <br />
+                OR <br />
+                <a href="" class="forword">Forward</a>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #maping let-modal>
+  <div class="modal-header">
+    <div class="modal-title">Approvals &nbsp; Maping</div>
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close"
+      (click)="modal.dismiss('Cross click')"
+    ></button>
+  </div>
+  <div class="modal-body product-steup-modal">
+    <div class="row">
+      <div class="col-5">
+        <button class="btn btn-status">Approval Pending</button>
+      </div>
+      <div class="col-6 text-center user-info">
+        <ul>
+          <li>Point of Contact : <span>Haribabu</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-3"></div>
+      <div class="col-6 mt-50">
+        <form>
+          <div class="mb-3 text-center">
+            <label for="">Country</label>
+            <div class="input-group text-center">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="India"
+                name="country"
+                ngModel
+              />
+            </div>
+          </div>
+          <div class="mb-3 text-center">
+            <label for="">Entity Type</label>
+            <div class="input-group text-center">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Pvt Ltd Company"
+                name="entitytype"
+                ngModel
+              />
+            </div>
+          </div>
+          <div class="mb-3 text-center">
+            <label for="">Entity Type Code</label>
+            <div class="input-group text-center">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="PVT LTD"
+                name="entitytypecode"
+                ngModel
+              />
+            </div>
+          </div>
+
+          <div class="mb-3 text-center">
+            <div class="text-center">
+              <button class="btn btn-accept">
+                <i class="bi bi-check2-circle"></i> &nbsp; ACCEPT
+              </button>
+              &nbsp;
+              <button class="btn btn-reject">
+                <i class="bi bi-x-circle"></i> &nbsp;REJECT
+              </button>
+              <div class="mt-20">
+                <br />
+                OR <br />
+                <a href="" class="forword">Forward</a>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #download let-modal>
+  <div class="modal-header">
+    <div class="modal-title">Download File</div>
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close"
+      (click)="modal.dismiss('Cross click')"
+    ></button>
+  </div>
+  <div class="modal-body product-steup-modal">
+    <form>
+      <div class="mb-3 text-center">
+        <label for="">Country Name</label>
+        <div class="input-group text-center">
+          <select class="form-select" name="country" ngModel>
+            <option value="IN">India</option>
+            <option value="IN">India</option>
+            <option value="IN">India</option>
+          </select>
+        </div>
+      </div>
+      <!--       
+        <div class="mb-3 text-center">
+          <div class="text-center">
+            <button class="btn btn-accept"><i class="bi bi-check2-circle"></i> &nbsp; APPROVE</button> &nbsp; 
+               <button class="btn btn-reject"><i class="bi bi-x-circle"></i> &nbsp;REJECT</button>
+              <div class="mt-20">
+                <br>
+               OR <br>
+               <a href="">Forward</a>
+              </div>
+          </div>
+        </div> -->
+    </form>
+  </div>
+</ng-template>

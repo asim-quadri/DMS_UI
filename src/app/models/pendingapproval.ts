@@ -18,7 +18,7 @@ export interface pendingApproval {
   review?: boolean
   productID?: number
   createdBy?: number
-  displayName?:string
+  displayName?: string
 }
 
 export interface accessModel {
@@ -46,8 +46,12 @@ export interface accessModel {
   regulationGroupId?: number
   countryRegulationGroupMappingId?: number
   countryEntityTypeMappingId?: number
-  entityTypeId?:number
+  entityTypeId?: number
   IndustryMappingId?: number
   entityId?: number;
+  billingDetailId?: number;
+  TOBId?: number;
+  TOBMappingId?: number;
+  tobHistoryId?:number;
 }
 

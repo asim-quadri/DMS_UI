@@ -1,0 +1,278 @@
+<div class="main-container">
+  <div class="home-header d-md-flex justify-content-center">
+    <h3>Announcements</h3>
+  </div>
+  <div class="home-content user-table product-setup">
+    <div class="row py-4 mb-2">
+      <div class="col text-end">
+        <button
+          class="btn btn-color w-auto"
+          type="button"
+          (click)="toggleRegulationRedirect($event)"
+        >
+          <!--*ngIf="showAddNewRegulation"-->
+          <i class="fa-solid fa-industry"></i> &nbsp; Add New Announcement
+        </button>
+      </div>
+    </div>
+    <div class="row mt-1 gx-1">
+      <div class="col-lg-5">
+        <div class="product-panel">
+          <div class="product-panel-header">
+            <div class="input-group text-center mb-1">
+              <label for="Country" class="mt-10"
+                >Regulation/Compliance:&nbsp; &nbsp;</label
+              >
+              <input
+                #searchInput
+                type="search"
+                (search)="clearSearch()"
+                class="form-control"
+                placeholder="Search by keywords ..."
+                (keyup)="searchRegulations($event)"
+              />
+              <div class="input-group-prepend">
+                <button
+                  class="btn btn-white"
+                  type="button"
+                  (click)="searchRegulations(searchInput.value)"
+                >
+                  <i class="bi bi-search"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="product-panel-body">
+            <div class="panel-gray regulation m-0">
+              <div *ngFor="let regulation of regulationSetup">
+                <div [hidden]="!regulation.visible">
+                  <div class="accordion" id="accordionRegulations">
+                    <div class="accordion-item">
+                      <h2
+                        class="accordion-header m-0"
+                        id="heading{{ regulation.id }}"
+                      >
+                        <button
+                          class="accordion-button"
+                          type="button"
+                          (click)="toggleRegulation(regulation!)"
+                        >
+                          {{ regulation.regulationName }}
+                        </button>
+                      </h2>
+                      <div
+                        [id]="'collapse' + regulation.id"
+                        class="accordion-collapse collapse"
+                        [class.show]="isRegulationExpanded(regulation.id!)"
+                      >
+                        <div class="accordion-body">
+                          <ng-container
+                            *ngFor="let compliance of regulation.compliance"
+                          >
+                            <ng-container
+                              *ngTemplateOutlet="
+                                renderCompliance;
+                                context: {
+                                  $implicit: compliance,
+                                  regulation: regulation
+                                }
+                              "
+                            >
+                            </ng-container>
+                          </ng-container>
+
+                          <div *ngFor="let toc of regulation.toc">
+                            <h5
+                              (click)="
+                                toggleTocUnderRegulation(toc!, regulation)
+                              "
+                            >
+                              {{ toc.typeOfComplianceName }} -
+                              {{ regulation.regulationName }}
+                            </h5>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- <div *ngIf="showContextMenu" [ngStyle]="{'top': contextMenuPosition.y, 'left': contextMenuPosition.x}"
+                                    class="context-menu">
+                                    <div (click)="onMenuItemClick('Compliance')">Compliance</div>
+                                    <div (click)="onMenuItemClick('Type of Compliance')">Type of Compliance</div>
+                                </div> -->
+            </div>
+            <ng-template
+              #renderCompliance
+              let-compliance
+              let-regulation="regulation"
+            >
+              <div>
+                <h5
+                class="compliance-inner-title"
+                  (click)="toggleCompliance(compliance, regulation)"
+                  (contextmenu)="
+                    onMenuRightClick($event, compliance, regulation)
+                  "
+                >
+                  <b>Complaince-Name: </b>{{ compliance.complianceName }}
+                  <b>Regulation-Name: </b>{{ regulation.regulationName }}
+                  <span class="float-end"
+                    ><i class="fa-solid fa-angle-down"></i
+                  ></span>
+                  <div
+                    class="nested-panel"
+                    *ngIf="isComplianceExpanded(compliance.id!)"
+                  >
+                    <div *ngFor="let toc of compliance.toc">
+                      <h6
+                        class="m-0 compliance-sub-title"
+                        (click)="
+                          toggleTocUnderCompliance(compliance, toc!, regulation)
+                        "
+                      >
+                        {{ toc.typeOfComplianceName }} -
+                        {{ compliance.complianceName }}
+                      </h6>
+                    </div>
+
+                    <ng-container
+                      *ngFor="let childCompliance of compliance.compliance"
+                    >
+                      <ng-container
+                        *ngTemplateOutlet="
+                          renderCompliance;
+                          context: {
+                            $implicit: childCompliance,
+                            regulation: regulation
+                          }
+                        "
+                      >
+                      </ng-container>
+                    </ng-container>
+                  </div>
+                </h5>
+              </div>
+            </ng-template>
+          </div>
+
+          <button
+            class="btn btn-approve mt-20"
+            (click)="openAnnouncementApproverModal()"
+          >
+            <i class="bi bi-arrow-down-up"></i> &nbsp; APPROVALS&nbsp;
+            <span>{{ announcementCount }}</span>
+          </button>
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="product-panel">
+          <div class="product-panel-header">
+            <div class="row input-group text-center mb-1">
+              <div
+                class="col-md-8 d-flex justify-content-center align-items-center"
+              >
+                <label for="Announcement" class="mr-10">Announcement:</label>
+                <input
+                  #searchInput
+                  type="search"
+                  (search)="clearAnnouncementSearch()"
+                  class="form-control"
+                  placeholder="Search by keywords ..."
+                  (keyup)="searchAnnouncement($event)"
+                />
+                <div class="input-group-prepend">
+                  <button
+                    class="btn btn-white"
+                    type="button"
+                    (click)="searchAnnouncement(searchInput.value)"
+                  >
+                    <i class="bi bi-search"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="product-panel-body">
+            <div class="regulation">
+              <ul class="pl-0">
+                <ng-container *ngFor="let announcement of announcements">
+                  <div class="accordionMain-body" [hidden]="announcement.hide">
+                    <li class="accord-item">
+                      <!-- Accordion Header -->
+                      <div
+                        class="accordion-header"
+                        (click)="announcement.expanded = !announcement.expanded"
+                      >
+                        <span class="subject"
+                          ><strong>Title:</strong>
+                          {{ announcement.subject }}</span
+                        >
+                        <button class="toggle-btn">
+                          <img
+                            src="../../../../assets/images/icons/angle-down-curved.svg"
+                            class="toggle-carrot-icon"
+                            [class.rotated]="announcement.expanded"
+                            alt="Expand"
+                          />
+                        </button>
+                      </div>
+
+                      <div
+                        class="accordion-expand-body"
+                        *ngIf="announcement.expanded"
+                      >
+                        <p>
+                          <strong>Applicable Date:</strong>
+                          {{
+                            announcement.applicableDate | date : "dd-MMM-yyyy"
+                          }}
+                        </p>
+                        <p>
+                          <strong>Created Date:</strong>
+                          {{ announcement.createdDate | date : "dd-MMM-yyyy" }}
+                        </p>
+                        <p>
+                          <strong>Created By:</strong>
+                          {{ announcement.createdByName }}
+                        </p>
+                        <p class="description">
+                          <strong>Description:</strong>
+                          <app-expandable-text
+                            [text]="announcement.description || ''"
+                            [maxLines]="3"
+                          ></app-expandable-text>
+                        </p>
+                        <div>
+                          <button
+                            class="toggle-btn"
+                            (click)="editAnnouncement(announcement)"
+                          >
+                            <i
+                              class="fa-sharp fa-solid fa-pen-to-square"
+                              style="font-size: 1.2rem"
+                            ></i>
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  </div>
+                </ng-container>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="clearfix"></div>
+
+<ng-template #Approvals let-modal>
+  <app-announcement-approval
+    [modal]="modal"
+    (reloaddata)="reload($event)"
+    (sendSelectedUID)="getSelectedUId($event)"
+  ></app-announcement-approval>
+</ng-template>

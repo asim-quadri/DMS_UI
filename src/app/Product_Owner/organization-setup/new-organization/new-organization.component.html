@@ -1,0 +1,992 @@
+<div class="main-container">
+  <!-- <app-top-nav></app-top-nav> -->
+  <div class="home-header d-md-flex justify-content-center">
+    <h3>Organization</h3>
+  </div>
+  <div class="home-content user-table product-setup">
+    <div class="row py-4 mb-2">
+      <div class="col text-end">
+        <button
+          class="add-organization-btn btn btn-color w-auto"
+          (click)="clearFormAndNotify()"
+          *ngIf="showAddNewOrganizationButton"
+        >
+          <i class="bi bi-plus-circle-fill text-white me-1"></i>
+          Add New Organization
+        </button>
+      </div>
+    </div>
+    <div class="row mt-20 gx-1">
+      <div class="col-lg-5">
+        <app-organization-verticalnav></app-organization-verticalnav>
+      </div>
+      <div class="col-lg-7">
+        <div class="product-panel">
+          <div class="product-panel-header text-center pb-1">
+            <h4 class="pb-3">Add New Organization</h4>
+          </div>
+          <div class="product-panel-body new-regulation text-center">
+            <div class="row mt-20 justify-content-center">
+              <div class="col-11">
+                <div class="row">
+                  <div class="col-6">
+                    <div class="icheck-primary">
+                      <input
+                        type="radio"
+                        id="yes"
+                        checked
+                        name="primaryentity"
+                        (change)="onOrgCheckboxChange($event)"
+                      />
+                      <label for="yes">Organization Details</label>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="icheck-primary">
+                      <input
+                        type="radio"
+                        id="No"
+                        name="primaryentity"
+                        [checked]="checkBilling"
+                        (change)="onBillingCheckboxChange($event)"
+                      />
+                      <label for="No">Billing</label>
+                    </div>
+                  </div>
+                </div>
+                <div *ngIf="this.showOrgDiv">
+                  <form [formGroup]="formgroup">
+                    <div class="row gx-2 gy-2">
+                      <div class="col-6 text-start">
+                        <label for="organizationName">Organization Name</label>
+                        <app-input-text
+                          [formGroup]="formgroup"
+                          [name]="'organizationName'"
+                          [placeholder]="'Organization Name'"
+                        >
+                        </app-input-text>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('organizationName')?.invalid &&
+                            formgroup.get('organizationName')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="
+                              formgroup.get('organizationName')?.errors
+                                ?.required
+                            "
+                          >
+                            Organization name is required
+                          </small>
+                        </div>
+                      </div>
+                      <div class="col-6 text-start">
+                        <label for="entity">Primary Entity</label>
+                        <app-input-text
+                          [formGroup]="formgroup"
+                          [name]="'entity'"
+                          [placeholder]="'Entity Name'"
+                        ></app-input-text>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('entity')?.invalid &&
+                            formgroup.get('entity')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="formgroup.get('entity')?.errors?.required"
+                          >
+                            Entity is required
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="row gx-2 gy-2 mt-2 mb-2">
+                      <div class="col-6 text-start">
+                        <label for="countryId"
+                          >Application Onboarding Countries</label
+                        >
+                        <ng-multiselect-dropdown
+                          name="Country"
+                          placeholder="Select Country"
+                          [settings]="addMapping.countryDD"
+                          formControlName="countryId"
+                          [data]="addMapping.countryDD.data"
+                          (onSelect)="onCountrySelect($event)"
+                          (onDeSelect)="onCountryDeSelect($event)"
+                          (onSelectAll)="onSelectAllCountries($event)"
+                          [ngClass]="{
+                            'multiselect-dropdown-error':
+                              addMapping.isSubmit &&
+                              formgroup.get('countryId')?.invalid
+                          }"
+                        >
+                        </ng-multiselect-dropdown>
+
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('countryId')?.invalid &&
+                            formgroup.get('countryId')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="formgroup.get('countryId')?.errors?.required"
+                          >
+                            Application onboarding countries are required
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="row gx-2 gy-3 mt-3">
+                      <div class="col-4 text-start">
+                        <label for="countryDDId">Country</label>
+                        <app-input-dropdown
+                          [formGroup]="formgroup"
+                          [name]="'countryDDId'"
+                          [object]="this.countries"
+                          [key]="'countryName'"
+                          [value]="'id'"
+                          (change)="onCountryChange($event)"
+                        >
+                        </app-input-dropdown>
+
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('country')?.invalid &&
+                            formgroup.get('country')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="formgroup.get('country')?.errors?.required"
+                          >
+                            Country is required
+                          </small>
+                        </div>
+                      </div>
+
+                      <div class="col-4 text-start">
+                        <label for="stateId">State</label>
+                        <app-input-dropdown
+                          [formGroup]="formgroup"
+                          [name]="'stateId'"
+                          [object]="this.stateList"
+                          [key]="'stateName'"
+                          [value]="'id'"
+                        >
+                        </app-input-dropdown>
+
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('stateId')?.invalid &&
+                            formgroup.get('stateId')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="formgroup.get('stateId')?.errors?.required"
+                          >
+                            State is required
+                          </small>
+                        </div>
+                      </div>
+                      <div class="col-4 text-start">
+                        <label for="city">City:</label>
+                        <app-input-text
+                          [formGroup]="formgroup"
+                          [name]="'city'"
+                          [placeholder]="'City'"
+                        ></app-input-text>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('city')?.invalid &&
+                            formgroup.get('city')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="formgroup.get('city')?.errors?.required"
+                          >
+                            City is required
+                          </small>
+                        </div>
+                      </div>
+                      <div class="col-4 text-start">
+                        <label for="pin">Pin</label>
+                        <app-input-text
+                          [formGroup]="formgroup"
+                          [name]="'pin'"
+                          [placeholder]="'Pin'"
+                        ></app-input-text>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('pin')?.invalid &&
+                            formgroup.get('pin')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="formgroup.get('pin')?.errors?.required"
+                          >
+                            PIN is required
+                          </small>
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="formgroup.get('pin')?.errors?.pattern"
+                          >
+                            Invalid PIN
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="row mt-3 gx-2 gy-3">
+                      <div class="col-4 text-start">
+                        <label for="entityType">Entity Type</label>
+                        <app-input-dropdown
+                          [formGroup]="formgroup"
+                          [name]="'entityType'"
+                          [object]="this.selectedEntityList"
+                          [key]="'entityType'"
+                          [value]="'entityTypeId'"
+                        >
+                        </app-input-dropdown>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('entityType')?.invalid &&
+                            formgroup.get('entityType')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="
+                              formgroup.get('entityType')?.errors?.required
+                            "
+                          >
+                            Entity type is required
+                          </small>
+                        </div>
+                      </div>
+                      <div class="col-4 text-start">
+                        <label for="majorIndustry">Major Industry</label>
+                        <app-input-dropdown
+                          [formGroup]="formgroup"
+                          [name]="'majorIndustry'"
+                          [object]="this.selectedMajorIndustryList"
+                          [key]="'majorIndustryName'"
+                          [value]="'id'"
+                          (change)="GetMinorIndustrybyMajorID()"
+                        >
+                        </app-input-dropdown>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('majorIndustry')?.invalid &&
+                            formgroup.get('majorIndustry')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="
+                              formgroup.get('majorIndustry')?.errors?.required
+                            "
+                          >
+                            Major industry is required
+                          </small>
+                        </div>
+                      </div>
+                      <div class="col-4 text-start">
+                        <label for="minorIndustry">Minor Industry</label>
+                        <app-input-dropdown
+                          [formGroup]="formgroup"
+                          [name]="'minorIndustry'"
+                          [object]="this.majorMinorMapping"
+                          [key]="'minorIndustryName'"
+                          [value]="'id'"
+                        >
+                        </app-input-dropdown>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('minorIndustry')?.invalid &&
+                            formgroup.get('minorIndustry')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="
+                              formgroup.get('minorIndustry')?.errors?.required
+                            "
+                          >
+                            Minor industry is required
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="row mt-3 gx-2 gy-3">
+                      <div class="col-12 text-start">
+                        <label for="address">Address</label>
+                        <textarea
+                          class="form-control text-center h-75"
+                          placeholder="Add Address Here"
+                          formControlName="address"
+                          required
+                        ></textarea>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('address')?.invalid &&
+                            formgroup.get('address')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="formgroup.get('address')?.errors?.required"
+                          >
+                            Address is required
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="row mt-3 gx-2 gy-3">
+                      <div class="col-4 text-start">
+                        <label for="typeOfProduct">Type of Product</label>
+                        <app-input-dropdown
+                          [formGroup]="formgroup"
+                          [name]="'typeOfProduct'"
+                          [object]="this.typeOfProduct"
+                          [key]="'typeOfProduct'"
+                          [value]="'id'"
+                        >
+                        </app-input-dropdown>
+                        <!-- <select class="form-select" formControlName="productType" required>
+                        <option value="Custom">Custom</option>
+                        <option value="Standard">Standard</option>
+                        <option value="Premium">Premium</option>
+                      </select> -->
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('typeOfProduct')?.invalid &&
+                            formgroup.get('typeOfProduct')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="
+                              formgroup.get('typeOfProduct')?.errors?.required
+                            "
+                          >
+                            Type of product is required
+                          </small>
+                        </div>
+                      </div>
+                      <div class="col-4 text-start">
+                        <label for="numberOfEntities">No. of Entities</label>
+                        <app-input-text
+                          [formGroup]="formgroup"
+                          [name]="'numberOfEntities'"
+                          [placeholder]="'Number of Entities'"
+                        ></app-input-text>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('numberOfEntities')?.invalid &&
+                            formgroup.get('numberOfEntities')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="
+                              formgroup.get('numberOfEntities')?.errors
+                                ?.required
+                            "
+                          >
+                            Number of entities is required
+                          </small>
+                        </div>
+                      </div>
+                      <div class="col-4 text-start">
+                        <label for="numberOfUsers">No. of Users</label>
+                        <app-input-text
+                          [formGroup]="formgroup"
+                          [name]="'numberOfUsers'"
+                          [placeholder]="'Number Of Users'"
+                        ></app-input-text>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('numberOfUsers')?.invalid &&
+                            formgroup.get('numberOfUsers')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="
+                              formgroup.get('numberOfUsers')?.errors?.required
+                            "
+                          >
+                            Number of users is required
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="row mt-3 gx-2 gy-3">
+                      <div class="col-6 text-start">
+                        <label for="billingLevel">Billing Level</label>
+                        <app-input-dropdown
+                          [formGroup]="formgroup"
+                          [name]="'billingLevel'"
+                          [object]="this.billingLevel"
+                          [key]="'billingLevelName'"
+                          [value]="'id'"
+                        >
+                        </app-input-dropdown>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('billingLevel')?.invalid &&
+                            formgroup.get('billingLevel')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="
+                              formgroup.get('billingLevel')?.errors?.required
+                            "
+                          >
+                            Billing level is required
+                          </small>
+                        </div>
+                      </div>
+                      <div class="col-6 text-start">
+                        <label for="fullName">Full Name</label>
+                        <app-input-text
+                          [formGroup]="formgroup"
+                          [name]="'fullName'"
+                          [placeholder]="'Full Name'"
+                        >
+                        </app-input-text>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('fullName')?.invalid &&
+                            formgroup.get('fullName')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="formgroup.get('fullName')?.errors?.required"
+                          >
+                            Full name is required
+                          </small>
+                        </div>
+                      </div>
+                      <div class="col-6 text-start">
+                        <label for="emailID">Email ID</label>
+                        <app-input-text
+                          [formGroup]="formgroup"
+                          [name]="'emailID'"
+                          [placeholder]="'Email: name@domain.com'"
+                        >
+                        </app-input-text>
+                      </div>
+                      <!-- <div class="col-6">
+                        <label for="designation">Designation</label>
+                        <app-input-text [formGroup]="formgroup" [name]="'designation'" [placeholder]="'Designation'">
+                        </app-input-text>
+                        <div class="invalid-feedback"
+                          *ngIf="formgroup.get('designation')?.invalid && formgroup.get('designation')?.touched">
+                          <small class="form-text text-danger" *ngIf="formgroup.get('designation')?.errors?.required">
+                            Designation is required
+                          </small>
+                        </div>
+                      </div> -->
+                      <div class="col-6 text-start" *ngIf="!isNewOrg">
+                        <label for="password">Password</label>
+                        <app-input-text
+                          [formGroup]="formgroup"
+                          [name]="'password'"
+                          [placeholder]="'Password'"
+                        >
+                        </app-input-text>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('password')?.invalid &&
+                            formgroup.get('password')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="formgroup.get('password')?.errors?.required"
+                          >
+                            Password is required
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row mt-3 gx-2 gy-3">
+                      <div class="col-6 text-start">
+                        <label for="fromMonth">From Month</label>
+                        <!-- <input type="text" [name]="'fromMonth'" [placeholder]="'From Month'" [value]="this.months.fromMonth" readonly> -->
+                        <app-input-text
+                          [formGroup]="formgroup"
+                          [name]="'fromMonth'"
+                          [placeholder]="'From Month'"
+                        ></app-input-text>
+
+                        <!-- <div class="invalid-feedback" *ngIf="formgroup.get('fromMonth')?.invalid && formgroup.get('fromMonth')?.touched">
+                          <small class="form-text text-danger" *ngIf="formgroup.get('fromMonth')?.errors?.required">
+                            FromMonth is required
+                          </small>
+                        </div> -->
+                      </div>
+
+                      <div class="col-6 text-start">
+                        <label for="toMonth">To Month</label>
+                        <app-input-text
+                          [formGroup]="formgroup"
+                          [name]="'toMonth'"
+                          [placeholder]="'To Month'"
+                        ></app-input-text>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('toMonth')?.invalid &&
+                            formgroup.get('toMonth')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="formgroup.get('toMonth')?.errors?.required"
+                          >
+                            ToMonth is required
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="row mt-3 gx-2 gy-3">
+                      <div class="col-6 text-start">
+                        <label for="financialYearStart">Starting FY</label>
+                        <app-input-dropdown
+                          [formGroup]="formgroup"
+                          [name]="'financialYearStart'"
+                          [object]="this.years"
+                          [key]="'year'"
+                          [value]="'id'"
+                          (change)="getEndYear($event)"
+                        >
+                        </app-input-dropdown>
+                        <!-- <select>
+                          <option *ngFor="let year of years" [value]="year">{{ year }}</option> 
+                        </select> -->
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('FinancialYearStart')?.invalid &&
+                            formgroup.get('FinancialYearStart')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="
+                              formgroup.get('FinancialYearStart')?.errors
+                                ?.required
+                            "
+                          >
+                            Starting FY is required
+                          </small>
+                        </div>
+                      </div>
+
+                      <div class="col-6 text-start">
+                        <label for="financialYearEnd">To Year</label>
+                        <app-input-text
+                          [formGroup]="formgroup"
+                          [name]="'financialYearEnd'"
+                          [placeholder]="'To Year'"
+                        ></app-input-text>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('financialYearEnd')?.invalid &&
+                            formgroup.get('financialYearEnd')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="
+                              formgroup.get('financialYearEnd')?.errors
+                                ?.required
+                            "
+                          >
+                            To Year is required
+                          </small>
+                        </div>
+                      </div>
+                      <div class="col-6 text-start">
+                        <label for="noofBranches">No. of Branches</label>
+                        <app-input-text
+                          [formGroup]="formgroup"
+                          [name]="'noofBranches'"
+                          [placeholder]="'No. of Branches'"
+                        >
+                        </app-input-text>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('noofBranches')?.invalid &&
+                            formgroup.get('noofBranches')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="
+                              formgroup.get('noofBranches')?.errors?.required
+                            "
+                          >
+                            No. of Branches is required
+                          </small>
+                        </div>
+                      </div>
+                      <div class="col-6 text-start">
+                        <label for="roleId">Role</label>
+                        <app-input-dropdown
+                          [formGroup]="formgroup"
+                          [name]="'roleId'"
+                          [object]="this.Roles"
+                          [key]="'roleName'"
+                          [value]="'id'"
+                        >
+                        </app-input-dropdown>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            formgroup.get('roleId')?.invalid &&
+                            formgroup.get('roleId')?.touched
+                          "
+                        >
+                          <small
+                            class="form-text text-danger"
+                            *ngIf="formgroup.get('roleId')?.errors?.required"
+                          >
+                            No. of Branches is required
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      class="row mt-3 gx-2 gy-3 mb-4 justify-content-center"
+                      style="margin-top: 10px"
+                    >
+                      <div class="col-5">
+                        <button
+                          type="button"
+                          class="btn btn-color btn-block"
+                          (click)="onSubmit()"
+                          [disabled]="formgroup.pristine"
+                          *ngIf="showAddNewOrganizationButton"
+                        >
+                          &nbsp; Add Organization &nbsp;
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+
+                <div *ngIf="this.showBillingDiv">
+                  <div class="row mt-20">
+                    <div class="col-12">
+                      <div class="table-responsive">
+                        <ag-grid-angular
+                          #agGrid
+                          style="width: auto; height: 300px"
+                          class="ag-theme-alpine"
+                          [rowData]="rowData!"
+                          [columnDefs]="columnDefs"
+                          [defaultColDef]="defaultColumnDef"
+                          [rowSelection]="rowSelection"
+                          [suppressRowClickSelection]="true"
+                          (gridReady)="onGridReady($event)"
+                          [pagination]="true"
+                          [paginationPageSize]="10"
+                          [paginationAutoPageSize]="true"
+                          (rowClicked)="onRowClicked($event)"
+                        >
+                        </ag-grid-angular>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ng-template #billingdetails let-modal>
+      <div class="modal-header">
+        <h4 class="modal-title" id="modal-basic-title">Billing Details</h4>
+        <button
+          type="button"
+          class="btn-close"
+          aria-label="Close"
+          (click)="modal.dismiss('Cross click')"
+        ></button>
+      </div>
+      <div class="modal-body approval">
+        <div class="row">
+          <div class="col-10 text-center user-info">
+            <ul>
+              <li>
+                Organization: :
+                <span>{{ this.billingDetails.organizationName }}</span>
+              </li>
+              <li>
+                Product Type :
+                <span>{{ this.billingDetails.typeOfProduct }}</span>
+              </li>
+              <li>
+                Billing Level :
+                <span>{{ this.billingDetails.billingLevelName }}</span>
+              </li>
+              <li>
+                Entity Name :
+                <span>{{ this.billingDetails.entityName }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="row justify-content-center">
+          <div class="col-md-7">
+            <form action="" #myform="ngForm">
+              <!-- {{ myform.value | json }} -->
+              <!-- {{ myform.value | json }} -->
+
+              <div class="row mt-20 justify-content-center">
+                <div class="col-3">
+                  <label for="entityName">PAN</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.pan"
+                    readonly
+                  />
+                </div>
+                <div class="col-3">
+                  <label for="entityName">TAN</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.tan"
+                    readonly
+                  />
+                </div>
+                <div class="col-3">
+                  <label for="entityName">GST No</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.gstNo"
+                    readonly
+                  />
+                </div>
+                <div class="col-3">
+                  <label for="entityName">Country</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.countryName"
+                    readonly
+                  />
+                </div>
+                <div class="col-3">
+                  <label for="entityName">State</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.stateName"
+                    readonly
+                  />
+                </div>
+                <div class="col-3">
+                  <label for="entityName">City</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.city"
+                    readonly
+                  />
+                </div>
+                <div class="col-3">
+                  <label for="entityName">PIN</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.pin"
+                    readonly
+                  />
+                </div>
+                <div class="col-12">
+                  <label for="entityName">Address</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.address"
+                    readonly
+                  />
+                </div>
+                <div class="col-3">
+                  <label for="entityName">Order ID</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.orderId"
+                    readonly
+                  />
+                </div>
+                <div class="col-3">
+                  <label for="entityName">Service Provider</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.serviceProviderName"
+                    readonly
+                  />
+                </div>
+                <div class="col-3">
+                  <label for="entityName">Fee Per Entity</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.feePerEntity"
+                    readonly
+                  />
+                </div>
+                <div class="col-3">
+                  <label for="entityName">Fee Per User</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.feePerUser"
+                    readonly
+                  />
+                </div>
+                <div class="col-3">
+                  <label for="entityName">Bill Number</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.billNumber"
+                    readonly
+                  />
+                </div>
+                <div class="col-3">
+                  <label for="entityName">Billing Frequency</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.frequency"
+                    readonly
+                  />
+                </div>
+                <div class="col-3">
+                  <label for="entityName">Bill Date</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.billDateString"
+                    readonly
+                  />
+                </div>
+                <div class="col-12">
+                  <label for="entityName">Remarks</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.remarks"
+                    readonly
+                  />
+                </div>
+                <div class="col-3">
+                  <label for="entityName">Collection Date</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.collectionDateString"
+                    readonly
+                  />
+                </div>
+                <div class="col-3">
+                  <label for="entityName">Bill Amount</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.billAmount"
+                    readonly
+                  />
+                </div>
+                <div class="col-3">
+                  <label for="entityName">TDS (%)</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.tds"
+                    readonly
+                  />
+                </div>
+                <div class="col-3">
+                  <label for="entityName">Received Amount</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.receivedAmount"
+                    readonly
+                  />
+                </div>
+                <div class="col-3">
+                  <label for="entityName">Check Number</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.checkNumber"
+                    readonly
+                  />
+                </div>
+                <div class="col-3">
+                  <label for="entityName">Bill Status</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="this.billingDetails.billStatusName"
+                    readonly
+                  />
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </ng-template>
+  </div>
+</div>

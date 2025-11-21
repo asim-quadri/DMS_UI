@@ -3,10 +3,12 @@ import { HttpClient } from '@angular/common/http'
 
 
 import { AppConfig } from '../app.config'
-import { UsersModel, loginModel } from '../models/Users';
-import { RolesModels, UpdateRoleModels } from '../models/roles';
-import { Products } from '../models/products';
-import { accessModel, pendingApproval } from '../models/pendingapproval';
+import { UsersModel, loginModel, MenuOptionModel } from '../Models/Users';
+import { RolesModels, UpdateRoleModels } from '../Models/roles';
+import { Products } from '../Models/products';
+import { HeaderMenuItem } from '../Models/HeaderMenuItem';
+import { accessModel, pendingApproval } from '../Models/pendingapproval';
+import { SetUserAccessModel } from '../Models/SetUserAccessModel';
 import { forkJoin } from 'rxjs';
 
 
@@ -168,6 +170,26 @@ export class ApiService {
     return this.http.post<any>(this.BASEURL + '/Access/PostRejectAccess', access, this.getAuthHeadersJSON())
   }
 
+  getMenu(roleId: number | string = 0, userId: number | string = 0) {
+    return this.http.get<MenuOptionModel[]>(this.BASEURL + '/Access/GetMenuOptions?roleId=' + roleId + '&userId=' + userId, this.getAuthHeadersJSON());
+  }
+
+  getHeaderMenus(userId: number | string = 0) {
+    return this.http.get<HeaderMenuItem[]>(this.BASEURL + '/Access/GetUserAccess?userId=' + userId, this.getAuthHeadersJSON());
+  }
+
+  getMenuOptionsByParentId(parentId: number | string = 0, userId: number | string = 0) {
+    return this.http.get<MenuOptionModel[]>(this.BASEURL + '/Access/GetMenuOptionsForParent?parentMenuId=' + parentId + '&userId='+userId, this.getAuthHeadersJSON());
+  }
+
+  setUserAccess(access: SetUserAccessModel[]) {
+    return this.http.post<any>(this.BASEURL + '/Access/SetUserAccess', access, this.getAuthHeadersJSON());
+  }
+
+  setUserOrganizations(SetUserOrganizationModel: any[]) {    
+    return this.http.post<any>(this.BASEURL + '/Access/AddUserOrganization', SetUserOrganizationModel, this.getAuthHeadersJSON());
+  }
+  
   multipleAPIRequests(request:any){
     return forkJoin(request);
   }

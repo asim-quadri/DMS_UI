@@ -1,0 +1,46 @@
+@use "src/assets/scss/_colors.scss";
+
+.readonly-field {
+  background-color: #f0f8ff;
+  color: #6c757d;
+  border: 1px solid #ced4da;
+}
+
+.modal-body .mb-3 label {
+  font-weight: bold;
+}
+.update-btn {
+  background-color: colors.$primary-blue;
+  color: white;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.update-btn:hover {
+  background-color: colors.$primary-orange;
+  color: #e2e6ea;
+}
+.btn-Width {
+  width: 100%;
+  max-width: 130px;
+  height: 40px;
+  padding: auto;
+}
+.button.btn-primary:disabled {
+  background-color: hsl(197, 98%, 52%) !important;
+  border-color: #141413 !important;
+  color: #fff !important;
+  opacity: 1;
+  cursor: not-allowed;
+}
+.button-text {
+  padding: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+.home-header h3 {
+  color: colors.$white;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0px;
+  text-align: center;
+}

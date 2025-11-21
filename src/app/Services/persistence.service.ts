@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import { UsersModel } from '../models/Users';
+import { UsersModel } from '../Models/Users';
 import { json } from '@rxweb/reactive-form-validators';
 import { Router } from '@angular/router';
-import { RolesModels } from '../models/roles';
+import { RolesModels } from '../Models/roles';
+import { MenuOptionModel } from '../Models/Users';
 
 @Injectable({
   providedIn: 'root',
@@ -10,6 +11,7 @@ import { RolesModels } from '../models/roles';
 export class PersistenceService {
   user: UsersModel = {};
   role: RolesModels = {};
+  menuOptions: MenuOptionModel[] = [];
 
   constructor(private router: Router) {
     var userobje = sessionStorage.getItem('currentUser')!;
@@ -32,10 +34,6 @@ export class PersistenceService {
 
   setSessionStorage(key: string, data: any): void {
     sessionStorage.setItem(key, JSON.stringify(data));
-    // Update the user property if we're setting currentUser
-    if (key === 'currentUser') {
-      this.user = data;
-    }
   }
 
   removeSessionStorage(key: string) {
@@ -50,24 +48,11 @@ export class PersistenceService {
     return JSON.parse(sessionStorage.getItem(UserId) || '{}');
   }
 
+  getOrganizationId() {
+    return this.user.organizationId;
+  }
   getUserUID() {
-    // First check the user property, then fallback to session storage
-    if (this.user?.uid) {
-      return this.user.uid;
-    }
-    
-    // Fallback: check session storage directly
-    const currentUser = sessionStorage.getItem('currentUser');
-    if (currentUser && currentUser !== '{}') {
-      try {
-        const userData = JSON.parse(currentUser);
-        return userData?.uid || null;
-      } catch (error) {
-        return null;
-      }
-    }
-    
-    return null;
+    return this.user!.uid ? this.user!.uid : null;
   }
 
   getRoleUID() {
@@ -86,7 +71,7 @@ export class PersistenceService {
     return this.user.fullName;
   }
 
-  getRoleId(){
+  getRoleId() {
     return this.user.roleId;
   }
 
@@ -94,7 +79,7 @@ export class PersistenceService {
     return this.user.roleName;
   }
 
-  isUser(){
+  isUser() {
     return this.user.roleName == 'User' ? true : false;
   }
 

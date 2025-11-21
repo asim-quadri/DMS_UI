@@ -1,0 +1,249 @@
+<form [formGroup]="formgroup">
+  <div class="col-10 mx-auto">
+    <div class="row gx-2 gy-2 justify-content-start">
+      <div class="col-6 text-start">
+        <div class="form-group">
+          <label for="">Register Reference Code</label>
+          <app-input-text
+            [formGroup]="formgroup"
+            [name]="'typeOfComplianceRegisterReferenceCode'"
+            [placeholder]="'Register Reference Code'"
+            [readonly]="true"
+            y
+          ></app-input-text>
+        </div>
+      </div>
+      <div class="col-6 text-start">
+        <div class="form-group">
+          <label for="">Section Name</label>
+          <app-input-text
+            [formGroup]="formgroup"
+            [name]="'sectionName'"
+            [placeholder]="'Section Name'"
+          ></app-input-text>
+        </div>
+      </div>
+      <div class="col-6 text-start">
+        <div class="form-group">
+          <label for="">Registration Name</label>
+          <app-input-text
+            [formGroup]="formgroup"
+            [name]="'registrationName'"
+            [placeholder]="'Registration Name'"
+            (input)="generateTypeOfComplianceRefCode($event)"
+          ></app-input-text>
+        </div>
+      </div>
+      <div class="col-12 text-start">
+        <div class="form-group">
+          <label for="">Description</label>
+          <textarea
+            class="form-control text-start h-75"
+            formControlName="description"
+            rows="8"
+            placeholder="Description"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="col-10 text-start">
+        <div class="form-group">
+          <label for="">Document Name</label>
+          <app-input-text
+            [formGroup]="formgroup"
+            [name]="'document'"
+            (keyup.enter)="addDocument()"
+            [placeholder]="'Document Name'"
+          ></app-input-text>
+        </div>
+      </div>
+      <div class="col-2 mt-4">
+        <button
+          type="submit"
+          class="btn btn-add mt-4 w-full"
+          (click)="addDocument()"
+        >
+          Add
+        </button>
+      </div>
+
+      <div
+        *ngFor="let document of documents; let i = index"
+        class="document-list col-12"
+      >
+        <ul>
+          <li>
+            {{ i + 1 }}) {{ document.documentName }}
+            <button (click)="editDocument(i)" class="edit">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button (click)="removeDocument(i)" class="remove">
+              <i class="bi bi-x"></i>
+            </button>
+            <div class="clearfix"></div>
+          </li>
+          <div class="clearfix"></div>
+        </ul>
+        <div class="clearfix"></div>
+      </div>
+      <div class="col-6 text-start">
+        <label for="majorIndustryId">Major Industry</label>
+        <app-input-multiselect
+          [formGroup]="formgroup"
+          [name]="'majorIndustryId'"
+          [object]="selectedMajorIndustryList"
+          [key]="'majorIndustryId'"
+          [value]="'majorIndustryName'"
+          (getSelectedItems)="GetMinorIndustrybyMajorIDMap($event)"
+        >
+        </app-input-multiselect>
+      </div>
+      <div class="col-6 text-start">
+        <div>
+          <label for="">Minor Industry</label>
+          <div>
+            <app-treeview
+              [treeData]="minorIndustoryTreeNode"
+              (nodeSelectionChange)="onNodeSelect($event)"
+              [label]="'Minor Industry'"
+            >
+            </app-treeview>
+          </div>
+        </div>
+        <div
+          class="invalid-feedback"
+          *ngIf="
+            formgroup.get('minorIndustryId')?.invalid &&
+            formgroup.get('minorIndustryId')?.touched
+          "
+        >
+          <small
+            class="form-text text-danger"
+            *ngIf="formgroup.get('minorIndustryId')?.errors?.required"
+          >
+            Minor industry is required
+          </small>
+        </div>
+      </div>
+      <div class="col-6 text-start">
+        <div class="form-group branch-type mt-0">
+          <label for="type">Type of branch</label>
+          <app-treeview
+            [treeData]="TOBTreeNode"
+            (nodeSelectionChange)="onTOBNodeSelect($event)"
+            [label]="'Type of Branch'"
+          >
+            ></app-treeview
+          >
+        </div>
+      </div>
+      <div class="col-6 text-start">
+        <label for="legalEntityType">Legal Entity Type</label>
+        <app-input-multiselect
+          [formGroup]="formgroup"
+          [name]="'entityTypeId'"
+          [object]="selectedBindlegalEntityType"
+          [key]="'legalEntityType'"
+          [value]="'entityName'"
+          (getSelectedItems)="GetMinorIndustrybyMajorIDMap($event)"
+        >
+        </app-input-multiselect>
+      </div>
+      <div class="col-6 text-start">
+        <label for="">Concerned Ministry</label>
+        <app-input-dropdown
+          [formGroup]="formgroup"
+          [name]="'concernedMinistryId'"
+          [object]="this.concernedMinistry"
+          [key]="'concernedMinistryName'"
+          [value]="'id'"
+        >
+        </app-input-dropdown>
+        <div
+          class="invalid-feedback"
+          *ngIf="
+            formgroup.get('concernedMinistryId')?.invalid &&
+            formgroup.get('concernedMinistryId')?.touched
+          "
+        >
+          <small
+            class="form-text text-danger"
+            *ngIf="formgroup.get('concernedMinistryId')?.errors?.required"
+          >
+            Concerned Ministry is required
+          </small>
+        </div>
+      </div>
+      <div class="col-6 text-start">
+        <label for="">Regulatory Authority</label>
+        <app-input-dropdown
+          [formGroup]="formgroup"
+          [name]="'regulatoryAuthorityId'"
+          [object]="this.regulatoryAuthority"
+          [key]="'regulatoryAuthorityName'"
+          [value]="'id'"
+        >
+        </app-input-dropdown>
+        <div
+          class="invalid-feedback"
+          *ngIf="
+            formgroup.get('regulatoryAuthorityId')?.invalid &&
+            formgroup.get('regulatoryAuthorityId')?.touched
+          "
+        >
+          <small
+            class="form-text text-danger"
+            *ngIf="formgroup.get('regulatoryAuthorityId')?.errors?.required"
+          >
+            regulatory Authority is required
+          </small>
+        </div>
+      </div>
+    </div>
+    <div class="clearfix"></div>
+
+    <div class="col-12 gx-2 gy-2 mx-auto">
+      <app-parameter
+        (parametersChange)="onParametersChange($event)"
+        [parameterObject]="parametersvalues"
+        [inReview]="inReview"
+        (formValidityChange)="onFormValidityChange($event)"
+      ></app-parameter>
+    </div>
+
+    <!-- <div>complianceid {{complianceId}}</div>
+  <div>regulationSetupId {{regulationSetupId}}</div>
+  <div>regulationSetupName {{regulationSetupName}}</div> -->
+
+    <div class="row justify-content-center">
+      <div
+        class="col-4"
+        *ngIf="!inReview || ActionType == 'Edit' || ActionType == 'Create'"
+      >
+        <br />
+        <button
+          type="submit"
+          class="btn btn-success"
+          [disabled]="!formgroup.valid"
+          (click)="onSubmit()"
+        >
+          Add Type Of Compliance
+        </button>
+      </div>
+    </div>
+    <div
+      class="col-4"
+      *ngIf="inReview && ActionType != 'Edit' && ActionType != 'Create'"
+    >
+      <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        <button class="btn btn-accept" (click)="acceptSelectedRequests()">
+          <i class="bi bi-check2-circle"></i> &nbsp; ACCEPT
+        </button>
+        &nbsp;
+        <button class="btn btn-reject" (click)="rejectSelectedRequests()">
+          <i class="bi bi-x-circle"></i> &nbsp;REJECT
+        </button>
+      </div>
+    </div>
+  </div>
+</form>

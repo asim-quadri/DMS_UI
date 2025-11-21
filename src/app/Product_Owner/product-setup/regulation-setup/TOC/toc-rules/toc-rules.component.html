@@ -1,0 +1,684 @@
+<div class="progress-tracker mt-2">
+  <div class="step" [class.active]="currentStep >= 0">
+    <div class="label">Due Date</div>
+  </div>
+  <div class="line" [class.active]="currentStep >= 1"></div>
+  <div class="step" [class.active]="currentStep >= 1">
+    <div class="label">Interest & Penalty</div>
+  </div>
+  <div class="line" [class.active]="currentStep >= 2"></div>
+  <div class="step" [class.active]="currentStep >= 2">
+    <div class="label">Imprisonment</div>
+  </div>
+  <div class="line" [class.active]="currentStep >= 3"></div>
+  <div class="step" [class.active]="currentStep >= 3">
+    <div class="label">Parameter Setup</div>
+  </div>
+</div>
+
+<div [hidden]="currentStep !== 0">
+  <form [formGroup]="formDues">
+    <!-- Section Name of Dues and Dues Reference Code fields -->
+    <div class="row justify-content-center mb-2 mt-20">
+      <div class="col-md-3">
+        <label for="duesReferenceCode">Dues Reference Code</label>
+        <input
+          id="duesReferenceCode"
+          formControlName="duesReferenceCode"
+          class="form-control"
+          readonly
+        />
+      </div>
+      <div class="col-md-3">
+        <label for="sectionNameofDues">Section Name of Dues</label>
+        <input
+          id="sectionNameofDues"
+          formControlName="sectionNameofDues"
+          placeholder="Enter Section Name of Dues"
+          class="form-control"
+          (input)="generateComplianceDueRefCode($event)"
+        />
+      </div>
+    </div>
+    <div class="cutom-radio-button">
+      <div class="row justify-content-center">
+        <form [formGroup]="frequencyForm">
+          <div class="row justify-content-center">
+            <div class="col-md-10 text-center">
+              <label>Frequency Type:</label>
+              <div class="row justify-content-center gx-2">
+                <div class="col-md-3 d-flex align-items-center gap-2">
+                  <input
+                    type="radio"
+                    id="flatFrequency"
+                    name="frequencytype"
+                    formControlName="frequencytype"
+                    value="FlatFrequency"
+                  />
+                  <label for="flatFrequency" class="text-dark-gray m-0"
+                    >Flat Frequency</label
+                  >
+                </div>
+                <div class="col-md-3 d-flex align-items-center gap-2">
+                  <input
+                    type="radio"
+                    id="slabFrequency"
+                    name="frequencytype"
+                    formControlName="frequencytype"
+                    value="SlabFrequency"
+                  />
+                  <label for="slabFrequency" class="text-dark-gray m-0"
+                    >Slab Frequency</label
+                  >
+                </div>
+
+                <div class="col-md-5">
+                  <button class="btn btn-new" (click)="addRow()">
+                    Add New Record
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+
+        <div class="col-md-12 px-5 mt-3">
+          <table class="table table-bordered">
+            <tr>
+              <th>From Turn Over</th>
+              <th>To Turn Over</th>
+              <th>Frequency</th>
+              <th>Add Due Date</th>
+              <th>Actions</th>
+            </tr>
+
+            <ng-container
+              *ngFor="let rowControl of getVisibleMainRows(); let i = index"
+            >
+              <tr [formGroup]="asFormGroup(rowControl)">
+                <td>
+                  <input formControlName="fromTrunOver" class="form-control" />
+                </td>
+                <td>
+                  <input formControlName="toTrunOver" class="form-control" />
+                </td>
+                <td>
+                  <select formControlName="frequency" class="form-select">
+                    <option value="">Select</option>
+                    <option
+                      *ngFor="let option of periodOptions"
+                      [value]="option.value"
+                    >
+                      {{ option.name }}
+                    </option>
+                  </select>
+                </td>
+                <td>
+                  <a
+                    href="#"
+                    (click)="
+                      addSubRow(asFormGroup(rowControl));
+                      $event.preventDefault()
+                    "
+                    >Add Due Date</a
+                  >
+                </td>
+                <td>
+                  <button
+                    class="btn btn-expand"
+                    type="button"
+                    (click)="toggleSubTable(asFormGroup(rowControl))"
+                  >
+                    <i
+                      class="bi"
+                      [ngClass]="
+                        asFormGroup(rowControl).value.showSubTable
+                          ? 'bi-eye-slash'
+                          : 'bi-eye-fill'
+                      "
+                    >
+                    </i>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="removeRow(asFormGroup(rowControl), i)"
+                  >
+                    🗑️
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Sub-table -->
+              <tr *ngIf="asFormGroup(rowControl).value.showSubTable">
+                <td colspan="5">
+                  <table border="1" class="sub-table">
+                    <thead>
+                      <tr>
+                        <th>From Turn Over</th>
+                        <th>To Turn Over</th>
+                        <th>For the Month</th>
+                        <th>Due Date</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <ng-container
+                        *ngFor="
+                          let subRow of getVisibleSubRows(
+                            asFormGroup(rowControl)
+                          );
+                          let j = index
+                        "
+                      >
+                        <tr
+                          *ngIf="j === 0"
+                          [formGroup]="asFormGroup(subRow)"
+                          class="mt-1 mb-1"
+                        >
+                          <td colspan="5">
+                            <label>Frequency Type:</label> &nbsp;
+                            <!-- <input
+                              type="radio"
+                              formControlName="frequencytype"
+                              value="FlatFrequency"
+                            />
+                            Flat Due Date &nbsp; -->
+                            <input
+                              type="radio"
+                              formControlName="frequencytype"
+                              value="FlatFrequency"
+                              id="FlatFrequency"
+                            />
+                            Flat Due Date &nbsp;
+                            <input
+                              type="radio"
+                              formControlName="frequencytype"
+                              value="SlabFrequency"
+                              id="SlabFrequency"
+                            />
+                            Slab Due Date
+                          </td>
+                        </tr>
+
+                        <tr [formGroup]="asFormGroup(subRow)">
+                          <td>
+                            <input
+                              formControlName="fromTrunOver"
+                              class="form-control"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              formControlName="toTrunOver"
+                              class="form-control"
+                            />
+                          </td>
+                          <td>
+                            <!-- <select
+                              formControlName="forTheMonth"
+                              class="form-select"
+                            >
+                              <option value="">Select</option>
+                              <option
+                                *ngFor="let option of months"
+                                [value]="option.value"
+                              >
+                                {{ option.name }}
+                              </option>
+                            </select> -->
+
+                                <input
+                              formControlName="forTheMonth"
+                              class="form-control"
+                              readonly
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="date"
+                              formControlName="dueDate"
+                              class="form-control"
+                            />
+                          </td>
+                          <td>
+                            <a
+                              href="#"
+                              (click)="
+                                addTocDueMonth(
+                                  asFormGroup(subRow),
+                                  '',
+                                  asFormGroup(rowControl)
+                                );
+                                $event.preventDefault()
+                              "
+                            >
+                              Add Due Months
+                            </a>
+                            <button
+                              type="button"
+                              (click)="removeSubRow(asFormGroup(subRow), j)"
+                            >
+                              🗑️
+                            </button>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td colspan="5">
+                            <div formArrayName="tocDueMonths">
+                              <div
+                                *ngFor="
+                                  let monthRow of getVisibleTocDueMonths(
+                                    asFormGroup(subRow)
+                                  );
+                                  let monthIndex = index
+                                "
+                                class="due-date-card"
+                                [formGroup]="asFormGroup(monthRow)"
+                                style="
+                                  display: flex;
+                                  justify-content: space-between;
+                                  margin-bottom: 8px;
+                                  padding: 8px;
+                                  border: 1px solid #ccc;
+                                "
+                              >
+                                <div>
+                                  <strong>{{
+                                    monthRow.get("label")?.value
+                                  }}</strong>
+                                  <button
+                                    type="button"
+                                    (click)="
+                                      removeTocDueMonth(
+                                        asFormGroup(monthRow),
+                                        monthIndex
+                                      )
+                                    "
+                                    class="btn btn-remove-date"
+                                  >
+                                    <i class="fa-solid fa-circle-xmark"></i>
+                                  </button>
+                                </div>
+                                <div>
+                                  {{ monthRow.get("dueDate")?.value | date }}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      </ng-container>
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+            </ng-container>
+          </table>
+
+          <br />
+          <!-- <button (click)="logData()">Log Form Data</button> -->
+        </div>
+        <!-- <div class="col-md-8">
+          <label>Select Frequency:</label>
+          <div class="row gx-2">
+            <div class="col">
+              <input type="radio" name="frequency" formControlName="frequency" value="monthly" />
+              Monthly
+            </div>
+            <div class="col">
+              <input type="radio" name="frequency" formControlName="frequency" value="quarterly" />
+              Quarterly
+            </div>
+            <div class="col">
+              <input type="radio" name="frequency" formControlName="frequency" value="half-yearly" />
+              Half Yearly
+            </div>
+            <div class="col">
+              <input type="radio" name="frequency" formControlName="frequency" value="yearly" />
+              Yearly
+            </div>
+            <div class="col">
+              <input type="radio" name="frequency" formControlName="frequency" value="one-time" />
+              One Time
+            </div>
+          </div>
+        </div> -->
+      </div>
+    </div>
+    <!-- <div class="row justify-content-center">
+      <div class="col-md-4">
+        <label>For the Month:</label>
+        <input type="month" formControlName="month" class="form-control" />
+      </div>
+      <div class="col-md-4">
+        <label>Due Date:</label>
+        <input type="date" formControlName="dueDate" class="form-control" />
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-add" (click)="addDueDate()">Add</button>
+      </div>
+    </div> -->
+
+    <!-- <div *ngIf="dueDates.length > 0">
+      <div *ngFor="let date of dueDates; let i = index" class="due-date-card">
+        <div>
+          <strong>{{ date.label }}</strong>
+          <button (click)="removeDueDate(i)">
+            <i class="fa-solid fa-circle-xmark"></i>
+          </button>
+        </div>
+        <div>
+          {{ date.dueDate | date }}
+        </div>
+      </div>
+    </div> -->
+  </form>
+</div>
+
+<div [hidden]="currentStep !== 1">
+  <form [formGroup]="formInterestPenalty">
+    <div class="row mt-20 justify-content-center">
+      <div class="col-md-8">
+        <div class="text-start">
+          <label for="section">Section</label>
+          <input
+            id="section"
+            formControlName="sectionName"
+            placeholder="Enter Section Name"
+            class="form-control"
+          />
+        </div>
+        <div class="mt-2 mb-2 text-start">
+          <label for="interestType">Interest Type</label>
+          <select
+            id="interestType"
+            formControlName="interestType"
+            class="form-select"
+          >
+            <option value="simple">Simple</option>
+            <option value="compound">Compound</option>
+          </select>
+        </div>
+        <div class="row gx-2 mb-2 text-start">
+          <label for="interestRate">Interest Rate</label>
+          <div class="col-md-6 text-start">
+            <input
+              id="interestRate"
+              type="number"
+              formControlName="interestRate"
+              placeholder="Ex: 10%"
+              class="form-control"
+            />
+          </div>
+          <div class="col-md-6 text-start">
+            <select formControlName="interestRatePeriod" class="form-select">
+              <option value="month">Per Month</option>
+              <option value="year">Per Year</option>
+            </select>
+          </div>
+        </div>
+        <div class="row gx-2 mb-2 text-start">
+          <label for="period">Period</label>
+          <select id="period" formControlName="period" class="form-select">
+            <option value="include">Include</option>
+            <option value="exclude">Exclude</option>
+          </select>
+        </div>
+        <div class="row gx-2 mb-2 text-start">
+          <label for="penaltyRate">Penalty Rate</label>
+          <div class="col-md-6">
+            <input
+              id="penaltyRate"
+              type="number"
+              formControlName="penaltyRate"
+              placeholder="Ex: 10%"
+              class="form-control"
+            />
+          </div>
+          <div class="col-md-6">
+            <select formControlName="penaltyRatePeriod" class="form-select">
+              <option value="day">Per Day</option>
+              <option value="month">Per Month</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div [hidden]="currentStep !== 2">
+  <form [formGroup]="formImprisonment">
+    <div class="row mt-20 justify-content-center">
+      <div class="col-md-8">
+        <div class="text-start">
+          <label for="section">Section</label>
+          <input
+            id="section"
+            formControlName="sectionName"
+            placeholder="Enter Section Name"
+            class="form-control"
+          />
+        </div>
+        <div class="mt-2 mb-2 text-start">
+          <label for="duration">Duration</label>
+          <div class="row gx-2">
+            <div class="col-md-3">
+              <input
+                id="durationFrom"
+                formControlName="durationFrom"
+                placeholder="EX 2"
+                class="form-control"
+              />
+            </div>
+            <div class="col-md-3">
+              <select
+                id="durationType"
+                formControlName="durationType"
+                class="form-select"
+              >
+                <option *ngFor="let option of durationOptions" [value]="option">
+                  {{ option }}
+                </option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <input
+                id="durationTo"
+                formControlName="durationTo"
+                placeholder="EX 2"
+                class="form-control"
+              />
+            </div>
+            <div class="col-md-3">
+              <select
+                id="durationTypeEnd"
+                formControlName="durationTypeEnd"
+                class="form-select"
+              >
+                <option *ngFor="let option of durationOptions" [value]="option">
+                  {{ option }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="row gx-2 mb-2 text-start">
+          <label for="forWhom">For Whom</label>
+          <input
+            id="forWhom"
+            formControlName="forWhom"
+            placeholder="Enter Employee Designation"
+            class="form-control"
+          />
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+<div [hidden]="currentStep !== 3">
+  <div class="row justify-content-center mt-20">
+    <div class="col-md-10">
+      <div class="row justify-content-center">
+        <div class="col-6 text-start">
+          <label for="majorIndustryId">Major Industry</label>
+          <app-input-multiselect
+            [formGroup]="formImprisonment"
+            [name]="'majorIndustryId'"
+            [object]="selectedMajorIndustryList"
+            [key]="'majorIndustryId'"
+            [value]="'majorIndustryName'"
+            (getSelectedItems)="this.GetMinorIndustrybyMajorIDMap($event)"
+          >
+          </app-input-multiselect>
+        </div>
+        <div class="col-6 text-start">
+          <div>
+            <label for="">Minor Industry</label>
+            <div>
+              <app-treeview
+                [treeData]="minorIndustoryTreeNode"
+                (nodeSelectionChange)="onNodeSelect($event)"
+                [label]="'Minor Industory'"
+              >
+              </app-treeview>
+            </div>
+          </div>
+          <div
+            class="invalid-feedback"
+            *ngIf="
+              formgroup.get('minorIndustryId')?.invalid &&
+              formgroup.get('minorIndustryId')?.touched
+            "
+          >
+            <small
+              class="form-text text-danger"
+              *ngIf="formgroup.get('minorIndustryId')?.errors?.required"
+            >
+              Minor industry is required
+            </small>
+          </div>
+        </div>
+      </div>
+      <div class="row justify-content-center">
+        <div class="col-6 text-start">
+          <label for="">Type of Branch</label>
+          <app-treeview
+            [treeData]="TOBTreeNode"
+            (nodeSelectionChange)="onTOBNodeSelect($event)"
+            [label]="'Type of Branch'"
+          >
+          </app-treeview>
+        </div>
+        <div class="col-6 text-start">
+          <label for="legalEntityType">Legal Entity Type</label>
+          <app-input-multiselect
+            [formGroup]="formImprisonment"
+            [name]="'entityTypeId'"
+            [object]="selectedBindlegalEntityType"
+            [key]="'legalEntityType'"
+            [value]="'entityName'"
+          >
+          </app-input-multiselect>
+        </div>
+      </div>
+      <div class="row justify-content-center">
+        <div class="col-6 text-start">
+          <label for="">Concerned Ministry</label>
+          <app-input-dropdown
+            [formGroup]="formImprisonment"
+            [name]="'concernedMinistryId'"
+            [object]="this.concernedMinistry"
+            [key]="'concernedMinistryName'"
+            [value]="'id'"
+          >
+          </app-input-dropdown>
+          <div
+            class="invalid-feedback"
+            *ngIf="
+              formImprisonment.get('concernedMinistryId')?.invalid &&
+              formImprisonment.get('concernedMinistryId')?.touched
+            "
+          >
+            <small
+              class="form-text text-danger"
+              *ngIf="
+                formImprisonment.get('concernedMinistryId')?.errors?.required
+              "
+            >
+              Concerned Ministry is required
+            </small>
+          </div>
+        </div>
+        <div class="col-6 text-start">
+          <label for="">Regulatory Authority</label>
+          <app-input-dropdown
+            [formGroup]="formImprisonment"
+            [name]="'regulatoryAuthorityId'"
+            [object]="this.regulatoryAuthority"
+            [key]="'regulatoryAuthorityName'"
+            [value]="'id'"
+          >
+          </app-input-dropdown>
+          <div
+            class="invalid-feedback"
+            *ngIf="
+              formImprisonment.get('regulatoryAuthorityId')?.invalid &&
+              formImprisonment.get('regulatoryAuthorityId')?.touched
+            "
+          >
+            <small
+              class="form-text text-danger"
+              *ngIf="
+                formImprisonment.get('regulatoryAuthorityId')?.errors?.required
+              "
+            >
+              regulatory Authority is required
+            </small>
+          </div>
+        </div>
+      </div>
+      <!-- <div>
+     <label for="">Type of Branch 1111</label>
+    <app-treeview [treeData]="TOBTreeNode" (nodeSelectionChange)="onTOBNodeSelect($event)" [label]="'Type of Branch'">
+      ></app-treeview>
+  </div> -->
+      <app-parameter
+        (parametersChange)="onParametersChange($event)"
+        [parameterObject]="parametersvalues"
+        (formValidityChange)="onFormValidityChange($event)"
+        [inReview]="inReview"
+        [isParameterchecked]="isParameterChecked"
+      ></app-parameter>
+    </div>
+  </div>
+</div>
+<div class="row justify-content-center gap-3 mt-20">
+  <button
+    type="submit"
+    class="btn btn-next mt-0 px-4 w-auto"
+    (click)="goToStep(currentStep)"
+  >
+    Next
+  </button>
+  <button
+    class="btn btn-success btn-border w-auto"
+    (click)="saveChanges()"
+    *ngIf="!inReview || ActionType == 'Edit' || ActionType == 'Create'"
+  >
+    Save Changes
+  </button>
+</div>
+<div
+  class="col-4"
+  *ngIf="inReview && ActionType != 'Edit' && ActionType != 'Create'"
+>
+  <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+    <button class="btn btn-accept" (click)="acceptSelectedRequests()">
+      <i class="bi bi-check2-circle"></i> &nbsp; ACCEPT
+    </button>
+    &nbsp;
+    <button class="btn btn-reject" (click)="rejectSelectedRequests()">
+      <i class="bi bi-x-circle"></i> &nbsp;REJECT
+    </button>
+  </div>
+</div>
