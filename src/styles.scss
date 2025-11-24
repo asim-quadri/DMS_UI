@@ -74,7 +74,7 @@ a {
 body {
   font-family: $font-family_1 !important;
   font-weight: normal;
-  background-color: $background-color_1;
+  background: colors.$body-bg !important;
   height: 100vh;
   overflow-y: auto;
 }
@@ -141,12 +141,7 @@ input[type="radio"] {
 
 .auth-body {
   height: 100vh;
-  background: rgb(50, 90, 156);
-  background: linear-gradient(
-    90deg,
-    rgba(50, 90, 156, 0) 50%,
-    rgba(50, 90, 156, 1) 50%
-  );
+  background: transparent linear-gradient(149deg, #3AB54A 0%, #F7B037 100%) 0% 0% no-repeat padding-box;
 }
 
 .login-bg {
@@ -155,9 +150,8 @@ input[type="radio"] {
 }
 
 .auth-form {
-  height: 100px;
-  width: 430px;
-  margin: 23vh auto;
+  max-width: 430px;
+  width: 100%;
 
   h1 {
     text-align: center;
@@ -218,11 +212,11 @@ input[type="radio"] {
 }
 
 .btn-submit {
-  background-color: $background-color_3;
+  background-color: colors.$black-bg;
   color: $color_1;
   font-size: 15px;
   font-weight: 600;
-  padding: 15px 25px;
+  padding: 10px 25px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -241,11 +235,10 @@ input[type="radio"] {
 }
 
 .auth-left img {
-  width: 250px;
-}
-
-.auth-left {
-  padding-top: 32vh;
+  width: 100%;
+  height: 100vh;
+  object-fit: cover;
+  object-position: bottom;
 }
 
 .auth-links {
@@ -265,7 +258,7 @@ input[type="radio"] {
 .main-container {
   width: 100%;
   overflow-y: auto;
-  height: calc(100vh - 80px);
+  height: calc(100vh - 88px);
   float: left;
   background-color: colors.$body-bg !important;
   position: relative;
@@ -491,21 +484,12 @@ input[type="radio"] {
 }
 
 .home-header {
-  background-color: colors.$primary-blue !important;
-  padding: 20px 30px;
-  border: none;
-  border-radius: 25px 0px 0px 0px;
-  background-color: $background-color_7;
-  padding: 20px 30px;
+  background-color: colors.$title-header-bg !important;
+  padding: 12px 30px;
   border: none;
   border-radius: 25px 0px 0px 0px;
 
   .form-control {
-    height: 40px;
-    border: 1px solid #707070;
-    color: $color_6;
-    font-size: 13px;
-    border-right: none;
     border-radius: 5px;
     height: 40px;
     border: 1px solid #707070;
@@ -535,6 +519,7 @@ input[type="radio"] {
 .home-content {
   padding: 20px 30px;
   padding: 10px 30px;
+  background-color: colors.$content-bg;
   .col-form-label {
     font-size: 14px;
     font-weight: 600;
@@ -2884,4 +2869,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   right: 0;
   width: 100%;
   height: 100%;
+}
+
+// Rebranding styles 
+
+.light-label {
+  color: colors.$white;
 }

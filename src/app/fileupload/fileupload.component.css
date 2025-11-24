@@ -1,6 +1,6 @@
 /* File Manager Container */
 .file-manager-container {
-  height: calc(100vh - 80px); /* Adjust for header height */
+  height: calc(100vh - 88px); /* Adjust for header height */
   display: flex;
   flex-direction: column;
   background-color: #f8f9fa;
@@ -796,6 +796,9 @@
   transition: transform 0.2s ease;
 }
 
-
-
-
+.file-manager-title {
+  color: #ffffff;
+  font-size: 20px;
+  margin: 0;
+  text-align: center;
+}

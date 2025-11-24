@@ -13,6 +13,10 @@ export class InputPasswordComponent {
   @Input()
   placeholder: any;
   @Input()
+  label: string = '';
+  @Input()
+  labelClass: string = 'form-label';
+  @Input()
   showPassword: boolean = false;
   togglePassword()
   {

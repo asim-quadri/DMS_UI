@@ -1,4 +1,5 @@
 <form novalidate autocomplete="off" [formGroup]="this.formGroup">
+  <label *ngIf="label" for="{{ name }}" class="{{ labelClass }}">{{ label }}</label>
   <input
     type="text"
     id="name"

@@ -17,4 +17,8 @@ export class InputTextComponent {
  placeholder: any;
  @Input()
  readonly: any;
+ @Input()
+ label: string = '';
+ @Input()
+ labelClass: string = 'form-label';
  }
