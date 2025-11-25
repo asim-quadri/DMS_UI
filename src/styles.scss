@@ -118,7 +118,7 @@ h4 {
 }
 
 input[type="radio"] {
-  accent-color: colors.$primary-orange;
+  accent-color: colors.$primary-yellow;
   width: 15px;
   height: 15px;
 }
@@ -316,7 +316,7 @@ input[type="radio"] {
 
 .btn-color {
   background-color: $background-color_5 !important;
-  border: 1px solid colors.$primary-blue !important;
+  border: 1px solid colors.$primary-green !important;
   padding: 9px 35px !important;
   font-size: 13px !important;
   color: $color_1 !important;
@@ -326,14 +326,14 @@ input[type="radio"] {
 
   &:hover {
     color: $color_1 !important;
-    background-color: colors.$primary-orange !important;
-    border-color: colors.$primary-orange !important;
+    background-color: colors.$primary-yellow !important;
+    border-color: colors.$primary-yellow !important;
   }
 }
 
 .btn-color-nav {
   background-color: $background-color_5;
-  border: 1px solid colors.$primary-blue;
+  border: 1px solid colors.$primary-green;
   padding: 9px 35px;
   font-size: 13px;
   color: $color_1;
@@ -341,7 +341,7 @@ input[type="radio"] {
 
   &:hover {
     background-color: $background-color_5;
-    border: 1px solid colors.$primary-blue;
+    border: 1px solid colors.$primary-green;
     padding: 9px 35px;
     font-size: 13px;
     color: $color_1;
@@ -593,7 +593,7 @@ input[type="radio"] {
         color: $color_1;
         font-weight: 500;
         padding: 10px 10px;
-        border: 1px solid colors.$primary-blue;
+        border: 1px solid colors.$primary-green;
         text-align: center;
       }
     }
@@ -719,7 +719,7 @@ label {
 }
 
 .btn-reject {
-  background-color: colors.$primary-orange;
+  background-color: colors.$primary-yellow;
   color: $color_1;
   font-size: 13px;
   border-radius: 0px;
@@ -732,7 +732,7 @@ label {
   transition: all 0.5s;
 
   &:hover {
-    background-color: colors.$primary-orange !important;
+    background-color: colors.$primary-yellow !important;
     color: colors.$white !important;
   }
 
@@ -875,7 +875,7 @@ tr {
 }
 
 .btn-accept {
-  background-color: colors.$primary-blue;
+  background-color: colors.$primary-green;
   border-radius: 2px;
   font-size: 13px;
   color: colors.$white;
@@ -883,7 +883,7 @@ tr {
   transition: all 0.5s;
 
   &:hover {
-    background-color: colors.$primary-blue !important;
+    background-color: colors.$primary-green !important;
     color: colors.$white !important;
   }
 }
@@ -975,7 +975,7 @@ tr {
 
 .product-panel-header {
   padding: 8px 15px 8px 15px;
-  background-color: colors.$primary-blue;
+  background-color: colors.$primary-green;
   border-radius: 5px 5px 0px 0px;
 
   h4 {
@@ -1064,13 +1064,13 @@ ul.alphabetic-sort {
       font-weight: 500;
 
       &:hover {
-        background-color: colors.$primary-orange !important;
+        background-color: colors.$primary-yellow !important;
         color: colors.$white !important;
       }
     }
 
     li.selected {
-      background-color: colors.$primary-orange !important;
+      background-color: colors.$primary-yellow !important;
       color: $color_1;
     }
   }
@@ -1102,7 +1102,7 @@ ul.alphabetic-sort {
 }
 
 .btn-approve {
-  background-color: colors.$primary-blue !important;
+  background-color: colors.$primary-green !important;
   color: $color_1 !important;
   font-size: 13px !important;
   padding: 10px 25px !important;
@@ -1111,13 +1111,13 @@ ul.alphabetic-sort {
   text-transform: uppercase !important;
   margin-right: 15px !important;
   &:hover {
-    border: 1px solid colors.$primary-blue;
+    border: 1px solid colors.$primary-green;
     color: $color_5;
     background-color: $background-color_2;
   }
 
   span {
-    background-color: colors.$primary-orange;
+    background-color: colors.$primary-yellow;
     color: $color_1;
     padding: 5px 14px;
     font-size: 11px;
@@ -1140,7 +1140,7 @@ ul.alphabetic-sort {
   text-transform: uppercase;
 
   &:hover {
-    border: 1px solid colors.$primary-blue;
+    border: 1px solid colors.$primary-green;
     color: $color_5;
     background-color: $background-color_2;
   }
@@ -1155,7 +1155,7 @@ ul.alphabetic-sort {
 }
 
 .btn-approve-outline {
-  border: 1px solid colors.$primary-blue !important;
+  border: 1px solid colors.$primary-green !important;
   color: $color_5 !important;
   font-size: 13px !important;
   padding: 10px 20px !important;
@@ -1167,7 +1167,7 @@ ul.alphabetic-sort {
   &:hover {
     background-color: $background-color_5 !important;
     color: $color_1 !important;
-    border: 1px solid colors.$primary-blue !important;
+    border: 1px solid colors.$primary-green !important;
   }
 
   img {
@@ -1193,7 +1193,7 @@ ul.alphabetic-sort {
     min-width: 190px;
 
     span {
-      background-color: colors.$primary-orange !important;
+      background-color: colors.$primary-yellow !important;
       color: colors.$white !important;
       padding: 3px 15px;
       border-radius: 25px;
@@ -1202,7 +1202,7 @@ ul.alphabetic-sort {
   }
 
   .nav-link.active {
-    background-color: colors.$primary-orange !important;
+    background-color: colors.$primary-yellow !important;
     color: colors.$white !important;
     border: none;
     font-size: 14px;
@@ -1211,7 +1211,7 @@ ul.alphabetic-sort {
     box-shadow: 0px 3px 6px #00000029;
     margin: 1px 10px;
     span {
-      background-color: colors.$primary-blue !important;
+      background-color: colors.$primary-green !important;
     }
   }
 
@@ -1232,14 +1232,14 @@ ul.alphabetic-sort {
   color: $color_5 !important;
   position: absolute !important;
   right: 15px !important;
-  border: 1px solid colors.$primary-blue !important;
+  border: 1px solid colors.$primary-green !important;
 
   &:hover {
     padding: 2px 5px !important;
     color: $color_5 !important;
     position: absolute !important;
     right: 15px !important;
-    border: 1px solid colors.$primary-blue !important;
+    border: 1px solid colors.$primary-green !important;
   }
 }
 
@@ -1257,7 +1257,7 @@ ul.alphabetic-sort {
 input {
   &:first-child + label {
     &::before {
-      border: 1px solid colors.$primary-blue !important;
+      border: 1px solid colors.$primary-green !important;
       border-radius: 2px !important;
     }
   }
@@ -1319,12 +1319,12 @@ option {
   font-size: 13px !important;
   padding: 1px 55px 0px !important;
   font-weight: normal !important;
-  border: 1px solid colors.$primary-blue !important;
+  border: 1px solid colors.$primary-green !important;
   line-height: 0.5 !important;
   transition: all 0.3s !important;
 
   &:hover {
-    border: 1px solid colors.$primary-blue !important;
+    border: 1px solid colors.$primary-green !important;
     background-color: $background-color_5 !important;
     color: $color_1 !important;
   }
@@ -1433,7 +1433,7 @@ option {
     }
 
     &:hover {
-      background-color: colors.$primary-orange !important;
+      background-color: colors.$primary-yellow !important;
       color: colors.$white !important;
     }
 
@@ -1478,7 +1478,7 @@ option {
       color: $color_5;
       border-radius: 3px;
       width: 50%;
-      border: 1px solid colors.$primary-blue;
+      border: 1px solid colors.$primary-green;
       font-size: 14px;
 
       &:hover {
@@ -1527,7 +1527,7 @@ option {
       box-shadow: none;
       margin: 0px;
       border-radius: 0px;
-      border: 0.5px solid colors.$primary-blue;
+      border: 0.5px solid colors.$primary-green;
     }
   }
 }
@@ -1683,7 +1683,7 @@ p.noti-date {
   z-index: 1;
   width: 20px;
   height: 20px;
-  background-color: colors.$primary-blue;
+  background-color: colors.$primary-green;
   border-radius: 50%;
   font-size: 9px;
   text-align: center;
@@ -1748,7 +1748,7 @@ p.regulation-success {
 }
 
 .approve-count {
-  background-color: colors.$primary-orange;
+  background-color: colors.$primary-yellow;
   color: $color_1;
   padding: 3px 10px 4px;
   margin-left: 3px;
@@ -1836,7 +1836,7 @@ h6.heading {
 }
 
 .accordion-body {
-  background-color: colors.$primary-blue;
+  background-color: colors.$primary-green;
   padding-bottom: 10px;
   border-radius: 0px 0px 5px 5px;
 
@@ -1868,7 +1868,7 @@ h6.heading {
 }
 
 button.active {
-  background-color: colors.$primary-blue !important;
+  background-color: colors.$primary-green !important;
   color: colors.$white !important;
   font-weight: bold;
 }
@@ -1912,7 +1912,7 @@ button.active {
     margin: 3px 10px;
     position: relative;
     font-size: 14px;
-    border: 1px solid colors.$primary-blue;
+    border: 1px solid colors.$primary-green;
     color: $color_5;
     font-weight: 500;
 
@@ -1993,7 +1993,7 @@ button.active {
   }
 
   .filter-textbox {
-    border: 1px solid colors.$primary-blue !important;
+    border: 1px solid colors.$primary-green !important;
     border-radius: 5px !important;
     display: none !important;
   }
@@ -2083,18 +2083,16 @@ button.active {
     cursor: no-drop !important;
     color: $color_9;
     opacity: 1;
-    padding: 10px 1px;
-    width: 100%;
+    padding: 10px 18px;
     border: 1px solid #ccc;
-    font-size: 13px;
   }
   &:hover {
-    background-color: colors.$primary-orange !important;
-    border-color: colors.$primary-orange !important;
+    background-color: colors.$primary-yellow !important;
+    border-color: colors.$primary-yellow !important;
     color: colors.$white !important;
 
     span {
-      background-color: colors.$primary-blue !important;
+      background-color: colors.$primary-green !important;
     }
   }
 }
@@ -2133,14 +2131,14 @@ fieldset {
     .nav-link.active {
       margin: 0px;
       box-shadow: none;
-      border: 1px solid colors.$primary-orange;
+      border: 1px solid colors.$primary-yellow;
       border-radius: 0px;
     }
 
     .nav-link {
       margin: 0px;
       box-shadow: none;
-      border: 1px solid colors.$primary-blue;
+      border: 1px solid colors.$primary-green;
       border-radius: 0px;
     }
   }
@@ -2167,13 +2165,13 @@ label {
   .form-control {
     border-radius: 5px 0px 0px 5px;
     height: 45px;
-    border: 1px solid colors.$primary-blue;
+    border: 1px solid colors.$primary-green;
   }
 
   .form-select {
     border-radius: 0px 5px 5px 0px;
     height: 40px;
-    border: 1px solid colors.$primary-blue;
+    border: 1px solid colors.$primary-green;
     background-color: $background-color_5;
     color: $color_1;
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
@@ -2210,7 +2208,7 @@ label {
   height: 28px;
   width: 16px;
   background-color: $background-color_2;
-  border: 3px solid colors.$primary-blue;
+  border: 3px solid colors.$primary-green;
   border-radius: 50%;
   position: absolute;
   margin-top: 3px;
@@ -2221,7 +2219,7 @@ label {
   height: 28px;
   width: 16px;
   background-color: $background-color_2;
-  border: 3px solid colors.$primary-blue;
+  border: 3px solid colors.$primary-green;
   border-radius: 50%;
   position: absolute;
   margin-top: 3px;
@@ -2232,7 +2230,7 @@ label {
   height: 28px;
   width: 16px;
   background-color: $background-color_2;
-  border: 3px solid colors.$primary-blue;
+  border: 3px solid colors.$primary-green;
   border-radius: 50%;
   position: absolute;
   margin-top: 3px;
@@ -2243,7 +2241,7 @@ label {
   height: 28px;
   width: 16px;
   background-color: $background-color_2;
-  border: 3px solid colors.$primary-blue;
+  border: 3px solid colors.$primary-green;
   border-radius: 50%;
   position: absolute;
   margin-top: 3px;
@@ -2273,8 +2271,8 @@ label {
   thead {
     tr {
       th {
-        background-color: colors.$primary-blue !important;
-        border: 1px solid colors.$primary-blue !important;
+        background-color: colors.$primary-green !important;
+        border: 1px solid colors.$primary-green !important;
         font-size: 14px;
         color: #fff;
         font-weight: normal;
@@ -2293,7 +2291,7 @@ label {
         background-color: #ecf8ff;
         border: none;
         font-size: 14px;
-        color: colors.$primary-blue;
+        color: colors.$primary-green;
         font-weight: 500;
         text-align: center;
         padding: 8px 0px !important;
@@ -2322,7 +2320,6 @@ label {
   background-color: #de5926;
   color: #fff;
   border: none;
-  height: 45px;
 }
 
 .btn-search {
@@ -2404,14 +2401,14 @@ li {
 }
 
 .btn-accept {
-  background-color: colors.$primary-blue;
+  background-color: colors.$primary-green;
   color: colors.$white;
   font-size: 13px;
   font-weight: 400;
 }
 
 .btn-reject {
-  background-color: colors.$primary-orange;
+  background-color: colors.$primary-yellow;
   color: colors.$white;
   font-size: 13px;
   font-weight: 400;
@@ -2440,7 +2437,7 @@ li {
 
   h6 {
     font-size: 15px;
-    color: colors.$primary-blue;
+    color: colors.$primary-green;
     font-weight: 400;
   }
 }
@@ -2452,11 +2449,11 @@ li {
 }
 
 .btn-color {
-  background-color: colors.$primary-blue !important;
+  background-color: colors.$primary-green !important;
   padding: 8px 35px !important;
   color: #fff !important;
   font-size: 14px !important;
-  border: 1px solid colors.$primary-blue !important;
+  border: 1px solid colors.$primary-green !important;
   font-weight: normal !important;
   font-weight: 900;
 }
@@ -2469,13 +2466,13 @@ li {
   font-weight: bold;
   &:hover {
     border-color: colors.$white !important;
-    background-color: colors.$primary-orange !important;
+    background-color: colors.$primary-yellow !important;
     color: colors.$white !important;
   }
 }
 
 .btn-approval {
-  background-color: colors.$primary-blue;
+  background-color: colors.$primary-green;
   color: #fff;
   font-size: 14px;
   padding: 10px 35px;
@@ -2508,7 +2505,7 @@ li {
 
 /* Handle */
 ::-webkit-scrollbar-thumb {
-  background: colors.$primary-blue;
+  background: colors.$primary-green;
   border-radius: 25px;
 }
 
@@ -2533,10 +2530,10 @@ li {
 }
 
 .nasted-tabs .nav-link.active {
-  color: colors.$primary-blue !important;
+  color: colors.$primary-green !important;
   background-color: #fff !important;
   font-weight: 500;
-  border-bottom: 4px solid colors.$primary-blue !important;
+  border-bottom: 4px solid colors.$primary-green !important;
   width: 80% !important;
 }
 
@@ -2629,7 +2626,7 @@ li {
 }
 
 .nested-panel h5 {
-  background-color: colors.$primary-blue !important;
+  background-color: colors.$primary-green !important;
   color: #fff !important;
 }
 
@@ -2645,7 +2642,7 @@ li {
   z-index: 99999 !important;
 }
 .ag-header-cell {
-  background-color: colors.$primary-blue !important;
+  background-color: colors.$primary-green !important;
   .ag-header-cell-text {
     color: #fff !important;
     font-size: 14px !important;
@@ -2692,7 +2689,7 @@ li {
   height: 40px !important;
 }
 .selected-item {
-  background-color: colors.$primary-blue !important;
+  background-color: colors.$primary-green !important;
   border-radius: 12px !important;
   font-weight: 400 !important;
   padding: 1px 6px !important;
@@ -2710,28 +2707,28 @@ li {
 
 // Rebranding: product-setup screens
 .active-tab-btn {
-  background-color: colors.$primary-orange !important;
+  background-color: colors.$primary-yellow !important;
   padding: 8px 20px !important;
   color: colors.$white !important;
   font-size: 14px !important;
   border: 1px solid colors.$white !important;
 }
 
-.primary-orange-btn {
-  background-color: colors.$primary-orange !important;
-  border-color: colors.$primary-orange !important;
+.primary-yellow-btn {
+  background-color: colors.$primary-yellow !important;
+  border-color: colors.$primary-yellow !important;
   color: colors.$white !important;
   &:hover {
-    background-color: colors.$primary-orange !important;
+    background-color: colors.$primary-yellow !important;
   }
 }
 
-.primary-blue-btn {
-  background-color: colors.$primary-blue !important;
-  border-color: colors.$primary-blue !important;
+.primary-green-btn {
+  background-color: colors.$primary-green !important;
+  border-color: colors.$primary-green !important;
 
   &:hover {
-    background-color: colors.$primary-orange !important;
+    background-color: colors.$primary-yellow !important;
   }
 }
 
@@ -2739,7 +2736,7 @@ li {
   .nav-item {
     .nav-link {
       &:hover {
-        background-color: colors.$primary-orange !important;
+        background-color: colors.$primary-yellow !important;
         color: colors.$white !important;
       }
     }
@@ -2799,7 +2796,7 @@ input[type="search"]::placeholder {
 
 span:has(> span.dropdown-multiselect__caret)
   > span:not(.dropdown-multiselect__caret) {
-  background-color: colors.$primary-orange !important;
+  background-color: colors.$primary-yellow !important;
   padding: 2px 4px !important;
   color: colors.$white !important;
   border-radius: 50%;
@@ -2829,24 +2826,25 @@ div:has(> .dropdown-btn) {
 }
 
 .btn-primary {
-  background-color: colors.$primary-blue !important;
+  background-color: colors.$primary-green !important;
+  border-color: colors.$primary-green !important;
 }
 
 input[type="checkbox"] {
-  accent-color: colors.$primary-orange !important;
+  accent-color: colors.$primary-yellow !important;
 }
 
 // Check box styles
 .mdc-checkbox
   .mdc-checkbox__native-control:enabled:checked
   ~ .mdc-checkbox__background {
-  border-color: colors.$primary-orange !important;
-  background: colors.$primary-orange !important;
+  border-color: colors.$primary-yellow !important;
+  background: colors.$primary-yellow !important;
 }
 
 .icheck-primary > input:first-child:checked + label::before {
-  background-color: colors.$primary-orange !important;
-  border-color: colors.$primary-orange !important;
+  background-color: colors.$primary-yellow !important;
+  border-color: colors.$primary-yellow !important;
 }
 
 /* Global Date Input icon changes */

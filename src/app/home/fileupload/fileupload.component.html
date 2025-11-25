@@ -20,7 +20,7 @@
     <div class="toolbar-right">
       <div class="search-container">
         <i class="bi bi-search search-icon"></i>
-        <input type="text" class="search-input" placeholder="Search in DMS">
+        <input type="text" class="search-input" placeholder="Search in proedox">
       </div>
       <button class="btn btn-outline-secondary toolbar-btn">
         <i class="bi bi-three-dots"></i>
@@ -174,7 +174,7 @@
 <!-- Modal Templates -->
 <ng-template #primaryFolder let-modal>
   <div class="modal-header">
-    <h5 class="modal-title">Create Primary Folder</h5>
+    <h5 class="modal-title mb-0">Create Primary Folder</h5>
     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
   <div class="modal-body">
@@ -183,7 +183,7 @@
         <label class="form-label">Folder Name</label>
         <input type="text" class="form-control" formControlName="primaryFolderName" placeholder="Enter folder name">
       </div>
-      <div class="d-flex justify-content-end gap-2">
+      <div class="d-flex justify-content-between gap-2">
         <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancel</button>
         <button type="submit" class="btn btn-primary" [disabled]="!fbCreatePrimaryFolder.valid">
           <i class="bi bi-folder-plus"></i> Create
@@ -195,7 +195,7 @@
 
 <ng-template #content let-modal>
   <div class="modal-header">
-    <h5 class="modal-title">Create New Folder</h5>
+    <h5 class="modal-title mb-0">Create New Folder</h5>
     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
   <div class="modal-body">
@@ -205,7 +205,7 @@
         <input type="text" class="form-control" formControlName="folderName" placeholder="Enter folder name">
         <div class="form-text">This folder will be created in: {{ selectedFolderTreeNodeItem?.label || 'Root' }}</div>
       </div>
-      <div class="d-flex justify-content-end gap-2">
+      <div class="d-flex justify-content-between gap-2">
         <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancel</button>
         <button type="submit" class="btn btn-primary" [disabled]="!formgroupCreateFolder.valid">
           <i class="bi bi-folder-plus"></i> Create

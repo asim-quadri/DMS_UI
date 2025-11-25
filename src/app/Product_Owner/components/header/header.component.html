@@ -7,7 +7,14 @@
         routerLink="/home"
       /> -->
 
-      <div class="header-title">DMS</div>
+      <div class="header-title">
+        <img
+        src="./assets/images/ProEDox-logo.png"
+        alt="logo"
+        class="header-logo"
+        routerLink="/home"
+      />
+    </div>
     <div class="">
       <!-- <div class="row">
         <div class="col-md-3" style="text-align: end;padding: 10px;">
@@ -37,7 +44,7 @@
               class="btn btn-profile-dropdown"
               (click)="toggleNotificationPopup()"
             >
-              <img src="./assets/images/icons/notification-bell.svg" alt="notification" width="16" height="16" />
+              <img src="./assets/images/icons/bell.svg" alt="notification" width="16" height="16" />
             </button>
 
             <div class="notification-popup" *ngIf="showNotificationPopup">
@@ -109,12 +116,12 @@
           </li>
           <li class="header-list-divider"></li>
           <li>
-            <!-- <a routerLink="/"> -->
-            <i class="bi bi-person-fill-gear logout-icon"></i>
-            <!-- </a> -->
+            <button class="border-0 bg-transparent" (click)="logout($event)">
+              <i class="fa fa-sign-out logout-icon" aria-hidden="true"></i>
+            </button>
           </li>
           <li class="header-list-divider"></li>
-          <li class="wid-170">
+          <li>
             <div class="user-profile">
               {{ name }}
             </div>

@@ -27,7 +27,7 @@ interface ComFolder {
 @Component({
   selector: 'app-fileupload',
   templateUrl: './fileupload.component.html',
-  styleUrls: ['./fileupload.component.css']
+  styleUrls: ['./fileupload.component.scss']
 })
 export class FileuploadComponent implements OnInit {
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
@@ -546,7 +546,7 @@ attachParentReferences(nodes: FolderTreeNode[], parent: FolderTreeNode | null = 
      alert("Cannot create or upload files to COMPSEQR360 folder.");
      return;
     }
-    this.modalService.open(content, { centered: true, size: 'sm'  });
+    this.modalService.open(content, { centered: true, size: 'md'  });
   }
   open(content: TemplateRef<any>) {
     this.modalService.open(content, { centered: true});

@@ -1,22 +1,21 @@
+@use "../../assets/scss/colors";
+
 /* File Manager Container */
 .file-manager-container {
-  height: calc(100vh - 88px); /* Adjust for header height */
+  height: calc(100vh - 160px); /* Adjust for header height */
   display: flex;
   flex-direction: column;
   background-color: #f8f9fa;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   overflow: hidden; /* Prevent scroll on container */
 }
 
 /* Top Toolbar */
 .toolbar {
-  background-color: #ffffff;
-  border-bottom: 1px solid #e0e0e0;
-  padding: 12px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
 }
 
 .toolbar-left {
@@ -44,7 +43,7 @@
 
 .toolbar-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .toolbar-separator {
@@ -64,9 +63,9 @@
   width: 100%;
   padding: 8px 12px 8px 35px;
   border: 1px solid #dee2e6;
-  border-radius: 20px;
+  border-radius: 12px;
   font-size: 14px;
-  background-color: #f8f9fa;
+  background-color: colors.$white;
   transition: all 0.2s ease;
 }
 
@@ -74,7 +73,7 @@
   outline: none;
   border-color: #007bff;
   background-color: white;
-  box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
 .search-icon {
@@ -88,12 +87,10 @@
 
 /* Navigation Bar */
 .nav-bar {
-  background-color: #ffffff;
-  border-bottom: 1px solid #e0e0e0;
-  padding: 12px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 20px;
 }
 
 .breadcrumb-container .breadcrumb {
@@ -160,18 +157,20 @@
 
 /* Sidebar */
 .sidebar {
-  width: 280px;
-  min-width: 250px; /* Ensure minimum width */
-  max-width: 350px; /* Prevent sidebar from getting too wide */
-  background-color: #ffffff;
+  width: 320px;
+  background-color: colors.$primary-green;
   border-right: 1px solid #e0e0e0;
   display: flex;
   flex-direction: column;
   overflow: hidden; /* Prevent sidebar overflow */
+  border-radius: 12px;
+  position: relative; /* For absolute positioned button */
 }
 
 .sidebar-header {
-  padding: 16px 20px;
+  padding: 8px 12px;
+  margin: 12px;
+  border-radius: 12px;
   border-bottom: 1px solid #e0e0e0;
   display: flex;
   justify-content: space-between;
@@ -190,13 +189,8 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden; /* Prevent horizontal scroll */
-  padding: 12px 0;
-  max-height: calc(100vh - 200px); /* Ensure it doesn't exceed container */
-}
-
-/* Folder Tree */
-.folder-tree {
-  padding: 0 8px;
+  padding: 0 12px 60px 12px; /* Add bottom padding for button space */
+  position: relative;
 }
 
 .tree-list {
@@ -206,7 +200,11 @@
 }
 
 .tree-item {
-  margin-bottom: 2px;
+  margin-bottom: 12px;
+}
+
+.tree-item:last-child {
+  margin-bottom: 0;
 }
 
 .tree-node {
@@ -215,10 +213,11 @@
   cursor: pointer;
   transition: all 0.2s ease;
   user-select: none;
+  background-color: colors.$white;
 }
 
 .tree-node:hover {
-  background-color: #f8f9fa;
+  background-color: colors.$white;
 }
 
 /* .tree-item.selected .tree-node {
@@ -228,16 +227,19 @@
 
 .tree-node-content {
   display: flex;
-  align-items: center;
   gap: 8px;
+  flex-direction: column;
 }
 
 .nested-content {
   padding-left: 16px;
+  flex-direction: row;
+  align-items: center;
 }
 
 .nested-content-deep {
-  padding-left: 32px;
+  flex-direction: row;
+  align-items: center;
 }
 
 .tree-toggle {
@@ -251,7 +253,7 @@
 }
 
 .tree-toggle:hover {
-  background-color: rgba(0,0,0,0.05);
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .folder-icon {
@@ -326,7 +328,7 @@
   min-height: 400px; /* Ensure minimum height for grid */
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* AG Grid Customization */
@@ -391,7 +393,8 @@
 }
 
 /* Button Styles */
-.btn-view, .btn-download {
+.btn-view,
+.btn-download {
   border: none;
   background: transparent;
   padding: 4px 8px;
@@ -400,7 +403,8 @@
   transition: all 0.2s ease;
 }
 
-.btn-view:hover, .btn-download:hover {
+.btn-view:hover,
+.btn-download:hover {
   background-color: #f8f9fa;
   color: #495057;
 }
@@ -412,13 +416,14 @@
 
 /* Modal Improvements */
 .modal-header {
-  background-color: #f8f9fa;
+  background-color: colors.$black-bg;
   border-bottom: 1px solid #e0e0e0;
 }
 
 .modal-title {
   font-weight: 600;
-  color: #333;
+  color: colors.$white;
+  font-size: 16px;
 }
 
 .form-label {
@@ -429,7 +434,7 @@
 
 .form-control:focus {
   border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
 /* Responsive Design */
@@ -437,19 +442,19 @@
   .sidebar {
     width: 240px;
   }
-  
+
   .search-container {
     width: 200px;
   }
-  
+
   .toolbar-left .toolbar-btn span {
     display: none;
   }
-  
+
   .content-header {
     padding: 12px 16px;
   }
-  
+
   .file-grid {
     padding: 16px;
   }
@@ -459,7 +464,7 @@
   .main-content {
     flex-direction: column;
   }
-  
+
   .sidebar {
     width: 100%;
     height: 200px;
@@ -467,41 +472,42 @@
     border-right: none;
     border-bottom: 1px solid #e0e0e0;
   }
-  
+
   .toolbar {
     padding: 8px 12px;
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
   }
-  
-  .toolbar-left, .toolbar-right {
+
+  .toolbar-left,
+  .toolbar-right {
     justify-content: center;
   }
-  
+
   .search-container {
     width: 100%;
     max-width: 300px;
   }
-  
+
   .nav-bar {
     padding: 8px 12px;
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
-  
+
   .content-header {
     padding: 12px;
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
-  
+
   .file-grid {
     padding: 12px;
   }
-  
+
   .folder-tree-container {
     max-height: 120px;
   }
@@ -801,4 +807,31 @@
   font-size: 20px;
   margin: 0;
   text-align: center;
+}
+
+.folder-sidebar-footer {
+  margin: 12px;
+}
+
+.btn-add-folder {
+  background-color: colors.$white;
+  color: colors.$text-black;
+  border-radius: 6px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.btn-folder-toggle {
+  border: none;
+  background: transparent;
+}
+
+.third-level-nesting {
+  background-color: #F1F1F1;
+  padding: 8px;
+  border-radius: 12px;
 }

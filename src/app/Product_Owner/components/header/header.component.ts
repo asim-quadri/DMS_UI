@@ -82,6 +82,11 @@ export class HeaderComponent implements OnInit {
     // this.fetchNotificationData();
   }
 
+  logout(event: Event) {
+    event.preventDefault();
+    this.persistance.logout();
+  }
+
   getEntities() {
     this.complianceTrackerService.getEntities().subscribe({
       next: (result: any) => {
@@ -387,17 +392,19 @@ export class HeaderComponent implements OnInit {
 
   openAllNotifications() {
     this.toggleNotificationPopup();
-  const sixDaysAgo = new Date();
-  sixDaysAgo.setDate(sixDaysAgo.getDate() - 6);
-  sixDaysAgo.setHours(0, 0, 0, 0);
+    const sixDaysAgo = new Date();
+    sixDaysAgo.setDate(sixDaysAgo.getDate() - 6);
+    sixDaysAgo.setHours(0, 0, 0, 0);
 
-  this.allNotifications = this.notifications.filter(n => {
-    const date = new Date(n.createdDate);
-    return !isNaN(date.getTime()) &&
-      date.getFullYear() >= sixDaysAgo.getFullYear() &&
-      date.getMonth() >= sixDaysAgo.getMonth() &&
-      date.getDate() >= sixDaysAgo.getDate();
-  });
+    this.allNotifications = this.notifications.filter((n) => {
+      const date = new Date(n.createdDate);
+      return (
+        !isNaN(date.getTime()) &&
+        date.getFullYear() >= sixDaysAgo.getFullYear() &&
+        date.getMonth() >= sixDaysAgo.getMonth() &&
+        date.getDate() >= sixDaysAgo.getDate()
+      );
+    });
     this.modalRef = this.modalService.open(this.allNotificationsModal, {
       size: 'lg',
       centered: true,

@@ -21,18 +21,6 @@
   </ul>
 
   <div class="bottom-buttons">
-    <button class="logout-btn" (click)="logout()">
-      <img
-        src="assets/images/logout.png"
-        alt="Logout"
-        [ngClass]="{
-          'icon-collapsed': isCollapsed,
-          'icon-expanded': !isCollapsed
-        }"
-      />
-      <span *ngIf="!isCollapsed">Logout</span>
-    </button>
-
     <button class="collapse-btn" (click)="toggleSidebar()">
       <img
         src="assets/images/icons/Icon-collapse.svg"
