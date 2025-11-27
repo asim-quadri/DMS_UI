@@ -520,6 +520,8 @@ input[type="radio"] {
   padding: 20px 30px;
   padding: 10px 30px;
   background-color: colors.$content-bg;
+  height: calc(100vh - 142px);
+
   .col-form-label {
     font-size: 14px;
     font-weight: 600;
@@ -555,7 +557,7 @@ input[type="radio"] {
 }
 
 .modal-header {
-  background-color: $background-color_5;
+  background-color: colors.$black-bg;
   border-radius: 4px 4px 0px 0px;
   margin: 0 auto;
   width: 100%;
@@ -2530,11 +2532,9 @@ li {
 }
 
 .nasted-tabs .nav-link.active {
-  color: colors.$primary-green !important;
-  background-color: #fff !important;
+  color: colors.$white !important;
+  background-color: colors.$primary-yellow !important;
   font-weight: 500;
-  border-bottom: 4px solid colors.$primary-green !important;
-  width: 80% !important;
 }
 
 .mt-30 {
@@ -2642,7 +2642,7 @@ li {
   z-index: 99999 !important;
 }
 .ag-header-cell {
-  background-color: colors.$primary-green !important;
+  background-color: colors.$black-bg !important;
   .ag-header-cell-text {
     color: #fff !important;
     font-size: 14px !important;
@@ -2873,4 +2873,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .light-label {
   color: colors.$white;
+}
+
+.access-control-sub-tabs {
+  .nav-item {
+    text-align: center;
+    .nav-link {
+     color: colors.$dark-gray;
+     width: auto;
+      &:hover{
+        background-color: colors.$primary-yellow;
+        color: colors.$white;
+      }
+    }
+  }
 }

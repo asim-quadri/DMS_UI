@@ -1,6 +1,7 @@
 <div class="sidemenu" [class.collapsed]="isCollapsed">
   <ul>
-    <li *ngFor="let item of menuItems" routerLinkActive="active">
+    <li *ngFor="let item of menuItems" 
+        [class.active]="isMenuActive(item)">
       <a
         [routerLink]="item.route"
         [attr.title]="isCollapsed ? item.title : null"

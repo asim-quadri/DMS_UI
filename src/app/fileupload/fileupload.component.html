@@ -41,18 +41,20 @@
       <!-- Top Toolbar -->
       <div class="toolbar">
         <div class="toolbar-left">
-          <button
-            class="btn btn-primary toolbar-btn"
-            (click)="openSm(content, 'subfolder')"
-          >
-            <i class="bi bi-folder-plus"></i> Create Folder
-          </button>
-          <button
-            class="btn btn-primary toolbar-btn"
-            (click)="triggerFileInput()"
-          >
-            <i class="bi bi-upload"></i> Upload File
-          </button>
+          <div class="create-upload-btns">
+            <button
+              class="btn btn-primary toolbar-btn"
+              (click)="openSm(content, 'subfolder')"
+            >
+              <i class="bi bi-folder-plus"></i> Create Folder
+            </button>
+            <button
+              class="btn btn-primary toolbar-btn"
+              (click)="triggerFileInput()"
+            >
+              <i class="bi bi-upload"></i> Upload File
+            </button>
+          </div>
           <input
             type="file"
             #fileInput
@@ -65,7 +67,7 @@
             <input
               type="text"
               class="search-input"
-              placeholder="Search in proedox"
+              placeholder="Search in ProEDox"
             />
           </div>
         </div>
@@ -185,7 +187,7 @@
                                 [class.selected]="isSelected(grandchild)"
                               >
                                 <div
-                                  class="tree-node"
+                                  class="tree-node nested-tree-deep"
                                   (click)="selectItem(grandchild, $event)"
                                 >
                                   <div
@@ -233,7 +235,7 @@
                                   </div>
                                    <!-- 👇 Recursive call -->
                                 <ul
-                                  class="tree-list nested"
+                                  class="tree-list nested fourth-level-nesting"
                                   *ngIf="
                                     grandchild.expanded &&
                                     grandchild.children?.length
@@ -291,101 +293,100 @@
                                             sub.label
                                           }}</span>
                                         </div>
-                                      </div>
-
-                                      <!-- 🌀 Keep nesting this same block for unlimited depth -->
-                                      <ul
-                                        class="tree-list nested"
-                                        *ngIf="
-                                          sub.expanded && sub.children?.length
-                                        "
-                                      >
-                                        <ng-container
-                                          *ngFor="let deeper of sub.children"
+                                        <!-- 🌀 Keep nesting this same block for unlimited depth -->
+                                        <ul
+                                          class="tree-list nested fifth-level-nesting"
+                                          *ngIf="
+                                            sub.expanded && sub.children?.length
+                                          "
                                         >
-                                          <li
-                                            class="tree-item"
-                                            [class.selected]="
-                                              isSelected(deeper)
-                                            "
+                                          <ng-container
+                                            *ngFor="let deeper of sub.children"
                                           >
-                                            <div
-                                              class="tree-node"
-                                              (click)="
-                                                selectItem(deeper, $event)
+                                            <li
+                                              class="tree-item"
+                                              [class.selected]="
+                                                isSelected(deeper)
                                               "
                                             >
                                               <div
-                                                class="tree-node-content nested-content-deep"
+                                                class="tree-node"
+                                                (click)="
+                                                  selectItem(deeper, $event)
+                                                "
                                               >
-                                                <span
-                                                  class="tree-toggle"
-                                                  *ngIf="
-                                                    deeper.children?.length &&
-                                                    !deeper.isFile
-                                                  "
-                                                  (click)="
-                                                    toggle(deeper, $event)
-                                                  "
+                                                <div
+                                                  class="tree-node-content nested-content-deep"
                                                 >
+                                                  <span
+                                                    class="tree-toggle"
+                                                    *ngIf="
+                                                      deeper.children?.length &&
+                                                      !deeper.isFile
+                                                    "
+                                                    (click)="
+                                                      toggle(deeper, $event)
+                                                    "
+                                                  >
+                                                    <i
+                                                      class="bi"
+                                                      [class.bi-chevron-right]="
+                                                        !deeper.expanded
+                                                      "
+                                                      [class.bi-chevron-down]="
+                                                        deeper.expanded
+                                                      "
+                                                    ></i>
+                                                  </span>
+                                                  <span
+                                                    class="tree-toggle"
+                                                    *ngIf="
+                                                      !deeper.children?.length &&
+                                                      !deeper.isFile
+                                                    "
+                                                  ></span>
                                                   <i
                                                     class="bi"
-                                                    [class.bi-chevron-right]="
-                                                      !deeper.expanded
+                                                    [class.bi-folder-fill]="
+                                                      !deeper.isFile
                                                     "
-                                                    [class.bi-chevron-down]="
-                                                      deeper.expanded
+                                                    [class.bi-file-earmark-text]="
+                                                      deeper.isFile
+                                                    "
+                                                    [class.folder-icon]="
+                                                      !deeper.isFile
+                                                    "
+                                                    [class.file-icon]="
+                                                      deeper.isFile
                                                     "
                                                   ></i>
-                                                </span>
-                                                <span
-                                                  class="tree-toggle"
-                                                  *ngIf="
-                                                    !deeper.children?.length &&
-                                                    !deeper.isFile
-                                                  "
-                                                ></span>
-                                                <i
-                                                  class="bi"
-                                                  [class.bi-folder-fill]="
-                                                    !deeper.isFile
-                                                  "
-                                                  [class.bi-file-earmark-text]="
-                                                    deeper.isFile
-                                                  "
-                                                  [class.folder-icon]="
-                                                    !deeper.isFile
-                                                  "
-                                                  [class.file-icon]="
-                                                    deeper.isFile
-                                                  "
-                                                ></i>
-                                                <span class="folder-name">{{
-                                                  deeper.label
-                                                }}</span>
+                                                  <span class="folder-name">{{
+                                                    deeper.label
+                                                  }}</span>
+                                                </div>
                                               </div>
-                                            </div>
-
-                                            <!-- recursive structure continues -->
-                                            <ul
-                                              class="tree-list nested"
-                                              *ngIf="
-                                                deeper.expanded &&
-                                                deeper.children?.length
-                                              "
-                                            >
-                                              <ng-container
-                                                *ngTemplateOutlet="
-                                                  recursiveBlock;
-                                                  context: {
-                                                    $implicit: deeper.children
-                                                  }
+  
+                                              <!-- recursive structure continues -->
+                                              <ul
+                                                class="tree-list nested"
+                                                *ngIf="
+                                                  deeper.expanded &&
+                                                  deeper.children?.length
                                                 "
-                                              ></ng-container>
-                                            </ul>
-                                          </li>
-                                        </ng-container>
-                                      </ul>
+                                              >
+                                                <ng-container
+                                                  *ngTemplateOutlet="
+                                                    recursiveBlock;
+                                                    context: {
+                                                      $implicit: deeper.children
+                                                    }
+                                                  "
+                                                ></ng-container>
+                                              </ul>
+                                            </li>
+                                          </ng-container>
+                                        </ul>
+                                      </div>
                                     </li>
                                   </ng-container>
                                 </ul>

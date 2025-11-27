@@ -43,6 +43,16 @@ export class SidemenuComponent implements OnInit {
     this.isCollapsed = !this.isCollapsed;
   }
 
+  isMenuActive(item: any): boolean {
+    const currentUrl = this.router.url;
+    
+    if (item.title === 'User Management') {
+      return currentUrl.includes('/users') || currentUrl.includes('/roles');
+    }
+    
+    return currentUrl === item.route || currentUrl.startsWith(item.route + '/');
+  }
+
   logout() {
     this.persistenceService.logout();
   }

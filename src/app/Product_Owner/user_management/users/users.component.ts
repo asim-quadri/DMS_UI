@@ -62,14 +62,15 @@ export class UsersComponent implements OnInit {
     // },
     { headerName: 'id', field: 'id', hide: true },
     { headerName: 'uid', field: 'uid', hide: true },
-    { headerName: 'Full Name', field: 'fullName', width: 250 },
+    { headerName: 'Full Name', field: 'fullName', flex: 1, minWidth: 250 },
     // { headerName: 'Email', field: 'email', width: 210 },
-    { headerName: 'Role', field: 'roleDisplayName', width: 200 },
+    { headerName: 'Role', field: 'roleDisplayName', flex: 1, minWidth: 200 },
     { headerName: 'RoleId', field: 'roleId', hide: true },
     {
       headerName: 'Created Date',
       field: 'createdOn',
-      width: 150,
+      flex: 1,
+      minWidth: 150,
       valueFormatter: function (param: any) {
         return param.value.split('T')[0];
       },
@@ -77,7 +78,8 @@ export class UsersComponent implements OnInit {
     {
       headerName: 'Modified Date',
       field: 'modifiedOn',
-      width: 150,
+      flex: 1,
+      minWidth: 150,
       valueFormatter: function (param: any) {
         if (param.value)
           return param.value.split('T')[0];
@@ -86,13 +88,15 @@ export class UsersComponent implements OnInit {
     {
       headerName: 'Status',
       field: 'dummystatus',
-      width: 100,
+      flex: 1,
+      minWidth: 100,
       cellRenderer: AgbuttonComponent,
     },
 
     {
       field: 'Edit',
-      width: 100,
+      flex: 1,
+      minWidth: 100,
       cellRenderer: AgbuttonComponent,
       cellRendererParams: {
         clicked: (field: any) => {
@@ -103,7 +107,8 @@ export class UsersComponent implements OnInit {
     },
     {
       field: 'Disable',
-      width: 120,
+      flex: 1,
+      minWidth: 120,
       wrapText: true,
       cellRenderer: AgDeleteButtonComponent,
       cellRendererParams: {
