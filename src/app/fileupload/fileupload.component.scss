@@ -145,6 +145,7 @@
 .filter-btn {
   font-size: 13px;
   padding: 6px 12px;
+  border: 1px solid #6c757d;
 }
 
 /* Main Content */
@@ -855,4 +856,141 @@
     width: 100%;
     justify-content: center;
   }
+}
+
+/* Files List Table Specific Styling */
+::ng-deep .files-list-table {
+  border: none !important;
+  background: none !important;
+  background-color: transparent !important;
+}
+
+
+::ng-deep .files-list-table .ag-root-wrapper {
+  border: none !important;
+  background: none !important;
+  background-color: transparent !important;
+}
+
+::ng-deep .files-list-table .ag-header {
+  border: none !important;
+  border-bottom: 2px solid colors.$black-bg !important;
+  background: none !important;
+  background-color: transparent !important;
+}
+
+::ng-deep .files-list-table .ag-header-row {
+  border: none !important;
+  background: none !important;
+  background-color: transparent !important;
+}
+
+::ng-deep .files-list-table .ag-header-cell {
+  border: none !important;
+  border-right: none !important;
+  border-left: none !important;
+  border-top: none !important;
+  background: none !important;
+  background-color: transparent !important;
+  color: colors.$black-bg !important;
+}
+
+::ng-deep .files-list-table .ag-header-cell .ag-header-cell-text {
+  font-weight: 600 !important;
+  color: colors.$black-bg !important;
+}
+
+::ng-deep .files-list-table .ag-header-cell::after {
+  display: none !important;
+}
+
+::ng-deep .files-list-table .ag-header-cell-resize {
+  display: none !important;
+}
+
+::ng-deep .files-list-table .ag-row {
+  border-left: none !important;
+  border-right: none !important;
+  border-top: none !important;
+  border-bottom: 1px solid #e0e0e0 !important;
+  background: none !important;
+  background-color: transparent !important;
+}
+
+::ng-deep .files-list-table .ag-row:hover {
+  background: none !important;
+  background-color: transparent !important;
+}
+
+::ng-deep .files-list-table .ag-row-even {
+  background: none !important;
+  background-color: transparent !important;
+}
+
+::ng-deep .files-list-table .ag-row-odd {
+  background: none !important;
+  background-color: transparent !important;
+}
+
+::ng-deep .files-list-table .ag-cell {
+  border: none !important;
+  border-right: none !important;
+  border-left: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  background: none !important;
+  background-color: transparent !important;
+  color: #000000 !important;
+}
+
+::ng-deep .files-list-table .ag-cell::before,
+::ng-deep .files-list-table .ag-cell::after {
+  display: none !important;
+}
+
+::ng-deep .files-list-table.ag-theme-alpine {
+  --ag-border-color: transparent !important;
+  --ag-header-background-color: transparent !important;
+  --ag-odd-row-background-color: transparent !important;
+  --ag-row-background-color: transparent !important;
+  --ag-row-hover-color: transparent !important;
+  --ag-cell-horizontal-border: transparent !important;
+  --ag-header-cell-hover-background-color: transparent !important;
+  --ag-header-cell-moving-background-color: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+::ng-deep .files-list-table .ag-ltr .ag-cell {
+  border-right: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+::ng-deep .files-list-table .ag-ltr .ag-header-cell {
+  border-right: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+::ng-deep .files-list-table * {
+  box-shadow: none !important;
+  outline: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-top: none !important;
+}
+
+::ng-deep .files-list-table .ag-header-cell-resize::after {
+  display: none !important;
+}
+
+::ng-deep .files-list-table .ag-pinned-left-header {
+  box-shadow: none !important;
+  border-right: none !important;
+}
+
+::ng-deep .files-list-table .ag-pinned-right-header {
+  box-shadow: none !important;
+  border-left: none !important;
 }

@@ -143,7 +143,7 @@ export class FileuploadComponent implements OnInit {
     const fileName = params.data.fileName;
     const iconSrc = this.getFileIcon(fileType);
 
-    return `<img src="${iconSrc}" style="margin-right: 8px;" alt="file">${fileName}`;
+    return `<img src="${iconSrc}" style="margin-right: 8px;width: 24px;height: 24px;" alt="file">${fileName}`;
   }
 
   // Custom cell renderer for the options column

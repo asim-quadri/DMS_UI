@@ -713,11 +713,10 @@ label {
 .btn-approved {
   background-color: $background-color_13 !important;
   color: $color_1 !important;
-  font-size: 14px !important;
   margin-right: 5px !important;
   font-size: 13px !important;
-  padding: 8px 25px 5px !important;
-  border-radius: 0px !important;
+  padding: 8px 25px !important;
+  border-radius: 8px !important;
 }
 
 .btn-reject {
@@ -2319,7 +2318,7 @@ label {
 }
 
 .btn-secondary {
-  background-color: #de5926;
+  background-color: colors.$primary-green;
   color: #fff;
   border: none;
 }
@@ -2371,7 +2370,7 @@ li {
 }
 
 .oragne-status {
-  background-color: #df8d2f;
+  background-color: #df8d2f !important;
 }
 
 .green-status {
@@ -2407,6 +2406,7 @@ li {
   color: colors.$white;
   font-size: 13px;
   font-weight: 400;
+  border-radius: 8px;
 }
 
 .btn-reject {
@@ -2414,6 +2414,7 @@ li {
   color: colors.$white;
   font-size: 13px;
   font-weight: 400;
+  padding: 8px 25px !important;
 }
 
 .modal-header {
