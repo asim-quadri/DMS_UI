@@ -21,14 +21,14 @@
                 >
                   <i
                     class="bi bi-house-door"
-                    *ngIf="breadcrumb.label === 'DMS'"
+                    *ngIf="breadcrumb.label === 'ProEDox'"
                   ></i>
                   {{ breadcrumb.label }}
                 </span>
                 <span *ngIf="last" class="breadcrumb-current">
                   <i
                     class="bi bi-house-door"
-                    *ngIf="breadcrumb.label === 'DMS'"
+                    *ngIf="breadcrumb.label === 'ProEDox'"
                   ></i>
                   {{ breadcrumb.label }}
                 </span>
@@ -482,6 +482,15 @@
           <!-- File Grid Header -->
           <div class="content-header">
             <div class="content-title">
+              <!-- File Path Display -->
+              <div class="file-path-display" *ngIf="breadcrumbPath?.length">
+                <small class="text-muted file-path-text">
+                  <i class="bi bi-folder-fill"></i>
+                  <span *ngFor="let crumb of breadcrumbPath; let last = last">
+                    {{ crumb.label }}<span *ngIf="!last" class="path-separator">/</span>
+                  </span>
+                </small>
+              </div>
               <h5 class="mb-0">
                 {{ selectedFolderTreeNodeItem?.label || "Files" }}
               </h5>
@@ -537,12 +546,11 @@
           <div class="empty-state" *ngIf="files.length === 0">
             <div class="empty-state-content">
               <i class="bi bi-folder2-open empty-icon"></i>
-              <h6>This folder is empty</h6>
-              <p class="text-muted">
-                Add files by clicking the Upload button or drag and drop files
-                here.
+              <h6 class="empty-title">This folder is empty</h6>
+              <p class="empty-text">
+                Add files by clicking the Upload button
               </p>
-              <button class="btn btn-primary" (click)="triggerFileInput()">
+              <button class="btn btn-primary btn-sm" (click)="triggerFileInput()">
                 <i class="bi bi-upload"></i> Upload Files
               </button>
             </div>

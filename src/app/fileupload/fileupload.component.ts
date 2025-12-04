@@ -113,8 +113,8 @@ export class FileuploadComponent implements OnInit {
         (item.label || item.folderName) !== 'COMPSEQR360'
       ) : [];
 
-      // Find DMS root
-      const dmsRoot = this.treeData.find(n => n.treeType === 'DMS' && n.label === 'DMS');
+      // Find ProEDox root
+      const dmsRoot = this.treeData.find(n => n.treeType === 'DMS' && n.label === 'ProEDox');
       
       if (dmsRoot) {
         // Update DMS children
@@ -320,8 +320,15 @@ export class FileuploadComponent implements OnInit {
   uploadFile(file: File) {
     this.folderService.uploadFile(this.fileModel,file).subscribe(
       (result: any) => {
-        
-        this.getAllFilesbyFolderId(this.selectedFolderId);
+        // Refresh the current folder's files instead of hardcoded selectedFolderId
+        if (this.selectedFolderTreeNodeItem) {
+          this.getAllFilesbyFolderId(
+            this.selectedFolderTreeNodeItem.id,
+            this.getModuleType(this.selectedFolderTreeNodeItem.foldertitle || '')
+          );
+        } else {
+          this.getAllFilesbyFolderId(this.selectedFolderId);
+        }
         this.notifier.notify('success', 'Uploaded Successfully');
       },
       (error: any) => {
@@ -356,6 +363,8 @@ export class FileuploadComponent implements OnInit {
 
 getcompdata() {
   this.folderService.getcompleteFolderList().subscribe((result: any) => {
+    console.log('Organization data received:', result);
+    
     // Reset compliance folders array
     this.complianceFolders = [];
     
@@ -369,7 +378,9 @@ getcompdata() {
     }
 
     const compseqrTree = this.buildComFolderTree(result);
+    console.log('Built tree structure:', compseqrTree);
     const normalizedCompNodes = this.normalizeNodes(compseqrTree as any, null, 'COMPSEQR360');
+    console.log('Normalized comp nodes:', normalizedCompNodes);
     this.markTreeType(normalizedCompNodes, 'COMPSEQR360');
     this.folderService.getGetFolderTree(this.selectedEntityId, this.currentUserId)
       .subscribe({
@@ -439,7 +450,7 @@ attachParentReferences(nodes: FolderTreeNode[], parent: FolderTreeNode | null = 
 
 
   
-  getAllFilesbyFolderId(folderId: number,type:any='Dms'){
+  getAllFilesbyFolderId(folderId: number,type:any='proedox'){
     this.files = [];
     this.folderService.getFilesbyFolderId(folderId,type).subscribe((result: any) => {
       result.forEach((element: any) => {
@@ -565,26 +576,33 @@ selectItem(item: FolderTreeNode, event: MouseEvent): void {
   // ✅ Use treeType to ensure we find the correct node in correct tree
   const realNode = this.findNodeById(this.treeData, item.id, item.treeType) || item;
 
+  console.log('selectItem called for:', realNode.label, 'treeType:', realNode.treeType, 'path[0]:', realNode.path?.[0]);
+
   this.selectedFolderTreeNodeItem = realNode;
   this.buildBreadcrumbPath(realNode);
 
   if (realNode.isFile && realNode.fileData) {
+    console.log('Selected a file:', realNode.label);
     this.files = [{
       ...realNode.fileData,
       fullName: realNode.label
     }];
   } else if (realNode.treeType === 'COMPSEQR360' || (realNode.path && realNode.path[0] === 'COMPSEQR360')) {
     // ✅ Recursively collect all files for COMPSEQR360 folders
+    console.log('Collecting all files for COMPSEQR360 node');
     this.files = this.collectAllFiles(realNode);
   } else {
+    console.log('Fetching files from API for DMS node');
     this.getAllFilesbyFolderId(realNode.id, this.getModuleType(realNode.path || ''));
   }
 }
 
 collectAllFiles(node: FolderTreeNode): any[] {
   let files: any[] = [];
+  console.log('collectAllFiles for node:', node.label, 'Children:', node.children?.length);
   if (node.children && node.children.length > 0) {
     for (const child of node.children) {
+      console.log('  Child:', child.label, 'isFile:', child.isFile, 'hasFileData:', !!child.fileData);
       if (child.isFile && child.fileData) {
         files.push({
           ...child.fileData,
@@ -596,6 +614,7 @@ collectAllFiles(node: FolderTreeNode): any[] {
       }
     }
   }
+  console.log('collectAllFiles returning', files.length, 'files');
   return files;
 }
 
@@ -636,14 +655,8 @@ findNodeById(nodes: FolderTreeNode[], id: number, treeType?: 'DMS' | 'COMPSEQR36
 
 
 buildBreadcrumbPath(selectedNode: FolderTreeNode): void {
-  // Don't show breadcrumbs for compliance view (COMPSEQR360 tree)
-  if (selectedNode && (selectedNode.treeType === 'COMPSEQR360' || (selectedNode.path && selectedNode.path[0] === 'COMPSEQR360'))) {
-    this.breadcrumbPath = [];
-    return;
-  }
-
   if (!selectedNode) {
-    this.breadcrumbPath = [{ label: 'DMS' }];
+    this.breadcrumbPath = [{ label: 'ProEDox' }];
     return;
   }
 
@@ -669,30 +682,30 @@ buildBreadcrumbPath(selectedNode: FolderTreeNode): void {
     current = current.parent;
   }
 
-  // Determine if this is a DMS path
+  // Determine if this is a ProEDox path
   const isDmsPath = !path.some(n => 
     (n.foldertitle || '').toLowerCase() === 'compseqr360' ||
     n.label.toLowerCase() === 'compseqr360'
   );
 
   if (isDmsPath) {
-    // For DMS paths, add DMS as root if not already present
-    const hasDmsRoot = path.some(n => n.label.toLowerCase() === 'dms');
+    // For ProEDox paths, add ProEDox as root if not already present
+    const hasDmsRoot = path.some(n => n.label.toLowerCase() === 'proedox');
     if (!hasDmsRoot) {
       const dmsRoot = this.findDmsRoot();
       if (dmsRoot) {
         this.breadcrumbPath.push({ 
-          label: 'DMS', 
+          label: 'ProEDox', 
           node: dmsRoot 
         });
       } else {
-        this.breadcrumbPath.push({ label: 'DMS' });
+        this.breadcrumbPath.push({ label: 'ProEDox' });
       }
     }
 
-    // Add all folders in path except duplicate DMS entries
+    // Add all folders in path except duplicate ProEDox entries
     path.forEach(n => {
-      if (n.label.toLowerCase() !== 'dms' || path.indexOf(n) === 0) {
+      if (n.label.toLowerCase() !== 'proedox' || path.indexOf(n) === 0) {
         this.breadcrumbPath.push({
           label: n.label,
           node: n
@@ -717,6 +730,7 @@ normalizeNodes(
   parent: FolderTreeNode | null = null,
   foldertitle?: string
 ): FolderTreeNode[] {
+  console.log('normalizeNodes called with', items?.length, 'items, foldertitle:', foldertitle);
   const out: FolderTreeNode[] = [];
 
   for (const item of items || []) {
@@ -732,6 +746,8 @@ normalizeNodes(
       item.organizationName ||
       item.entityName ||
       `Item_${id}`;
+
+    console.log('  Normalizing:', label, 'hasChildren:', !!item.children?.length);
 
     const node: FolderTreeNode = {
       id,
@@ -749,8 +765,8 @@ normalizeNodes(
     // 🟢 Build proper breadcrumb path for both DMS & COMPSEQR360
     const parentPath = parent?.path || [];
     if ((foldertitle || '').toLowerCase() === 'dms') {
-      // Ensure path starts with DMS
-      node.path = parentPath.length > 0 ? [...parentPath, label] : ['DMS', label];
+      // Ensure path starts with ProEDox
+      node.path = parentPath.length > 0 ? [...parentPath, label] : ['ProEDox', label];
     } else if (item.path && Array.isArray(item.path)) {
       // COMPSEQR360 path from API
       node.path = [...item.path];
@@ -777,7 +793,7 @@ normalizeNodes(
 
 /** ✅ Navigate to breadcrumb click */
 navigateToBreadcrumb(breadcrumb: { label: string; node?: FolderTreeNode }): void {
-  // If no node (like root DMS), reset to initial DMS view
+  // If no node (like root ProEDox), reset to initial ProEDox view
   if (!breadcrumb.node) {
     const dmsRoot = this.findDmsRoot();
     if (dmsRoot) {
@@ -889,6 +905,11 @@ findDmsRoot(): FolderTreeNode | null {
  * Builds the full nested structure as a tree.
  */
   buildComFolderTree(data: any) {
+  console.log('buildComFolderTree called with data:', data);
+  console.log('Is array?', Array.isArray(data));
+  console.log('Length > 0?', Array.isArray(data) && data.length > 0);
+  console.log('Has organizationName?', Array.isArray(data) && data.length > 0 && data[0].organizationName);
+  
   const rootId = this.folderId++;
 
   const rootFolder: ComFolder = {
@@ -901,9 +922,144 @@ findDmsRoot(): FolderTreeNode | null {
     path: ["COMPSEQR360"]
   };
 
-  // Handle new data structure - array of compliance items
-  if (Array.isArray(data)) {
-    // Compliance Root
+  // Handle new data structure - array of organizations with files and entities
+  const isOrgStructure = Array.isArray(data) && data.length > 0 && data[0].hasOwnProperty('organizationName');
+  console.log('isOrgStructure:', isOrgStructure, 'data[0]:', data[0]);
+  
+  if (isOrgStructure) {
+    // Organization Root
+    const orgId = this.folderId++;
+    const orgFolder: ComFolder = {
+      label: "Organization",
+      id: orgId,
+      parentId: rootId,
+      expanded: true,  // Set to true to show organizations by default
+      children: [],
+      foldertitle: "Organization",
+      path: ["COMPSEQR360", "Organization"]
+    };
+
+    // Add organizations
+    data.forEach((org: any) => {
+      // Only add organizations marked as isOrganization: true
+      if (!org.isOrganization) {
+        console.log('Skipping non-organization:', org.organizationName);
+        return;
+      }
+
+      console.log('Processing organization:', org.organizationName, 'Files:', org.files?.length || 0, 'Entities:', org.entityList?.length || 0);
+
+      const orgFolderId = this.folderId++;
+      const orgItem: ComFolder = {
+        label: org.organizationName,
+        id: orgFolderId,
+        parentId: orgId,
+        expanded: true,  // Expanded to show files and entities
+        children: [],
+        foldertitle: "Organization",
+        path: ["COMPSEQR360", "Organization", org.organizationName]
+      };
+
+      // Process organization files
+      if (Array.isArray(org.files) && org.files.length > 0) {
+        console.log('Organization has files:', org.organizationName, org.files.length);
+        org.files.forEach((fileFolder: any) => {
+          console.log('  Processing file folder:', fileFolder.folderName, 'with', fileFolder.files?.length || 0, 'files');
+          const fileFolderId = this.folderId++;
+          const fileFolderNode: ComFolder = {
+            label: fileFolder.folderName || 'Organization Files',
+            id: fileFolderId,
+            parentId: orgFolderId,
+            expanded: false,
+            children: [],
+            foldertitle: "Organization",
+            path: ["COMPSEQR360", "Organization", org.organizationName, fileFolder.folderName]
+          };
+
+          // Add files inside the folder
+          if (Array.isArray(fileFolder.files) && fileFolder.files.length > 0) {
+            fileFolder.files.forEach((file: any) => {
+              const fileId = this.folderId++;
+              const fileNode: ComFolder = {
+                label: file.fileName,
+                id: fileId,
+                parentId: fileFolderId,
+                expanded: false,
+                children: [],
+                foldertitle: "Organization",
+                path: ["COMPSEQR360", "Organization", org.organizationName, fileFolder.folderName, file.fileName],
+                isFile: true,
+                fileData: file
+              };
+              fileFolderNode.children.push(fileNode);
+            });
+          }
+
+          orgItem.children.push(fileFolderNode);
+        });
+      }
+
+      // Process entities
+      if (Array.isArray(org.entityList) && org.entityList.length > 0) {
+        org.entityList.forEach((entity: any) => {
+          const entityId = this.folderId++;
+          const entityNode: ComFolder = {
+            label: entity.entityName,
+            id: entityId,
+            parentId: orgFolderId,
+            expanded: false,
+            children: [],
+            foldertitle: "Organization",
+            path: ["COMPSEQR360", "Organization", org.organizationName, entity.entityName]
+          };
+
+          // Process entity files
+          if (Array.isArray(entity.files) && entity.files.length > 0) {
+            entity.files.forEach((entityFileFolder: any) => {
+              const entityFileFolderId = this.folderId++;
+              const entityFileFolderNode: ComFolder = {
+                label: entityFileFolder.folderName || 'Entity Files',
+                id: entityFileFolderId,
+                parentId: entityId,
+                expanded: false,
+                children: [],
+                foldertitle: "Organization",
+                path: ["COMPSEQR360", "Organization", org.organizationName, entity.entityName, entityFileFolder.folderName]
+              };
+
+              // Add files inside entity folder
+              if (Array.isArray(entityFileFolder.files) && entityFileFolder.files.length > 0) {
+                entityFileFolder.files.forEach((file: any) => {
+                  const fileId = this.folderId++;
+                  const fileNode: ComFolder = {
+                    label: file.fileName,
+                    id: fileId,
+                    parentId: entityFileFolderId,
+                    expanded: false,
+                    children: [],
+                    foldertitle: "Organization",
+                    path: ["COMPSEQR360", "Organization", org.organizationName, entity.entityName, entityFileFolder.folderName, file.fileName],
+                    isFile: true,
+                    fileData: file
+                  };
+                  entityFileFolderNode.children.push(fileNode);
+                });
+              }
+
+              entityNode.children.push(entityFileFolderNode);
+            });
+          }
+
+          orgItem.children.push(entityNode);
+        });
+      }
+
+      orgFolder.children.push(orgItem);
+    });
+
+    rootFolder.children.push(orgFolder);
+  } else if (Array.isArray(data)) {
+    // Handle old compliance data structure (array of compliance items)
     const complianceId = this.folderId++;
     const complianceFolder: ComFolder = {
       label: "Compliance",
@@ -974,7 +1130,7 @@ findDmsRoot(): FolderTreeNode | null {
 
     rootFolder.children.push(complianceFolder);
   } else {
-    // Handle old data structure for backward compatibility
+    // Handle old data structure for backward compatibility (object with regulation, organization, announcement)
     // Regulation Root
     const regulationId = this.folderId++;
     const regulationFolder: ComFolder = {
@@ -1018,32 +1174,125 @@ findDmsRoot(): FolderTreeNode | null {
       parentId: rootId,
       expanded: false,
       children: [],
-      foldertitle: "Organization"
+      foldertitle: "Organization",
+      path: ["COMPSEQR360", "Organization"]
     };
 
     // Add organizations and entities
     (data.organization || []).forEach((org: any) => {
+      if (org && org.isOrganization === false) {
+        return;
+      }
+
       const orgFolderId = this.folderId++;
+      const orgPath = ["COMPSEQR360", "Organization", org.organizationName];
       const orgItem: ComFolder = {
         label: org.organizationName,
         id: orgFolderId,
         parentId: orgId,
-        expanded: false,
+        expanded: (org.files && org.files.length) || (org.entityList && org.entityList.length) ? true : false,
         children: [],
-        foldertitle: "Organization"
+        foldertitle: "Organization",
+        path: orgPath
       };
 
-      org.entityList.forEach((ent: any) => {
-        const entId = this.folderId++;
-        orgItem.children.push({
-          label: ent.entityName,
-          id: entId,
-          parentId: orgFolderId,
-          expanded: false,
-          children: [],
-          foldertitle: "Organization"
+      // Organization level files
+      if (Array.isArray(org.files) && org.files.length > 0) {
+        org.files.forEach((fileFolder: any) => {
+          const fileFolderId = this.folderId++;
+          const folderLabel = fileFolder.folderName || 'Organization Files';
+          const folderPath = [...orgPath, folderLabel];
+
+          const fileFolderNode: ComFolder = {
+            label: folderLabel,
+            id: fileFolderId,
+            parentId: orgFolderId,
+            expanded: false,
+            children: [],
+            foldertitle: "Organization",
+            path: folderPath
+          };
+
+          if (Array.isArray(fileFolder.files) && fileFolder.files.length > 0) {
+            fileFolder.files.forEach((file: any) => {
+              const fileId = this.folderId++;
+              const filePath = [...folderPath, file.fileName];
+              const fileNode: ComFolder = {
+                label: file.fileName,
+                id: fileId,
+                parentId: fileFolderId,
+                expanded: false,
+                children: [],
+                foldertitle: "Organization",
+                path: filePath,
+                isFile: true,
+                fileData: file
+              };
+              fileFolderNode.children.push(fileNode);
+            });
+          }
+
+          orgItem.children.push(fileFolderNode);
         });
-      });
+      }
+
+      // Entity level files
+      if (Array.isArray(org.entityList) && org.entityList.length > 0) {
+        org.entityList.forEach((ent: any) => {
+          const entId = this.folderId++;
+          const entityPath = [...orgPath, ent.entityName];
+          const entityNode: ComFolder = {
+            label: ent.entityName,
+            id: entId,
+            parentId: orgFolderId,
+            expanded: Array.isArray(ent.files) && ent.files.length > 0,
+            children: [],
+            foldertitle: "Organization",
+            path: entityPath
+          };
+
+          if (Array.isArray(ent.files) && ent.files.length > 0) {
+            ent.files.forEach((entityFolder: any) => {
+              const entityFolderId = this.folderId++;
+              const entityFolderLabel = entityFolder.folderName || 'Entity Files';
+              const entityFolderPath = [...entityPath, entityFolderLabel];
+
+              const entityFolderNode: ComFolder = {
+                label: entityFolderLabel,
+                id: entityFolderId,
+                parentId: entId,
+                expanded: false,
+                children: [],
+                foldertitle: "Organization",
+                path: entityFolderPath
+              };
+
+              if (Array.isArray(entityFolder.files) && entityFolder.files.length > 0) {
+                entityFolder.files.forEach((file: any) => {
+                  const fileId = this.folderId++;
+                  const entityFilePath = [...entityFolderPath, file.fileName];
+                  const fileNode: ComFolder = {
+                    label: file.fileName,
+                    id: fileId,
+                    parentId: entityFolderId,
+                    expanded: false,
+                    children: [],
+                    foldertitle: "Organization",
+                    path: entityFilePath,
+                    isFile: true,
+                    fileData: file
+                  };
+                  entityFolderNode.children.push(fileNode);
+                });
+              }
+
+              entityNode.children.push(entityFolderNode);
+            });
+          }
+
+          orgItem.children.push(entityNode);
+        });
+      }
 
       orgFolder.children.push(orgItem);
     });
