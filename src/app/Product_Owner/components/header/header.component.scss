@@ -1,10 +1,7 @@
 @use '/src/assets/scss/colors';
 
 .header {
-	background-color: colors.$white;
 	padding: 15px 25px;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-	border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 	position: sticky;
 	top: 0;
 	z-index: 1000;
@@ -13,9 +10,9 @@
 		align-items: center;
 	}
 	
-	img {
+	.header-logo {
 		width: 100%;
-		max-width: 260px;
+		max-width: 160px;
 		cursor: pointer;
 		transition: transform 0.2s ease;
 		
@@ -49,7 +46,6 @@
 	margin: 0;
 	display: flex;
 	align-items: center;
-	gap: 5px;
 	
 	li {
 		margin: 8px 5px;
@@ -57,17 +53,10 @@
 		align-items: center;
 		
 		&.header-notification {
-			background-color: colors.$primary-orange;
+			background-color: colors.$white;
 			border-radius: 8px;
-			padding: 8px;
 			position: relative;
 			transition: all 0.3s ease;
-			
-			&:hover {
-				background-color: darken(colors.$primary-orange, 10%);
-				transform: translateY(-1px);
-				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-			}
 		}
 	}
 }
@@ -86,7 +75,7 @@
 .user-profile {
 	border: 1px solid colors.$medium-gray;
 	text-align: center;
-	padding: 8px 20px;
+	padding: 4px 20px;
 	color: colors.$text-black;
 	border-radius: 8px;
 	font-size: 14px;
@@ -94,13 +83,6 @@
 	background-color: colors.$white;
 	transition: all 0.3s ease;
 	cursor: pointer;
-	
-	&:hover {
-		border-color: colors.$primary-blue;
-		background-color: rgba(50, 90, 156, 0.05);
-		transform: translateY(-1px);
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-	}
 }
 .notification-container {
 	background-color: #fff;
@@ -175,15 +157,12 @@
 }
 
 .logout-icon {
-	font-size: 28px;
-	color: colors.$primary-orange;
-	transition: all 0.3s ease;
-	cursor: pointer;
-	
-	&:hover {
-		color: darken(colors.$primary-orange, 15%);
-		transform: scale(1.1);
-	}
+  font-size: 20px;
+  color: colors.$black;
+  padding: 4px 5px 4px 9px;
+  background-color: colors.$white;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
 // Responsive Design for Header
@@ -243,5 +222,12 @@
 	.notification-popup {
 		width: 90vw;
 		right: 5px;
+	}
+}
+
+.btn-profile-dropdown{
+	&:hover {
+		background-color: colors.$white !important;
+		border-color: colors.$white !important;
 	}
 }

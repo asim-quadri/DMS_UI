@@ -1,16 +1,14 @@
 @use "/src/assets/scss/colors";
 
 .sidemenu {
-  background: linear-gradient(180deg, colors.$white 0%, #f8f9fa 100%);
-  padding: 20px;
   float: left;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   height: 100%;
   overflow-y: auto;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  width: 146px;
+  padding-right: 8px;
   
   ul {
     list-style: none;
@@ -18,8 +16,7 @@
     margin: 0;
     li {
       text-align: center;
-      margin-bottom: 30px;
-      border-radius: 12px;
+      margin-bottom: 12px;
       transition: all 0.3s ease;
       
       &:hover {
@@ -29,12 +26,11 @@
       }
       
       &.active {
-        background-color: rgba(50, 90, 156, 0.1);
-        border-left: 4px solid colors.$primary-blue;
+        border-left: 6px solid colors.$white;
       }
       
       a {
-        color: colors.$primary-blue;
+        color: colors.$white;
         text-decoration: none;
         display: flex;
         flex-direction: column;
@@ -42,10 +38,6 @@
         padding: 15px 10px;
         border-radius: 8px;
         transition: all 0.3s ease;
-        
-        &:hover {
-          color: colors.$primary-orange;
-        }
         
         &.active {
           color: colors.$primary-blue;
@@ -116,12 +108,7 @@
   }
 
   .collapse-btn {
-    color: colors.$primary-orange;
-    
-    &:hover {
-      background-color: rgba(222, 89, 38, 0.1);
-      color: darken(colors.$primary-orange, 10%);
-    }
+    color: colors.$white;
   }
 
   .logout-btn {
@@ -136,6 +123,7 @@
 
 .sidemenu.collapsed {
   width: 60px;
+  padding-right: 0;
   ul li a span,
   .collapse-btn span,
   .logout-btn span {

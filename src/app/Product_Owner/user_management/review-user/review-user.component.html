@@ -7,9 +7,9 @@
 <div class="modal-body">
     <div class="row">
         <div class="col-md-3">
-            <button class="btn btn-status">Approval Pending</button>
+            <button class="btn btn-status oragne-status">Approval Pending</button>
         </div>
-        <div class="col-md-6 text-center user-info">
+        <div class="col-md-9 text-center user-info">
             <ul>
                 <li>Employee <span>{{pendingUserApproval?.empId}}</span></li>
                 <li>Role: <span>{{pendingUserApproval?.roleDisplayName}}</span></li>
@@ -20,7 +20,7 @@
     <div class="row mt-100">
         <div class="col-md-4"></div>
         <div class="col-md-4">
-            <form [formGroup]="formgroup" class="long-form">
+            <form [formGroup]="formgroup" class="long-form pe-2">
                 <div class="form-group">
                     <label class="col-form-label">Full Name:</label>
                     <app-input-text [formGroup]="formgroup" [name]="'fullName'"
@@ -75,8 +75,8 @@
                 </div>
 
             </form>
-            <div class="form-group">
-                <div class="mt-4" *ngIf="!persistanceService!.isUser()">
+            <div class="form-group"> 
+                <div class="d-flex mt-4" *ngIf="!persistanceService!.isUser()">
                     <button class="btn btn-approved width-50" (click)="submitApproved()"
                     *ngIf="persistanceService!.getRoleId() !== 4; else forwardButton">APPROVE</button>
                     <ng-template #forwardButton>

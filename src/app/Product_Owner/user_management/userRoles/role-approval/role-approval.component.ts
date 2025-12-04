@@ -50,15 +50,15 @@ export class RoleApprovalComponent {
 			width: 100,
 		},
 		{ headerName: 'historyId', field: 'historyId', width: 150, hide: true },
-		{ headerName: 'Type', field: 'approvalType', width: 150 },
+		{ headerName: 'Type', field: 'approvalType', flex: 1, minWidth: 150 },
 		// { headerName: 'Full Name', field: 'fullName', width: 150 },
 		// { headerName: 'Employee Id', field: 'empId', width: 150 },
-		{ headerName: 'Role Name', field: 'roleName', width: 150 },
-		{ headerName: 'Role Display Name', field: 'roleDisplayName', width: 200 },
-		{ headerName: 'Point of Contact', field: 'pointofContact', width: 150 },
-		{ headerName: 'Approved By', field: 'approvedBy', width: 150 },
+		{ headerName: 'Role Name', field: 'roleName', flex: 1, minWidth: 150 },
+		{ headerName: 'Role Display Name', field: 'roleDisplayName', flex: 1, minWidth: 200 },
+		{ headerName: 'Point of Contact', field: 'pointofContact', flex: 1, minWidth: 150 },
+		{ headerName: 'Approved By', field: 'approvedBy', flex: 1, minWidth: 150 },
 		{
-			headerName: 'Status', field: 'dummystatus', width: 110,
+			headerName: 'Status', field: 'dummystatus', flex: 1, minWidth: 110,
 			cellRenderer: AgbuttonComponent,
 			cellRendererParams: {
 				clicked: (field: any) => {

@@ -4,8 +4,15 @@ $primary-blue: #325A9C;
 $white: #FFFFFF;
 $black: #000000;
 $text-black: #252525;
-$body-bg: #F1F1F1;
+$body-bg: transparent linear-gradient(146deg, #3AB54A 0%, #F7B037 100%) 0% 0% no-repeat padding-box;
 $light-gray: #F1F1F1;
 $medium-gray: #bdbdbd;
 $dark-gray: #707070;
 $placeholder-gray: #CCCCCC;
+
+// DMS specific colors
+$black-bg: #342A21;
+$content-bg: #FAFAFA;
+$title-header-bg: #342A21;
+$primary-green: #3AB54A;
+$primary-yellow: #F7B037;

@@ -27,7 +27,7 @@ interface ComFolder {
 @Component({
   selector: 'app-fileupload',
   templateUrl: './fileupload.component.html',
-  styleUrls: ['./fileupload.component.css']
+  styleUrls: ['./fileupload.component.scss']
 })
 export class FileuploadComponent implements OnInit {
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
@@ -65,9 +65,10 @@ export class FileuploadComponent implements OnInit {
   selectedEntityId: number =1;
   public columnDefs = [
      { headerName: 'ID', valueGetter: 'node.rowIndex + 1', sortable: true, filter: true },
+     { headerName: 'File Name', field: 'fullName',cellRenderer: this.fileCellRenderer.bind(this), sortable: true, filter: true },
      { headerName: 'Folder', field: 'folderName', sortable: true, filter: true },
-    { headerName: 'File Name', field: 'fullName',cellRenderer: this.fileCellRenderer.bind(this), sortable: true, filter: true },
     { headerName: 'Last modified', field: 'createdOn', sortable: true, filter: true },
+    { headerName: 'Owner', field: 'fullName', sortable: true, filter: true },
     // { headerName: 'Access', field: 'filePath', cellRenderer: this.imageRenderer },
     {
       headerName: 'Options',
@@ -140,9 +141,9 @@ export class FileuploadComponent implements OnInit {
   fileCellRenderer(params: any) {
     const fileType = params.data.fileType;
     const fileName = params.data.fileName;
-    const iconClass = this.getFileIcon(fileType);
+    const iconSrc = this.getFileIcon(fileType);
 
-    return `<i class="${iconClass}" style="margin-right: 8px;"></i>${fileName}`;
+    return `<img src="${iconSrc}" style="margin-right: 8px;width: 24px;height: 24px;" alt="file">${fileName}`;
   }
 
   // Custom cell renderer for the options column
@@ -174,16 +175,16 @@ export class FileuploadComponent implements OnInit {
   getFileIcon(fileType: string | null): string {
     switch (fileType) {
       case 'application/pdf':
-        return 'fas fa-file-pdf';
+        return '../assets/images/icons/pdf.png';
       case 'image/jpeg':
       case 'image/jpg':
       case 'image/png':
-        return 'fas fa-file-image';
+        return '../assets/images/icons/google.png';
       case 'application/vnd.ms-excel':
       case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-        return 'fas fa-file-excel';
+        return '../assets/images/icons/excel.png';
       default:
-        return 'fas fa-file';
+        return '../assets/images/icons/file.png';
     }
   }
 
@@ -393,11 +394,11 @@ getcompdata() {
 
     const dmsRoot: FolderTreeNode = {
       id: Math.floor(Math.random() * 1e9),
-      label: 'DMS',
+      label: 'ProEDox',
       expanded: true,
       children: normalizedDmsNodes,
       parentId: 0,
-      foldertitle: 'DMS',
+      foldertitle: 'ProEDox',
       treeType: 'DMS'  // ✅ root also tagged
     };
 
@@ -546,7 +547,7 @@ attachParentReferences(nodes: FolderTreeNode[], parent: FolderTreeNode | null = 
      alert("Cannot create or upload files to COMPSEQR360 folder.");
      return;
     }
-    this.modalService.open(content, { centered: true, size: 'sm'  });
+    this.modalService.open(content, { centered: true, size: 'md'  });
   }
   open(content: TemplateRef<any>) {
     this.modalService.open(content, { centered: true});

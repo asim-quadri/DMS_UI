@@ -1,37 +1,35 @@
 <div class="login-bg">
   <div class="auth-body">
     <div class="row">
-      <div class="col-md-6 text-center">
+      <div class="col-md-6 text-center p-0">
         <div class="auth-left">
-          <img src="./assets/images/logo.svg" alt="" />
+          <img src="./assets/images/login-images/login.png" alt="" />
         </div>
       </div>
-      <div class="col-md-6">
+      <div class="col-md-6 d-flex justify-content-center align-items-center">
         <div class="auth-form">
           <h1>Login</h1>
           <form [formGroup]="formgroup" (ngSubmit)="onSubmit()" class="mb-6">
             <div class="mb-4 form-group">
-              <!-- <span class="input-group-text">
-                  <img src="./assets/images/icons/user.svg" alt="" />
-                </span> -->
               <app-input-text
                 [formGroup]="formgroup"
                 [name]="'userId'"
                 (keydown.enter)="onSubmit()"
                 [placeholder]="'Enter User ID / Mobile Number'"
+                [label]="'Employee ID / Email'"
+                [labelClass]="'light-label'"
               ></app-input-text>
               <!-- <input type="text" class="form-control" name="Username" required="" formControlName="userId" placeholder="Employee ID / Email Address"/> -->
             </div>
             <div class="mb-3 form-group">
               <!--input-group mb-3-->
-              <!-- <span class="input-group-text">
-                  <img src="./assets/images/icons/lock.svg" alt="" />
-                </span> -->
               <app-input-password
                 [formGroup]="formgroup"
                 [name]="'password'"
                 (keydown.enter)="onSubmit()"
                 [placeholder]="'Password'"
+                [label]="'Password'"
+                [labelClass]="'light-label'"
               >
                 
               </app-input-password>
@@ -56,7 +54,7 @@
                 </p>
               </div> -->
             <button
-              class="btn btn-submit"
+              class="btn-submit mt-3"
               type="submit"
               [disabled]="!formgroup.valid"
             >
@@ -64,7 +62,7 @@
             </button>
             <!-- (click)="submit()" -->
           </form>
-          <div class="text-center mt-5">
+          <div class="text-center mt-3">
             <a
               routerLink="/forget"
               class="genlink text-white text-decoration-none mt-5"

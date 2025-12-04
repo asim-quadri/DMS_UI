@@ -399,7 +399,7 @@ export class FileuploadComponent implements OnInit {
   }
 
   openSm(content: TemplateRef<any>) {
-    this.modalService.open(content, { centered: true, size: 'sm'  });
+    this.modalService.open(content, { centered: true, size: 'md'  });
   }
   open(content: TemplateRef<any>) {
     this.modalService.open(content, { centered: true});
