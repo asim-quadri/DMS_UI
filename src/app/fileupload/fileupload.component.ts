@@ -175,16 +175,16 @@ export class FileuploadComponent implements OnInit {
   getFileIcon(fileType: string | null): string {
     switch (fileType) {
       case 'application/pdf':
-        return '../assets/images/icons/pdf.png';
+        return 'assets/images/icons/pdf.png';
       case 'image/jpeg':
       case 'image/jpg':
       case 'image/png':
-        return '../assets/images/icons/google.png';
+        return 'assets/images/icons/google.png';
       case 'application/vnd.ms-excel':
       case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-        return '../assets/images/icons/excel.png';
+        return 'assets/images/icons/excel.png';
       default:
-        return '../assets/images/icons/file.png';
+        return 'assets/images/icons/file.png';
     }
   }
 
