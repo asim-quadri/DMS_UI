@@ -1,6 +1,20 @@
 <div class="main-container">
   <div class="home-header">
     <h3 class="file-manager-title">Files & Folders</h3>
+    <!-- Entity Selector -->
+    <div class="entity-selector" *ngIf="userAssignedEntities.length > 0">
+      <label for="entitySelect" class="entity-label">Select Entity:</label>
+      <select 
+        id="entitySelect" 
+        class="form-select entity-dropdown"
+        [(ngModel)]="selectedEntity"
+        (change)="onEntityChange(selectedEntity!)"
+        [compareWith]="compareEntities">
+        <option *ngFor="let entity of userAssignedEntities" [ngValue]="entity">
+          {{ entity.entityName }}
+        </option>
+      </select>
+    </div>
   </div>
   <div class="home-content">
     <div class="file-manager-container">

@@ -10,6 +10,43 @@
   overflow-y: auto;
 }
 
+/* Entity Selector */
+.home-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.entity-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.entity-label {
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 0;
+}
+
+.entity-dropdown {
+  min-width: 200px;
+  padding: 8px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.entity-dropdown:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
 /* Top Toolbar */
 .toolbar {
   display: flex;

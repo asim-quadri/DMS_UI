@@ -10,6 +10,9 @@ import { FolderTreeNode } from '../Models/filetreeNode';
 import { HttpClient } from '@angular/common/http';
 import { PersistenceService } from '../Services/persistence.service';
 import { Router } from '@angular/router';
+import { ClientComplianceTrackerService } from '../Services/client-compliance-tracker.service';
+import { UserAssignedEntity, PendingComplianceTracker, LocationMaster, ComplianceTrackerDocument, RegulationWithTOC, TypeOfCompliance } from '../Models/compliancetracker';
+import { forkJoin } from 'rxjs';
 
 interface ComFolder {
   label: string;
@@ -22,6 +25,9 @@ interface ComFolder {
   path?: string[];
   isFile?: boolean;
   fileData?: any;
+  nodeType?: string;
+  complianceData?: any;
+  locationData?: any;
 }
 
 @Component({
@@ -91,8 +97,30 @@ export class FileuploadComponent implements OnInit {
   complianceFolders: any[] = []; // Folders with Files data
   selectedComplianceFolder: any = null; // Selected compliance folder
   complianceFiles: any[] = []; // Files from selected compliance folder
+  
+  // Client Compliance Tracker properties
+  userAssignedEntities: UserAssignedEntity[] = [];
+  selectedEntity: UserAssignedEntity | null = null;
+  pendingComplianceData: PendingComplianceTracker[] = [];
+  locationMasterData: LocationMaster[] = [];
+  
+  // Regulations and Type of Compliance (TOC) properties
+  regulationsData: RegulationWithTOC[] = [];
+  selectedRegulation: RegulationWithTOC | null = null;
+  typeOfComplianceList: TypeOfCompliance[] = [];
+  selectedTOC: TypeOfCompliance | null = null;
+  isLoadingRegulations: boolean = false;
+  isLoadingTOC: boolean = false;
 
-  constructor(private folderService: FolderService,private notifier:NotifierService,private formBuilder: FormBuilder,private http: HttpClient,private persistenceService: PersistenceService,private route:Router) {
+  constructor(
+    private folderService: FolderService,
+    private notifier: NotifierService,
+    private formBuilder: FormBuilder,
+    private http: HttpClient,
+    private persistenceService: PersistenceService,
+    private route: Router,
+    private clientComplianceService: ClientComplianceTrackerService
+  ) {
     this.formgroupCreateFolder = this.formBuilder.group({
       folderName: ['', Validators.required],
       isParent: [false]
@@ -104,8 +132,555 @@ export class FileuploadComponent implements OnInit {
 
   ngOnInit() {
     //this.getAllFolders();
-    this.getcompdata();
+    this.loadClientComplianceTracker();
   }
+
+  /**
+   * Load Client Compliance Tracker data from API
+   */
+  loadClientComplianceTracker() {
+    const userId = this.persistenceService.getUserId() || 16; // Default to 16 for testing
+    
+    // First get user assigned entities
+    this.clientComplianceService.getUserAssignedEntities(userId).subscribe({
+      next: (entities) => {
+        this.userAssignedEntities = entities;
+        console.log('User Assigned Entities:', entities);
+        
+        if (entities.length > 0) {
+          // Select first entity by default
+          this.selectedEntity = entities[0];
+          this.loadComplianceDataForEntity(this.selectedEntity.id, userId);
+        } else {
+          // No entities, just load DMS
+          this.loadDmsTree();
+        }
+      },
+      error: (err) => {
+        console.error('Error loading user entities:', err);
+        this.loadDmsTree();
+      }
+    });
+  }
+
+  /**
+   * Load compliance data for selected entity
+   */
+  loadComplianceDataForEntity(entityId: number, userId: number) {
+    // Load both compliance tracker and location data in parallel
+    forkJoin({
+      complianceData: this.clientComplianceService.getPendingComplianceTrackerByEntity(entityId, userId),
+      locationData: this.clientComplianceService.getLocationMasterByEntity(entityId)
+    }).subscribe({
+      next: ({ complianceData, locationData }) => {
+        this.pendingComplianceData = complianceData;
+        this.locationMasterData = locationData;
+        console.log('Compliance Data:', complianceData);
+        console.log('Location Data:', locationData);
+        
+        // First load regulations, then build the tree
+        this.loadRegulationsForEntity(entityId, () => {
+          // Build the tree structure AFTER regulations are loaded
+          this.buildComplianceTrackerTreeUI();
+        });
+      },
+      error: (err) => {
+        console.error('Error loading compliance data:', err);
+        this.loadDmsTree();
+      }
+    });
+  }
+
+  /**
+   * Load regulations list with type of compliance (TOC) for entity
+   * API: /Questionnaires/GetRegulationListByEntityId?entityId={entityId}
+   */
+  loadRegulationsForEntity(entityId: number, callback?: () => void) {
+    this.isLoadingRegulations = true;
+    this.regulationsData = [];
+    this.selectedRegulation = null;
+    this.typeOfComplianceList = [];
+    
+    this.clientComplianceService.getRegulationListByEntityId(entityId).subscribe({
+      next: (regulations: RegulationWithTOC[]) => {
+        this.regulationsData = regulations;
+        this.isLoadingRegulations = false;
+        console.log('Regulations Data:', regulations);
+        
+        // If regulations exist, log TOC count for each
+        regulations.forEach(reg => {
+          console.log(`Regulation: ${reg.regulationName}, TOC count: ${reg.toc?.length || 0}`);
+        });
+        
+        // Call callback if provided (to build tree after regulations are loaded)
+        if (callback) {
+          callback();
+        }
+      },
+      error: (err) => {
+        console.error('Error loading regulations:', err);
+        this.isLoadingRegulations = false;
+        this.notifier.notify('error', 'Failed to load regulations');
+        // Still call callback to build tree even if regulations fail
+        if (callback) {
+          callback();
+        }
+      }
+    });
+  }
+
+  /**
+   * Handle regulation selection - displays TOC list for selected regulation
+   */
+  onRegulationSelect(regulation: RegulationWithTOC) {
+    this.selectedRegulation = regulation;
+    this.typeOfComplianceList = regulation.toc || [];
+    this.selectedTOC = null;
+    
+    console.log('Selected Regulation:', regulation.regulationName);
+    console.log('Type of Compliance List:', this.typeOfComplianceList);
+    
+    // Display TOC data in files grid
+    if (this.typeOfComplianceList.length > 0) {
+      this.files = this.typeOfComplianceList.map((toc, index) => ({
+        id: toc.id,
+        fileName: toc.typeOfComplianceName,
+        fullName: toc.typeOfComplianceName,
+        folderName: regulation.regulationName,
+        ruleType: toc.ruleType,
+        frequency: toc.frequency,
+        typeOfComplianceUID: toc.typeOfComplianceUID,
+        dueDate: toc.dueDate,
+        forTheMonth: toc.forTheMonth,
+        parentRegulationName: toc.parentRegulationName,
+        parentComplianceName: toc.parentComplianceName,
+        createdOn: toc.lastModified,
+        fileType: 'compliance'
+      }));
+    } else {
+      this.files = [];
+      this.notifier.notify('info', 'No type of compliance found for this regulation');
+    }
+  }
+
+  /**
+   * Handle TOC (Type of Compliance) selection
+   */
+  onTOCSelect(toc: TypeOfCompliance) {
+    this.selectedTOC = toc;
+    console.log('Selected TOC:', toc.typeOfComplianceName, 'Rule Type:', toc.ruleType);
+    
+    // Display single TOC details
+    this.files = [{
+      id: toc.id,
+      fileName: toc.typeOfComplianceName,
+      fullName: toc.typeOfComplianceName,
+      folderName: this.selectedRegulation?.regulationName || 'Regulation',
+      ruleType: toc.ruleType,
+      frequency: toc.frequency,
+      typeOfComplianceUID: toc.typeOfComplianceUID,
+      dueDate: toc.dueDate,
+      forTheMonth: toc.forTheMonth,
+      parentRegulationName: toc.parentRegulationName,
+      parentComplianceName: toc.parentComplianceName,
+      createdOn: toc.lastModified,
+      fileType: 'compliance',
+      parameters: toc.parameters
+    }];
+  }
+
+  /**
+   * Get all TOC items from all regulations (flattened)
+   */
+  getAllTOCItems(): TypeOfCompliance[] {
+    const allTOC: TypeOfCompliance[] = [];
+    this.regulationsData.forEach(reg => {
+      if (reg.toc && reg.toc.length > 0) {
+        allTOC.push(...reg.toc);
+      }
+    });
+    return allTOC;
+  }
+
+  /**
+   * Filter TOC by rule type (Payments, Filing, Activity)
+   */
+  filterTOCByRuleType(ruleType: string): TypeOfCompliance[] {
+    return this.typeOfComplianceList.filter(toc => toc.ruleType === ruleType);
+  }
+
+  /**
+   * Clear regulation selection
+   */
+  clearRegulationSelection() {
+    this.selectedRegulation = null;
+    this.typeOfComplianceList = [];
+    this.selectedTOC = null;
+    this.files = [];
+  }
+
+  /**
+   * Add TOC nodes to the tree under their respective Regulation nodes
+   * This updates the sidebar to show TOC items as children of Regulations
+   * Structure: Entity → Compliance Tracker → Financial Year → Regulation → TOC items
+   */
+  addTOCNodesToTree(regulations: RegulationWithTOC[]) {
+    if (!regulations || regulations.length === 0) {
+      console.log('No regulations to add to tree');
+      return;
+    }
+
+    console.log('Adding TOC items to existing regulation nodes:', regulations.length);
+    console.log('Regulation names from API:', regulations.map(r => r.regulationName));
+
+    // Find all Regulation nodes in the tree and add TOC items to matching ones
+    const addTOCToRegulationNodes = (nodes: FolderTreeNode[]) => {
+      for (const node of nodes) {
+        // Check if this is a Regulation node (inside Financial Year)
+        if (node.foldertitle === 'Regulation') {
+          console.log('Found Regulation node in tree:', node.label);
+          
+          // Find matching regulation from API data
+          const matchingReg = regulations.find(r => r.regulationName === node.label);
+          
+          console.log('Matching regulation found:', matchingReg ? matchingReg.regulationName : 'NONE');
+          
+          if (matchingReg && matchingReg.toc && matchingReg.toc.length > 0) {
+            // Store regulation data on the node
+            node.fileData = matchingReg;
+            
+            // Add TOC items as children of this regulation node
+            // First, check if TOC items already exist to avoid duplicates
+            const existingTOCLabels = node.children?.filter(c => c.foldertitle === 'TOC').map(c => c.label) || [];
+            
+            matchingReg.toc.forEach(toc => {
+              // Skip if TOC already exists
+              if (existingTOCLabels.includes(toc.typeOfComplianceName)) {
+                return;
+              }
+              
+              const tocNodeId = this.folderId++;
+              const tocNode: FolderTreeNode = {
+                id: tocNodeId,
+                label: toc.typeOfComplianceName,
+                parentId: node.id,
+                parent: node,
+                expanded: false,
+                foldertitle: 'TOC',
+                children: [],
+                treeType: 'COMPSEQR360',
+                path: [...(node.path || []), toc.typeOfComplianceName],
+                isFile: false,
+                fileData: toc
+              };
+              
+              // Find compliance data for this TOC to add Location → Documents
+              const tocComplianceData = this.pendingComplianceData.filter(
+                item => item.tocId === toc.id && item.regulationName === matchingReg.regulationName
+              );
+              
+              if (tocComplianceData.length > 0) {
+                // Group by location
+                const byLocation = this.groupByKey(tocComplianceData, 'locationId');
+                
+                Object.keys(byLocation).forEach(locIdStr => {
+                  const locId = parseInt(locIdStr);
+                  const location = this.locationMasterData.find(l => l.Id === locId);
+                  const locationLabel = location 
+                    ? `${location.Id}-${location.LocationName}` 
+                    : `Location ${locId}`;
+
+                  const locationNodeId = this.folderId++;
+                  const locationNode: FolderTreeNode = {
+                    id: locationNodeId,
+                    label: locationLabel,
+                    parentId: tocNodeId,
+                    parent: tocNode,
+                    expanded: false,
+                    foldertitle: 'Location',
+                    children: [],
+                    treeType: 'COMPSEQR360',
+                    path: [...(tocNode.path || []), locationLabel]
+                  };
+
+                  // Add documents under location
+                  const locData = byLocation[locIdStr];
+                  locData.forEach((item: PendingComplianceTracker) => {
+                    const docLabel = `${item.cmpId} - ${item.forTheMonth}`;
+                    const docId = this.folderId++;
+                    
+                    const docNode: FolderTreeNode = {
+                      id: docId,
+                      label: docLabel,
+                      parentId: locationNodeId,
+                      parent: locationNode,
+                      expanded: false,
+                      foldertitle: 'Document',
+                      children: [],
+                      treeType: 'COMPSEQR360',
+                      path: [...(locationNode.path || []), docLabel],
+                      isFile: item.documentCount > 0,
+                      fileData: item
+                    };
+
+                    locationNode.children?.push(docNode);
+                  });
+
+                  tocNode.children?.push(locationNode);
+                });
+              }
+              
+              // Add at the beginning of children (before TypeOfCompliance nodes)
+              if (!node.children) {
+                node.children = [];
+              }
+              node.children.unshift(tocNode);
+            });
+            
+            console.log(`Added ${matchingReg.toc.length} TOC items to regulation: ${node.label}`);
+          }
+        }
+        
+        // Recursively process children
+        if (node.children && node.children.length > 0) {
+          addTOCToRegulationNodes(node.children);
+        }
+      }
+    };
+
+    addTOCToRegulationNodes(this.treeData);
+
+    // Re-attach parent references
+    this.attachParentReferences(this.treeData);
+    
+    // Trigger Angular change detection by reassigning treeData
+    this.treeData = [...this.treeData];
+    
+    console.log('Tree updated with TOC nodes under regulation nodes');
+  }
+
+  /**
+   * Build the Compliance Tracker folder tree UI
+   */
+  buildComplianceTrackerTreeUI() {
+    const complianceTrackerRoot = this.buildClientComplianceTree();
+    
+    // Now load DMS data and merge
+    this.folderService.getGetFolderTree(this.selectedEntityId, this.currentUserId)
+      .subscribe({
+        next: (dmsResult: any) => {
+          this.mergeDmsNodesWithComplianceTracker(complianceTrackerRoot, dmsResult);
+        },
+        error: (err: any) => {
+          console.error('Error fetching DMS data', err);
+          this.mergeDmsNodesWithComplianceTracker(complianceTrackerRoot, []);
+        }
+      });
+  }
+
+
+  /**
+   * Build client compliance tree based on flow:
+   * Entity → Compliance Tracker → Financial Year → Regulations → Type of Compliances → Location → Documents
+   */
+  buildClientComplianceTree(): FolderTreeNode[] {
+    const rootId = this.folderId++;
+    
+    // Create entity-level root nodes
+    const entityRoots: FolderTreeNode[] = [];
+    
+    this.userAssignedEntities.forEach(entity => {
+      const entityId = this.folderId++;
+      const entityNode: FolderTreeNode = {
+        id: entityId,
+        label: entity.entityName,
+        parentId: 0,
+        expanded: entity.id === this.selectedEntity?.id,
+        foldertitle: 'Entity',
+        children: [],
+        treeType: 'COMPSEQR360',
+        path: [entity.entityName]
+      };
+
+      // Only add children for selected entity
+      if (entity.id === this.selectedEntity?.id) {
+        // Compliance Tracker folder
+        const complianceTrackerId = this.folderId++;
+        const complianceTrackerNode: FolderTreeNode = {
+          id: complianceTrackerId,
+          label: 'Compliance Tracker',
+          parentId: entityId,
+          expanded: true,
+          foldertitle: 'ComplianceTracker',
+          children: [],
+          treeType: 'COMPSEQR360',
+          path: [entity.entityName, 'Compliance Tracker']
+        };
+
+        // Group compliance data by financial year
+        const byFinancialYear = this.groupByKey(this.pendingComplianceData, 'financialYear');
+        const sortedYears = Object.keys(byFinancialYear).sort().reverse();
+
+        sortedYears.forEach(year => {
+          const yearId = this.folderId++;
+          const yearNode: FolderTreeNode = {
+            id: yearId,
+            label: year,
+            parentId: complianceTrackerId,
+            expanded: false,
+            foldertitle: 'FinancialYear',
+            children: [],
+            treeType: 'COMPSEQR360',
+            path: [entity.entityName, 'Compliance Tracker', year]
+          };
+
+          const yearData = byFinancialYear[year];
+          
+          // Group by regulation
+          const byRegulation = this.groupByKey(yearData, 'regulationName');
+          
+          Object.keys(byRegulation).forEach(regName => {
+            const regId = this.folderId++;
+            const regNode: FolderTreeNode = {
+              id: regId,
+              label: regName,
+              parentId: yearId,
+              expanded: false,
+              foldertitle: 'Regulation',
+              children: [], // TOC nodes will be added by addTOCNodesToTree
+              treeType: 'COMPSEQR360',
+              path: [entity.entityName, 'Compliance Tracker', year, regName]
+            };
+
+            // Note: TypeOfCompliance (Quarterly Compliance) folder removed
+            // TOC → Location → Documents structure is added by addTOCNodesToTree method
+
+            yearNode.children?.push(regNode);
+          });
+
+          complianceTrackerNode.children?.push(yearNode);
+        });
+
+        entityNode.children?.push(complianceTrackerNode);
+
+        // Entity wise folder (for additional folders if needed)
+        const entityWiseFolderId = this.folderId++;
+        const entityWiseFolderNode: FolderTreeNode = {
+          id: entityWiseFolderId,
+          label: 'Entity wise Folder',
+          parentId: entityId,
+          expanded: false,
+          foldertitle: 'EntityWiseFolder',
+          children: [],
+          treeType: 'COMPSEQR360',
+          path: [entity.entityName, 'Entity wise Folder']
+        };
+        entityNode.children?.push(entityWiseFolderNode);
+      }
+
+      entityRoots.push(entityNode);
+    });
+
+    return entityRoots;
+  }
+
+  /**
+   * Merge DMS nodes with Compliance Tracker tree
+   */
+  mergeDmsNodesWithComplianceTracker(complianceTrackerNodes: FolderTreeNode[], dmsResult: any) {
+    // Filter out any old COMPSEQR360 data from DMS
+    const filteredDmsResult = Array.isArray(dmsResult) ? dmsResult.filter((item: any) => 
+      (item.label || item.folderName) !== 'COMPSEQR360' &&
+      (item.label || item.folderName) !== 'Compliance Tracker'
+    ) : [];
+
+    const normalizedDmsNodes = this.normalizeNodes(filteredDmsResult, null, 'DMS');
+
+    const dmsRoot: FolderTreeNode = {
+      id: Math.floor(Math.random() * 1e9),
+      label: 'ProEDox',
+      expanded: true,
+      children: normalizedDmsNodes,
+      parentId: 0,
+      foldertitle: 'ProEDox',
+      treeType: 'DMS'
+    };
+
+    this.markTreeType([dmsRoot], 'DMS');
+    this.markTreeType(complianceTrackerNodes, 'COMPSEQR360');
+
+    this.attachParentReferences(complianceTrackerNodes);
+    this.attachParentReferences([dmsRoot]);
+
+    // Combine compliance tracker entities and DMS
+    this.treeData = [...complianceTrackerNodes, dmsRoot];
+    
+    if (this.treeData.length > 0) {
+      console.log('Final Tree Data:', this.treeData);
+    }
+    
+    // NOW add TOC nodes to the tree (after tree is built)
+    if (this.regulationsData && this.regulationsData.length > 0) {
+      console.log('Adding TOC nodes after tree is built...');
+      this.addTOCNodesToTree(this.regulationsData);
+    }
+  }
+
+  /**
+   * Helper to group array by key
+   */
+  groupByKey(array: any[], key: string): { [key: string]: any[] } {
+    return array.reduce((result, item) => {
+      const keyValue = String(item[key] || 'Unknown');
+      (result[keyValue] = result[keyValue] || []).push(item);
+      return result;
+    }, {} as { [key: string]: any[] });
+  }
+
+  /**
+   * Load only DMS tree (fallback)
+   */
+  loadDmsTree() {
+    this.folderService.getGetFolderTree(this.selectedEntityId, this.currentUserId)
+      .subscribe({
+        next: (dmsResult: any) => {
+          const filteredDmsResult = Array.isArray(dmsResult) ? dmsResult.filter((item: any) => 
+            (item.label || item.folderName) !== 'COMPSEQR360'
+          ) : [];
+
+          const normalizedDmsNodes = this.normalizeNodes(filteredDmsResult, null, 'DMS');
+
+          const dmsRoot: FolderTreeNode = {
+            id: Math.floor(Math.random() * 1e9),
+            label: 'ProEDox',
+            expanded: true,
+            children: normalizedDmsNodes,
+            parentId: 0,
+            foldertitle: 'ProEDox',
+            treeType: 'DMS'
+          };
+
+          this.markTreeType([dmsRoot], 'DMS');
+          this.attachParentReferences([dmsRoot]);
+
+          this.treeData = [dmsRoot];
+        },
+        error: (err: any) => {
+          console.error('Error fetching DMS data', err);
+          this.treeData = [];
+        }
+      });
+  }
+
+  /**
+   * Handle entity selection change
+   */
+  onEntityChange(entity: UserAssignedEntity) {
+    this.selectedEntity = entity;
+    const userId = this.persistenceService.getUserId() || 16;
+    this.loadComplianceDataForEntity(entity.id, userId);
+  }
+
   getGetFolderTree(selectedEntityId: number, currentUserId: any) {
     this.folderService.getGetFolderTree(selectedEntityId, currentUserId).subscribe((result: any) => {
       // Filter out COMPSEQR360 data if present in DMS result
@@ -148,21 +723,44 @@ export class FileuploadComponent implements OnInit {
 
   // Custom cell renderer for the options column
   optionsRenderer(params: any) {
+    // Check if file content exists (for compliance documents) or filePath exists (for DMS)
+    const hasFileContent = params.data.fileContent;
+    const hasFilePath = params.data.filePath;
+    const canViewDownload = hasFileContent || hasFilePath;
+    
+    console.log('optionsRenderer - Row data:', params.data.fileName, 'hasFileContent:', !!hasFileContent, 'hasFilePath:', !!hasFilePath, 'canViewDownload:', canViewDownload);
+    
     const viewButton = document.createElement('button');
     viewButton.className = 'btn btn-sm btn-outline-secondary btn-view';
     viewButton.innerHTML = '<i class="bi bi-eye"></i>';
-
-    viewButton.addEventListener('click', () => {
-      this.onViewClick(params);
-    });
+    
+    // Disable if no file content/path available
+    if (!canViewDownload) {
+      viewButton.disabled = true;
+      viewButton.style.opacity = '0.5';
+      viewButton.style.cursor = 'not-allowed';
+      viewButton.title = 'No document available';
+    } else {
+      viewButton.addEventListener('click', () => {
+        this.onViewClick(params);
+      });
+    }
 
     const downloadButton = document.createElement('button');
     downloadButton.className = 'btn btn-sm btn-outline-secondary btn-download';
     downloadButton.innerHTML = '<i class="bi bi-download"></i>';
-
-    downloadButton.addEventListener('click', () => {
-      this.onDownloadClick(params);
-    });
+    
+    // Disable if no file content/path available
+    if (!canViewDownload) {
+      downloadButton.disabled = true;
+      downloadButton.style.opacity = '0.5';
+      downloadButton.style.cursor = 'not-allowed';
+      downloadButton.title = 'No document available';
+    } else {
+      downloadButton.addEventListener('click', () => {
+        this.onDownloadClick(params);
+      });
+    }
 
     const container = document.createElement('div');
     container.className = 'btn-group';
@@ -193,37 +791,168 @@ export class FileuploadComponent implements OnInit {
   }
 
   onViewClick(params: any): void {
-    // const imagePath = params.data.filePath;
-    // const fileName = params.data.fileName || 'downloaded-image.jpg';
-    // const link = document.createElement('a');
-    // link.href = imagePath;
-    // link.download = fileName;
-
-    // document.body.appendChild(link);
-
-    // link.click();
-
-    // document.body.removeChild(link);
-    const imagePath = params.data.filePath;
-    this.route.navigate(['/fileview'], { queryParams: { fileurl: imagePath } });
+    console.log('onViewClick called');
+    console.log('onViewClick - params:', params);
+    console.log('onViewClick - params.data:', params.data);
+    console.log('onViewClick - params.data keys:', Object.keys(params.data || {}));
+    console.log('onViewClick - fileContent exists:', !!params.data?.fileContent);
+    console.log('onViewClick - fileContent type:', typeof params.data?.fileContent);
+    console.log('onViewClick - fileContent length:', params.data?.fileContent?.length);
+    console.log('onViewClick - fileName:', params.data?.fileName);
+    
+    // Also check this.files to see what's in the grid data
+    console.log('onViewClick - this.files:', this.files);
+    console.log('onViewClick - this.files[0]?.fileContent exists:', !!this.files[0]?.fileContent);
+    
+    // Check if this is a compliance document with base64 content
+    if (params.data?.fileContent) {
+      console.log('Using params.data.fileContent');
+      this.viewBase64File(params.data.fileContent, params.data.fileName);
+    } else if (this.files[0]?.fileContent) {
+      // Fallback: use the fileContent from this.files array directly
+      console.log('Fallback: Using this.files[0].fileContent');
+      this.viewBase64File(this.files[0].fileContent, this.files[0].fileName);
+    } else if (params.data?.filePath) {
+      // Regular file with filePath
+      console.log('Using filePath navigation');
+      const imagePath = params.data.filePath;
+      this.route.navigate(['/fileview'], { queryParams: { fileurl: imagePath } });
+    } else {
+      console.error('No fileContent or filePath available');
+      this.notifier.notify('error', 'No file content available to view');
+    }
   }
 
   onDownloadClick(params: any): void {
-    const imagePath = params.data.filePath;
-    
-    const fileName = params.data.fileName || 'downloaded-image.jpg';
+    // Check if this is a compliance document with base64 content
+    if (params.data.fileContent) {
+      this.downloadBase64File(params.data.fileContent, params.data.fileName);
+    } else {
+      // Regular file with filePath
+      const imagePath = params.data.filePath;
+      const fileName = params.data.fileName || 'downloaded-file';
 
-  this.http.get(imagePath, { responseType: 'blob' }).subscribe((blob: Blob | MediaSource) => {
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    link.click();
-    window.URL.revokeObjectURL(url); // Clean up
-  }, (error: any) => {
-    console.error('Error downloading the image:', error);
-  });
+      this.http.get(imagePath, { responseType: 'blob' }).subscribe((blob: Blob | MediaSource) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        link.click();
+        window.URL.revokeObjectURL(url); // Clean up
+      }, (error: any) => {
+        console.error('Error downloading the file:', error);
+      });
+    }
+  }
 
+  /**
+   * View base64 encoded file content
+   */
+  viewBase64File(base64Content: string, fileName: string): void {
+    try {
+      console.log('viewBase64File called - fileName:', fileName);
+      console.log('viewBase64File - base64Content length:', base64Content?.length);
+      console.log('viewBase64File - base64Content first 100 chars:', base64Content?.substring(0, 100));
+      
+      const mimeType = this.getMimeType(fileName);
+      console.log('viewBase64File - mimeType:', mimeType);
+      
+      const byteCharacters = atob(base64Content);
+      console.log('viewBase64File - decoded length:', byteCharacters.length);
+      
+      const byteNumbers = new Array(byteCharacters.length);
+      
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+      console.log('viewBase64File - blob size:', blob.size);
+      
+      const url = window.URL.createObjectURL(blob);
+      console.log('viewBase64File - blob URL:', url);
+      
+      // Open in new tab for viewing
+      const newWindow = window.open(url, '_blank');
+      console.log('viewBase64File - window.open result:', newWindow);
+      
+      if (!newWindow) {
+        // Popup was blocked - try alternative approach
+        console.warn('Popup blocked! Trying alternative approach...');
+        this.notifier.notify('warning', 'Popup blocked. Please allow popups or use download instead.');
+        
+        // Alternative: Create a link and click it
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.click();
+      }
+      
+      // Clean up after a delay
+      setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+    } catch (error) {
+      console.error('Error viewing file:', error);
+      this.notifier.notify('error', 'Failed to view file');
+    }
+  }
+
+  /**
+   * Download base64 encoded file content
+   */
+  downloadBase64File(base64Content: string, fileName: string): void {
+    try {
+      const mimeType = this.getMimeType(fileName);
+      const byteCharacters = atob(base64Content);
+      const byteNumbers = new Array(byteCharacters.length);
+      
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+      const url = window.URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      link.click();
+      
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      this.notifier.notify('error', 'Failed to download file');
+    }
+  }
+
+  /**
+   * Get MIME type based on file extension
+   */
+  getMimeType(fileName: string): string {
+    const ext = this.getFileExtension(fileName);
+    const mimeTypes: { [key: string]: string } = {
+      'pdf': 'application/pdf',
+      'png': 'image/png',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'gif': 'image/gif',
+      'bmp': 'image/bmp',
+      'webp': 'image/webp',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'ppt': 'application/vnd.ms-powerpoint',
+      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'txt': 'text/plain',
+      'csv': 'text/csv',
+      'json': 'application/json',
+      'xml': 'application/xml',
+      'zip': 'application/zip',
+      'html': 'text/html'
+    };
+    return mimeTypes[ext] || 'application/octet-stream';
   }
 
 
@@ -576,25 +1305,392 @@ selectItem(item: FolderTreeNode, event: MouseEvent): void {
   // ✅ Use treeType to ensure we find the correct node in correct tree
   const realNode = this.findNodeById(this.treeData, item.id, item.treeType) || item;
 
-  console.log('selectItem called for:', realNode.label, 'treeType:', realNode.treeType, 'path[0]:', realNode.path?.[0]);
+  console.log('selectItem called for:', realNode.label, 'treeType:', realNode.treeType, 'foldertitle:', realNode.foldertitle, 'path:', realNode.path);
 
   this.selectedFolderTreeNodeItem = realNode;
   this.buildBreadcrumbPath(realNode);
 
   if (realNode.isFile && realNode.fileData) {
     console.log('Selected a file:', realNode.label);
-    this.files = [{
-      ...realNode.fileData,
-      fullName: realNode.label
-    }];
-  } else if (realNode.treeType === 'COMPSEQR360' || (realNode.path && realNode.path[0] === 'COMPSEQR360')) {
-    // ✅ Recursively collect all files for COMPSEQR360 folders
-    console.log('Collecting all files for COMPSEQR360 node');
-    this.files = this.collectAllFiles(realNode);
+    // For compliance tracker document nodes with fileData
+    if (realNode.foldertitle === 'Document' && realNode.fileData) {
+      this.files = [{
+        ...realNode.fileData,
+        fileName: realNode.label,
+        fullName: realNode.label,
+        folderName: realNode.path?.[realNode.path.length - 2] || 'Documents'
+      }];
+    } else {
+      this.files = [{
+        ...realNode.fileData,
+        fullName: realNode.label
+      }];
+    }
+  } else if (realNode.treeType === 'COMPSEQR360') {
+    // Handle Compliance Tracker nodes
+    console.log('Handling Compliance Tracker node:', realNode.foldertitle);
+    this.handleComplianceTrackerSelection(realNode);
   } else {
     console.log('Fetching files from API for DMS node');
     this.getAllFilesbyFolderId(realNode.id, this.getModuleType(realNode.path || ''));
   }
+}
+
+/**
+ * Handle selection of Compliance Tracker nodes
+ */
+handleComplianceTrackerSelection(node: FolderTreeNode): void {
+  const foldertitle = node.foldertitle;
+  
+  switch (foldertitle) {
+    case 'Document':
+      // Fetch documents from API when Document node is clicked
+      if (node.fileData) {
+        const compData = node.fileData as PendingComplianceTracker;
+        this.loadComplianceDocuments(compData.cmpId, node);
+      }
+      break;
+    
+    case 'Regulation':
+      // When a Regulation node is selected, load and display its TOC items
+      this.handleRegulationNodeSelection(node);
+      break;
+    
+    case 'RegulationItem':
+      // When a Regulation item from Regulations folder is selected
+      this.handleRegulationItemSelection(node);
+      break;
+    
+    case 'TOC':
+      // When a TOC node is selected, display its details
+      this.handleTOCNodeSelection(node);
+      break;
+    
+    case 'RegulationsFolder':
+      // When Regulations folder is selected, show all regulations
+      this.displayAllRegulations();
+      break;
+    
+    case 'Location':
+    case 'TypeOfCompliance':
+    case 'FinancialYear':
+    case 'ComplianceTracker':
+    case 'Entity':
+      // Collect all document data from children
+      this.files = this.collectComplianceTrackerFiles(node);
+      break;
+    
+    default:
+      this.files = this.collectAllFiles(node);
+  }
+}
+
+/**
+ * Handle Regulation node selection - load TOC data from API
+ */
+handleRegulationNodeSelection(node: FolderTreeNode): void {
+  console.log('Regulation node selected:', node.label);
+  
+  // Find the selected entity to get entityId
+  const entityId = this.selectedEntity?.id;
+  if (!entityId) {
+    console.error('No entity selected');
+    this.files = this.collectComplianceTrackerFiles(node);
+    return;
+  }
+  
+  // Find matching regulation from loaded data or load fresh
+  const existingReg = this.regulationsData.find(r => r.regulationName === node.label);
+  
+  if (existingReg && existingReg.toc && existingReg.toc.length > 0) {
+    // Use existing regulation data
+    this.onRegulationSelect(existingReg);
+  } else {
+    // Load regulations from API to get TOC
+    this.isLoadingTOC = true;
+    this.clientComplianceService.getRegulationListByEntityId(entityId).subscribe({
+      next: (regulations: RegulationWithTOC[]) => {
+        this.regulationsData = regulations;
+        const matchingReg = regulations.find(r => r.regulationName === node.label);
+        
+        if (matchingReg) {
+          this.onRegulationSelect(matchingReg);
+        } else {
+          // Fallback to collecting files from children
+          this.files = this.collectComplianceTrackerFiles(node);
+        }
+        this.isLoadingTOC = false;
+      },
+      error: (err) => {
+        console.error('Error loading regulations:', err);
+        this.isLoadingTOC = false;
+        this.files = this.collectComplianceTrackerFiles(node);
+      }
+    });
+  }
+}
+
+/**
+ * Handle TOC node selection - load and display documents for the TOC
+ * API: /ComplianceTracker/GetComplianceTrackerDocuments?CompId={typeOfComplianceUID}
+ */
+handleTOCNodeSelection(node: FolderTreeNode): void {
+  console.log('TOC node selected:', node.label);
+  
+  // Get TOC data from node's fileData
+  const tocData = node.fileData as TypeOfCompliance;
+  
+  if (tocData) {
+    // Also set the selected TOC for other operations
+    this.selectedTOC = tocData;
+    
+    // Find parent regulation name from path
+    const regulationName = node.path && node.path.length >= 2 
+      ? node.path[node.path.length - 2] 
+      : 'Regulation';
+    
+    // Find and set the parent regulation
+    const parentReg = this.regulationsData.find(r => r.regulationName === regulationName);
+    if (parentReg) {
+      this.selectedRegulation = parentReg;
+      this.typeOfComplianceList = parentReg.toc || [];
+    }
+    
+    // Get the CompId from typeOfComplianceUID
+    const compId = tocData.typeOfComplianceUID;
+    
+    if (compId) {
+      // Load documents from API
+      console.log('Loading documents for TOC CompId:', compId);
+      this.loadTOCDocuments(compId, node, tocData, regulationName);
+    } else {
+      // No CompId, just display TOC info
+      console.warn('No typeOfComplianceUID found for TOC:', node.label);
+      this.displayTOCInfo(tocData, regulationName);
+    }
+  } else {
+    console.warn('No TOC data found for node:', node.label);
+    this.files = [];
+  }
+}
+
+/**
+ * Load documents for a TOC item from API
+ * API: /ComplianceTracker/GetComplianceTrackerDocuments?CompId={compId}
+ */
+loadTOCDocuments(compId: string, node: FolderTreeNode, tocData: TypeOfCompliance, regulationName: string): void {
+  console.log('Loading TOC documents for compId:', compId);
+  
+  this.clientComplianceService.getComplianceTrackerDocuments(compId).subscribe({
+    next: (documents: ComplianceTrackerDocument[]) => {
+      console.log('TOC Documents received - raw response:', documents);
+      console.log('TOC Documents received - is array:', Array.isArray(documents));
+      console.log('TOC Documents received - length:', documents?.length);
+      
+      if (documents && documents.length > 0) {
+        console.log('First document - fileName:', documents[0].fileName);
+        console.log('First document - fileContent exists:', !!documents[0].fileContent);
+        console.log('First document - fileContent length:', documents[0].fileContent?.length);
+        
+        // Display documents in the grid
+        this.files = documents.map((doc, index) => ({
+          id: index + 1,
+          fileName: doc.fileName,
+          fullName: doc.fileName,
+          folderName: tocData.typeOfComplianceName,
+          compId: doc.compId,
+          fileContent: doc.fileContent, // Base64 content for view/download
+          createdBy: doc.createdBy,
+          isDelete: doc.isDelete,
+          createdOn: doc.createdDate,
+          // Additional TOC info
+          regulationName: regulationName,
+          typeOfComplianceName: tocData.typeOfComplianceName,
+          ruleType: tocData.ruleType,
+          frequency: tocData.frequency,
+          // File type based on extension for icon display
+          fileType: this.getMimeType(doc.fileName)
+        }));
+        
+        console.log('Files array set:', this.files);
+        console.log('First file in grid - fileContent exists:', !!this.files[0]?.fileContent);
+      } else {
+        // No documents found, display TOC info instead
+        console.log('No documents found for TOC, displaying TOC info');
+        this.displayTOCInfo(tocData, regulationName);
+      }
+    },
+    error: (err) => {
+      console.error('Error loading TOC documents:', err);
+      this.notifier.notify('error', 'Failed to load documents');
+      // Fallback to displaying TOC info
+      this.displayTOCInfo(tocData, regulationName);
+    }
+  });
+}
+
+/**
+ * Display TOC information in grid (when no documents available)
+ */
+displayTOCInfo(tocData: TypeOfCompliance, regulationName: string): void {
+  this.files = [{
+    id: tocData.id,
+    fileName: tocData.typeOfComplianceName,
+    fullName: tocData.typeOfComplianceName,
+    folderName: regulationName,
+    ruleType: tocData.ruleType,
+    frequency: tocData.frequency,
+    typeOfComplianceUID: tocData.typeOfComplianceUID,
+    dueDate: tocData.dueDate,
+    forTheMonth: tocData.forTheMonth,
+    parentRegulationName: tocData.parentRegulationName,
+    parentComplianceName: tocData.parentComplianceName,
+    createdOn: tocData.lastModified,
+    fileType: 'compliance',
+    parameters: tocData.parameters
+  }];
+}
+
+/**
+ * Handle RegulationItem node selection (from Regulations folder)
+ */
+handleRegulationItemSelection(node: FolderTreeNode): void {
+  console.log('RegulationItem node selected:', node.label);
+  
+  const regData = node.fileData as RegulationWithTOC;
+  
+  if (regData) {
+    this.onRegulationSelect(regData);
+  } else {
+    // Try to find from loaded regulations
+    const matchingReg = this.regulationsData.find(r => r.regulationName === node.label);
+    if (matchingReg) {
+      this.onRegulationSelect(matchingReg);
+    } else {
+      this.files = [];
+      console.warn('No regulation data found for node:', node.label);
+    }
+  }
+}
+
+/**
+ * Display all regulations in the grid
+ */
+displayAllRegulations(): void {
+  console.log('Displaying all regulations');
+  
+  if (this.regulationsData && this.regulationsData.length > 0) {
+    this.files = this.regulationsData.map(reg => ({
+      id: reg.id,
+      fileName: reg.regulationName,
+      fullName: reg.regulationName,
+      folderName: 'Regulations',
+      ruleType: reg.ruleType,
+      tocCount: reg.toc?.length || 0,
+      regulationSetupUID: reg.regulationSetupUID,
+      createdOn: null,
+      fileType: 'regulation'
+    }));
+  } else {
+    this.files = [];
+  }
+}
+
+/**
+ * Load compliance tracker documents from API
+ */
+loadComplianceDocuments(compId: string, node: FolderTreeNode): void {
+  console.log('Loading compliance documents for compId:', compId);
+  
+  this.clientComplianceService.getComplianceTrackerDocuments(compId).subscribe({
+    next: (documents: ComplianceTrackerDocument[]) => {
+      console.log('Compliance Documents received:', documents);
+      
+      if (documents && documents.length > 0) {
+        this.files = documents.map((doc, index) => ({
+          id: index + 1,
+          fileName: doc.fileName,
+          fullName: doc.fileName,
+          folderName: node.path?.[node.path.length - 2] || 'Documents',
+          compId: doc.compId,
+          fileContent: doc.fileContent,
+          createdBy: doc.createdBy,
+          isDelete: doc.isDelete,
+          createdOn: doc.createdDate,
+          // Add file type based on extension
+          fileType: this.getFileExtension(doc.fileName)
+        }));
+      } else {
+        // No documents found, show compliance info instead
+        if (node.fileData) {
+          const compData = node.fileData as PendingComplianceTracker;
+          this.files = [{
+            id: compData.id,
+            fileName: `${compData.cmpId} - ${compData.forTheMonth}`,
+            fullName: node.label,
+            folderName: node.path?.[node.path.length - 2] || 'Location',
+            regulationName: compData.regulationName,
+            frequency: compData.frequency,
+            dueDate: compData.dueDate,
+            dueAmount: compData.dueAmount,
+            amountPaid: compData.amountPaid,
+            status: compData.approvalStatus,
+            documentCount: compData.documentCount,
+            financialYear: compData.financialYear,
+            createdOn: compData.createdOn
+          }];
+        }
+      }
+    },
+    error: (err) => {
+      console.error('Error loading compliance documents:', err);
+      this.notifier.notify('error', 'Failed to load documents');
+      this.files = [];
+    }
+  });
+}
+
+/**
+ * Get file extension from filename
+ */
+getFileExtension(fileName: string): string {
+  if (!fileName) return '';
+  const lastDot = fileName.lastIndexOf('.');
+  return lastDot !== -1 ? fileName.substring(lastDot + 1).toLowerCase() : '';
+}
+
+/**
+ * Collect all compliance tracker files from node and children
+ */
+collectComplianceTrackerFiles(node: FolderTreeNode): any[] {
+  let files: any[] = [];
+  
+  if (node.children && node.children.length > 0) {
+    for (const child of node.children) {
+      if (child.foldertitle === 'Document' && child.fileData) {
+        const compData = child.fileData as PendingComplianceTracker;
+        files.push({
+          id: compData.id,
+          fileName: `${compData.cmpId} - ${compData.forTheMonth}`,
+          fullName: child.label,
+          folderName: child.path?.[child.path.length - 2] || 'Location',
+          regulationName: compData.regulationName,
+          frequency: compData.frequency,
+          dueDate: compData.dueDate,
+          dueAmount: compData.dueAmount,
+          amountPaid: compData.amountPaid,
+          status: compData.approvalStatus,
+          documentCount: compData.documentCount,
+          financialYear: compData.financialYear,
+          createdOn: compData.createdOn
+        });
+      } else {
+        files = [...files, ...this.collectComplianceTrackerFiles(child)];
+      }
+    }
+  }
+  
+  return files;
 }
 
 collectAllFiles(node: FolderTreeNode): any[] {
@@ -1479,6 +2575,13 @@ findDmsRoot(): FolderTreeNode | null {
     
     // Clear normal folder selection to avoid breadcrumb conflicts
     this.selectedFolderTreeNodeItem = null;
+  }
+
+  /**
+   * Compare entities for dropdown selection
+   */
+  compareEntities(entity1: UserAssignedEntity, entity2: UserAssignedEntity): boolean {
+    return entity1 && entity2 ? entity1.id === entity2.id : entity1 === entity2;
   }
 
  //end

@@ -6,8 +6,11 @@ import { file } from '@rxweb/reactive-form-validators';
 import { NotifierService } from 'angular-notifier';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { getDate } from 'date-fns';
-import { FolderTreeNode } from '../../models/filetreeNode';
+import { FolderTreeNode } from '../../Models/filetreeNode';
 import { HttpClient } from '@angular/common/http';
+import { ClientComplianceTrackerService } from '../../Services/client-compliance-tracker.service';
+import { ComplianceTrackerDocument } from '../../Models/compliancetracker';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-fileupload',
@@ -73,7 +76,14 @@ export class FileuploadComponent implements OnInit {
   selectedFolderTreeNodeItem: FolderTreeNode | null = null;
   breadcrumbPath: { label: string, node?: FolderTreeNode }[] = [];
 
-  constructor(private folderService: FolderService,private notifier:NotifierService,private formBuilder: FormBuilder,private http: HttpClient) {
+  constructor(
+    private folderService: FolderService,
+    private notifier: NotifierService,
+    private formBuilder: FormBuilder,
+    private http: HttpClient,
+    private clientComplianceService: ClientComplianceTrackerService,
+    private router: Router
+  ) {
     this.formgroupCreateFolder = this.formBuilder.group({
       folderName: ['', Validators.required],
       isParent: [false]
@@ -122,21 +132,42 @@ export class FileuploadComponent implements OnInit {
 
   // Custom cell renderer for the options column
   optionsRenderer(params: any) {
+    // Check if file content exists (for compliance documents) or filePath exists (for DMS)
+    const hasFileContent = params.data?.fileContent;
+    const hasFilePath = params.data?.filePath;
+    const canViewDownload = hasFileContent || hasFilePath;
+    
     const viewButton = document.createElement('button');
     viewButton.className = 'btn btn-sm btn-outline-secondary btn-view';
     viewButton.innerHTML = '<i class="bi bi-eye"></i>';
-
-    viewButton.addEventListener('click', () => {
-      this.onViewClick(params);
-    });
+    
+    // Disable if no file content/path available
+    if (!canViewDownload) {
+      viewButton.disabled = true;
+      viewButton.style.opacity = '0.5';
+      viewButton.style.cursor = 'not-allowed';
+      viewButton.title = 'No document available';
+    } else {
+      viewButton.addEventListener('click', () => {
+        this.onViewClick(params);
+      });
+    }
 
     const downloadButton = document.createElement('button');
     downloadButton.className = 'btn btn-sm btn-outline-secondary btn-download';
     downloadButton.innerHTML = '<i class="bi bi-download"></i>';
-
-    downloadButton.addEventListener('click', () => {
-      this.onDownloadClick(params);
-    });
+    
+    // Disable if no file content/path available
+    if (!canViewDownload) {
+      downloadButton.disabled = true;
+      downloadButton.style.opacity = '0.5';
+      downloadButton.style.cursor = 'not-allowed';
+      downloadButton.title = 'No document available';
+    } else {
+      downloadButton.addEventListener('click', () => {
+        this.onDownloadClick(params);
+      });
+    }
 
     const container = document.createElement('div');
     container.className = 'btn-group';
@@ -167,34 +198,156 @@ export class FileuploadComponent implements OnInit {
   }
 
   onViewClick(params: any): void {
-    const imagePath = params.data.filePath;
-    const fileName = params.data.fileName || 'downloaded-image.jpg';
-    const link = document.createElement('a');
-    link.href = imagePath;
-    link.download = fileName;
-
-    document.body.appendChild(link);
-
-    link.click();
-
-    document.body.removeChild(link);
+    // Check if this is a compliance document with base64 content
+    if (params.data?.fileContent) {
+      this.viewBase64File(params.data.fileContent, params.data.fileName);
+    } else if (params.data?.filePath) {
+      // Regular file with filePath - navigate to internal file viewer
+      const imagePath = params.data.filePath;
+      this.router.navigate(['/fileview'], { queryParams: { fileurl: imagePath } });
+    } else {
+      this.notifier.notify('error', 'No file content available to view');
+    }
   }
 
   onDownloadClick(params: any): void {
-    const imagePath = params.data.filePath;
-    const fileName = params.data.fileName || 'downloaded-image.jpg';
+    // Check if this is a compliance document with base64 content
+    if (params.data?.fileContent) {
+      this.downloadBase64File(params.data.fileContent, params.data.fileName);
+    } else if (params.data?.filePath) {
+      // Regular file with filePath
+      const imagePath = params.data.filePath;
+      const fileName = params.data.fileName || 'downloaded-file';
 
-  this.http.get(imagePath, { responseType: 'blob' }).subscribe((blob: Blob | MediaSource) => {
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    link.click();
-    window.URL.revokeObjectURL(url); // Clean up
-  }, (error: any) => {
-    console.error('Error downloading the image:', error);
-  });
+      this.http.get(imagePath, { responseType: 'blob' }).subscribe((blob: Blob | MediaSource) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        link.click();
+        window.URL.revokeObjectURL(url); // Clean up
+      }, (error: any) => {
+        console.error('Error downloading the file:', error);
+        this.notifier.notify('error', 'Failed to download file');
+      });
+    } else {
+      this.notifier.notify('error', 'No file content available to download');
+    }
+  }
 
+  /**
+   * View base64 encoded file content - navigates to file viewer
+   */
+  viewBase64File(base64Content: string, fileName: string): void {
+    try {
+      const mimeType = this.getMimeType(fileName);
+      const byteCharacters = atob(base64Content);
+      const byteNumbers = new Array(byteCharacters.length);
+      
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+      const url = window.URL.createObjectURL(blob);
+      
+      // Navigate to internal file viewer with the blob URL
+      this.router.navigate(['/fileview'], { queryParams: { fileurl: url } });
+    } catch (error) {
+      console.error('Error viewing file:', error);
+      this.notifier.notify('error', 'Failed to view file');
+    }
+  }
+
+  /**
+   * Download base64 encoded file content
+   */
+  downloadBase64File(base64Content: string, fileName: string): void {
+    try {
+      const mimeType = this.getMimeType(fileName);
+      const byteCharacters = atob(base64Content);
+      const byteNumbers = new Array(byteCharacters.length);
+      
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+      const url = window.URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      link.click();
+      
+      window.URL.revokeObjectURL(url);
+      this.notifier.notify('success', 'File downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      this.notifier.notify('error', 'Failed to download file');
+    }
+  }
+
+  /**
+   * Get MIME type based on file extension
+   */
+  getMimeType(fileName: string): string {
+    const ext = fileName?.split('.').pop()?.toLowerCase() || '';
+    const mimeTypes: { [key: string]: string } = {
+      'pdf': 'application/pdf',
+      'png': 'image/png',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'gif': 'image/gif',
+      'bmp': 'image/bmp',
+      'webp': 'image/webp',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'ppt': 'application/vnd.ms-powerpoint',
+      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'txt': 'text/plain',
+      'csv': 'text/csv',
+      'json': 'application/json',
+      'xml': 'application/xml',
+      'zip': 'application/zip',
+      'html': 'text/html'
+    };
+    return mimeTypes[ext] || 'application/octet-stream';
+  }
+
+  /**
+   * Load compliance tracker documents by CompId
+   */
+  loadComplianceDocuments(compId: string): void {
+    this.clientComplianceService.getComplianceTrackerDocuments(compId).subscribe({
+      next: (documents: ComplianceTrackerDocument[]) => {
+        if (documents && documents.length > 0) {
+          this.files = documents.map((doc, index) => ({
+            id: index + 1,
+            fileName: doc.fileName,
+            fullName: doc.fileName,
+            compId: doc.compId,
+            fileContent: doc.fileContent, // Base64 content for view/download
+            createdBy: doc.createdBy,
+            isDelete: doc.isDelete,
+            createdOn: doc.createdDate,
+            fileType: this.getMimeType(doc.fileName)
+          }));
+        } else {
+          this.files = [];
+          this.notifier.notify('info', 'No documents found');
+        }
+      },
+      error: (err) => {
+        console.error('Error loading compliance documents:', err);
+        this.notifier.notify('error', 'Failed to load documents');
+        this.files = [];
+      }
+    });
   }
 
 
@@ -417,7 +570,17 @@ export class FileuploadComponent implements OnInit {
     this.selectedFolderTreeNodeItem = item;
     console.log("selected item ==",this.selectedFolderTreeNodeItem);
     this.buildBreadcrumbPath(item);
-    this.getAllFilesbyFolderId(item.id);
+    
+    // Check if the item has a compId (compliance tracker document)
+    // CompId format example: TOC202681R1824
+    if (item.fileData?.compId || item.fileData?.cmpId || item.fileData?.typeOfComplianceUID) {
+      const compId = item.fileData.compId || item.fileData.cmpId || item.fileData.typeOfComplianceUID;
+      console.log("Loading compliance documents for compId:", compId);
+      this.loadComplianceDocuments(compId);
+    } else {
+      // Regular folder - load files by folder ID
+      this.getAllFilesbyFolderId(item.id);
+    }
   }
 
   buildBreadcrumbPath(selectedNode: FolderTreeNode): void {
