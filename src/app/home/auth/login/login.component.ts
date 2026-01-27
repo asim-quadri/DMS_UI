@@ -12,25 +12,39 @@ import { RxwebValidators } from '@rxweb/reactive-form-validators';
   selector: 'app-login',
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
- // providers: [FormBuilder],
+  // providers: [FormBuilder],
 })
-export class LoginComponent {
-
-  users !: UsersModel;
-  formgroup :FormGroup = this.fb.group({
-    userId: ['' ,[ RxwebValidators.required({ message: 'Employee Id / Email is required' })],],
+export class LoginComponent implements OnInit {
+  users!: UsersModel;
+  formgroup: FormGroup = this.fb.group({
+    userId: [
+      '',
+      [
+        RxwebValidators.required({
+          message: 'Employee Id / Email is required',
+        }),
+      ],
+    ],
     //email: ['' , RxwebValidators.required({ message: 'Employee Id / Email is required' }),],
-    password: ['' , RxwebValidators.required({ message: 'Password is required' }),],
+    password: [
+      '',
+      RxwebValidators.required({ message: 'Password is required' }),
+    ],
   });
 
-  constructor(private fb: FormBuilder, public apiService: ApiService,
-     private notifier:NotifierService, private router: Router, private persistance: PersistenceService){
-
-      if(this.persistance.getUserUID() != null){
-        this.persistance.logout();
-      }
+  constructor(
+    private fb: FormBuilder,
+    public apiService: ApiService,
+    private notifier: NotifierService,
+    private router: Router,
+    private persistance: PersistenceService,
+  ) {
+    if (this.persistance.getUserUID() != null) {
+      this.persistance.logout();
+    }
   }
 
+  ngOnInit() {}
 
   onSubmit() {
     if (this.formgroup.valid) {
@@ -43,7 +57,7 @@ export class LoginComponent {
             this.persistance.setSessionStorage('currentUser', user);
             this.notifier.notify('success', 'Login Successfully');
             this.formgroup.reset();
-            
+
             // Give a small delay to ensure session storage is set before navigation
             setTimeout(() => {
               this.router.navigate(['/home']).then((navigationSuccess) => {
@@ -60,7 +74,7 @@ export class LoginComponent {
         (error) => {
           console.error('Login error:', error);
           this.notifier.notify('error', 'Something went wrong during login');
-        }
+        },
       );
     } else {
       console.log('Form is invalid');
