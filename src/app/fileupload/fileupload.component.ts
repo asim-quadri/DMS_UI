@@ -111,6 +111,10 @@ export class FileuploadComponent implements OnInit {
   selectedTOC: TypeOfCompliance | null = null;
   isLoadingRegulations: boolean = false;
   isLoadingTOC: boolean = false;
+  
+  // Notices properties
+  noticesData: RegulationWithTOC[] = [];
+  isLoadingNotices: boolean = false;
 
   constructor(
     private folderService: FolderService,
@@ -180,8 +184,11 @@ export class FileuploadComponent implements OnInit {
         
         // First load regulations, then build the tree
         this.loadRegulationsForEntity(entityId, () => {
-          // Build the tree structure AFTER regulations are loaded
-          this.buildComplianceTrackerTreeUI();
+          // Also load notices data, then build the tree
+          this.loadNoticesForEntity(entityId, () => {
+            // Build the tree structure AFTER regulations and notices are loaded
+            this.buildComplianceTrackerTreeUI();
+          });
         });
       },
       error: (err) => {
@@ -222,6 +229,41 @@ export class FileuploadComponent implements OnInit {
         this.isLoadingRegulations = false;
         this.notifier.notify('error', 'Failed to load regulations');
         // Still call callback to build tree even if regulations fail
+        if (callback) {
+          callback();
+        }
+      }
+    });
+  }
+
+  /**
+   * Load notices regulations list with type of compliance (TOC) for entity
+   * API: /Questionnaires/GetRegulationListByEntityId?entityId={entityId}&accessType=Notices
+   */
+  loadNoticesForEntity(entityId: number, callback?: () => void) {
+    this.isLoadingNotices = true;
+    this.noticesData = [];
+    
+    this.clientComplianceService.getNoticesRegulationListByEntityId(entityId).subscribe({
+      next: (notices: RegulationWithTOC[]) => {
+        this.noticesData = notices;
+        this.isLoadingNotices = false;
+        console.log('Notices Data:', notices);
+        
+        // If notices exist, log TOC count for each
+        notices.forEach(notice => {
+          console.log(`Notice Regulation: ${notice.regulationName}, TOC count: ${notice.toc?.length || 0}`);
+        });
+        
+        // Call callback if provided
+        if (callback) {
+          callback();
+        }
+      },
+      error: (err) => {
+        console.error('Error loading notices:', err);
+        this.isLoadingNotices = false;
+        // Still call callback to build tree even if notices fail
         if (callback) {
           callback();
         }
@@ -504,17 +546,30 @@ export class FileuploadComponent implements OnInit {
 
       // Only add children for selected entity
       if (entity.id === this.selectedEntity?.id) {
-        // Compliance Tracker folder
+        // Regulatory Compliance folder (new static parent folder)
+        const regulatoryComplianceId = this.folderId++;
+        const regulatoryComplianceNode: FolderTreeNode = {
+          id: regulatoryComplianceId,
+          label: 'Regulatory Compliance',
+          parentId: entityId,
+          expanded: true,
+          foldertitle: 'RegulatoryCompliance',
+          children: [],
+          treeType: 'COMPSEQR360',
+          path: [entity.entityName, 'Regulatory Compliance']
+        };
+
+        // Compliance Tracker folder (now child of Regulatory Compliance)
         const complianceTrackerId = this.folderId++;
         const complianceTrackerNode: FolderTreeNode = {
           id: complianceTrackerId,
           label: 'Compliance Tracker',
-          parentId: entityId,
+          parentId: regulatoryComplianceId,
           expanded: true,
           foldertitle: 'ComplianceTracker',
           children: [],
           treeType: 'COMPSEQR360',
-          path: [entity.entityName, 'Compliance Tracker']
+          path: [entity.entityName, 'Regulatory Compliance', 'Compliance Tracker']
         };
 
         // Group compliance data by financial year
@@ -531,7 +586,7 @@ export class FileuploadComponent implements OnInit {
             foldertitle: 'FinancialYear',
             children: [],
             treeType: 'COMPSEQR360',
-            path: [entity.entityName, 'Compliance Tracker', year]
+            path: [entity.entityName, 'Regulatory Compliance', 'Compliance Tracker', year]
           };
 
           const yearData = byFinancialYear[year];
@@ -549,7 +604,7 @@ export class FileuploadComponent implements OnInit {
               foldertitle: 'Regulation',
               children: [], // TOC nodes will be added by addTOCNodesToTree
               treeType: 'COMPSEQR360',
-              path: [entity.entityName, 'Compliance Tracker', year, regName]
+              path: [entity.entityName, 'Regulatory Compliance', 'Compliance Tracker', year, regName]
             };
 
             // Note: TypeOfCompliance (Quarterly Compliance) folder removed
@@ -561,7 +616,68 @@ export class FileuploadComponent implements OnInit {
           complianceTrackerNode.children?.push(yearNode);
         });
 
-        entityNode.children?.push(complianceTrackerNode);
+        // Add Compliance Tracker to Regulatory Compliance
+        regulatoryComplianceNode.children?.push(complianceTrackerNode);
+        
+        // Notices folder (sibling to Compliance Tracker under Regulatory Compliance)
+        const noticesId = this.folderId++;
+        const noticesNode: FolderTreeNode = {
+          id: noticesId,
+          label: 'Notices',
+          parentId: regulatoryComplianceId,
+          expanded: false,
+          foldertitle: 'Notices',
+          children: [],
+          treeType: 'COMPSEQR360',
+          path: [entity.entityName, 'Regulatory Compliance', 'Notices']
+        };
+        
+        // Build Notices tree structure: Notices → regulationName → toc (folders)
+        if (this.noticesData && this.noticesData.length > 0) {
+          this.noticesData.forEach(noticeReg => {
+            const noticeRegId = this.folderId++;
+            const noticeRegNode: FolderTreeNode = {
+              id: noticeRegId,
+              label: noticeReg.regulationName,
+              parentId: noticesId,
+              expanded: false,
+              foldertitle: 'NoticeRegulation',
+              children: [],
+              treeType: 'COMPSEQR360',
+              path: [entity.entityName, 'Regulatory Compliance', 'Notices', noticeReg.regulationName],
+              fileData: noticeReg
+            };
+            
+            // Add TOC items as children of the regulation node
+            if (noticeReg.toc && noticeReg.toc.length > 0) {
+              noticeReg.toc.forEach(toc => {
+                const noticeTocId = this.folderId++;
+                const noticeTocNode: FolderTreeNode = {
+                  id: noticeTocId,
+                  label: toc.typeOfComplianceName,
+                  parentId: noticeRegId,
+                  expanded: false,
+                  foldertitle: 'NoticeTOC',
+                  children: [],
+                  treeType: 'COMPSEQR360',
+                  path: [entity.entityName, 'Regulatory Compliance', 'Notices', noticeReg.regulationName, toc.typeOfComplianceName],
+                  isFile: false,
+                  fileData: toc
+                };
+                
+                noticeRegNode.children?.push(noticeTocNode);
+              });
+            }
+            
+            noticesNode.children?.push(noticeRegNode);
+          });
+        }
+        
+        // Add Notices to Regulatory Compliance
+        regulatoryComplianceNode.children?.push(noticesNode);
+        
+        // Add Regulatory Compliance to Entity
+        entityNode.children?.push(regulatoryComplianceNode);
 
         // Entity wise folder (for additional folders if needed)
         const entityWiseFolderId = this.folderId++;
@@ -1366,6 +1482,16 @@ handleComplianceTrackerSelection(node: FolderTreeNode): void {
       this.handleTOCNodeSelection(node);
       break;
     
+    case 'NoticeRegulation':
+      // When a Notice Regulation node is selected, display its TOC items
+      this.handleNoticeRegulationSelection(node);
+      break;
+    
+    case 'NoticeTOC':
+      // When a Notice TOC node is selected, load and display documents
+      this.handleNoticeTOCSelection(node);
+      break;
+    
     case 'RegulationsFolder':
       // When Regulations folder is selected, show all regulations
       this.displayAllRegulations();
@@ -1375,6 +1501,8 @@ handleComplianceTrackerSelection(node: FolderTreeNode): void {
     case 'TypeOfCompliance':
     case 'FinancialYear':
     case 'ComplianceTracker':
+    case 'RegulatoryCompliance':
+    case 'Notices':
     case 'Entity':
       // Collect all document data from children
       this.files = this.collectComplianceTrackerFiles(node);
@@ -1428,6 +1556,136 @@ handleRegulationNodeSelection(node: FolderTreeNode): void {
       }
     });
   }
+}
+
+/**
+ * Handle Notice Regulation node selection - display TOC items for the selected notice regulation
+ */
+handleNoticeRegulationSelection(node: FolderTreeNode): void {
+  console.log('Notice Regulation node selected:', node.label);
+  
+  const regData = node.fileData as RegulationWithTOC;
+  
+  if (regData && regData.toc && regData.toc.length > 0) {
+    // Display TOC items in the grid
+    this.files = regData.toc.map((toc, index) => ({
+      id: toc.id,
+      fileName: toc.typeOfComplianceName,
+      fullName: toc.typeOfComplianceName,
+      folderName: regData.regulationName,
+      ruleType: toc.ruleType,
+      frequency: toc.frequency,
+      typeOfComplianceUID: toc.typeOfComplianceUID,
+      dueDate: toc.dueDate,
+      forTheMonth: toc.forTheMonth,
+      parentRegulationName: toc.parentRegulationName,
+      parentComplianceName: toc.parentComplianceName,
+      createdOn: toc.lastModified,
+      fileType: 'notice-toc'
+    }));
+  } else {
+    this.files = [];
+    this.notifier.notify('info', 'No type of compliance found for this notice regulation');
+  }
+}
+
+/**
+ * Handle Notice TOC node selection - load and display documents for the Notice TOC
+ * API: /ComplianceTracker/GetComplianceTrackerDocuments?CompId={typeOfComplianceUID}
+ */
+handleNoticeTOCSelection(node: FolderTreeNode): void {
+  console.log('Notice TOC node selected:', node.label);
+  
+  // Get TOC data from node's fileData
+  const tocData = node.fileData as TypeOfCompliance;
+  
+  if (tocData) {
+    // Find parent regulation name from path
+    const regulationName = node.path && node.path.length >= 2 
+      ? node.path[node.path.length - 2] 
+      : 'Notice Regulation';
+    
+    // Get the CompId from typeOfComplianceUID
+    const compId = tocData.typeOfComplianceUID;
+    
+    if (compId) {
+      // Load documents from API
+      console.log('Loading documents for Notice TOC CompId:', compId);
+      this.loadNoticeTOCDocuments(compId, node, tocData, regulationName);
+    } else {
+      // No CompId, just display TOC info
+      console.warn('No typeOfComplianceUID found for Notice TOC:', node.label);
+      this.displayNoticeTOCInfo(tocData, regulationName);
+    }
+  } else {
+    console.warn('No TOC data found for Notice node:', node.label);
+    this.files = [];
+  }
+}
+
+/**
+ * Load documents for a Notice TOC item from API
+ * API: /ComplianceTracker/GetComplianceTrackerDocuments?CompId={compId}
+ */
+loadNoticeTOCDocuments(compId: string, node: FolderTreeNode, tocData: TypeOfCompliance, regulationName: string): void {
+  console.log('Loading Notice TOC documents for compId:', compId);
+  
+  this.clientComplianceService.getComplianceTrackerDocuments(compId).subscribe({
+    next: (documents: ComplianceTrackerDocument[]) => {
+      console.log('Notice TOC Documents received:', documents);
+      
+      if (documents && documents.length > 0) {
+        // Display documents in the grid
+        this.files = documents.map((doc, index) => ({
+          id: index + 1,
+          fileName: doc.fileName,
+          fullName: doc.fileName,
+          folderName: tocData.typeOfComplianceName,
+          compId: doc.compId,
+          fileContent: doc.fileContent,
+          createdBy: doc.createdBy,
+          isDelete: doc.isDelete,
+          createdOn: doc.createdDate,
+          regulationName: regulationName,
+          typeOfComplianceName: tocData.typeOfComplianceName,
+          ruleType: tocData.ruleType,
+          frequency: tocData.frequency,
+          fileType: this.getMimeType(doc.fileName)
+        }));
+      } else {
+        // No documents, display TOC info
+        this.displayNoticeTOCInfo(tocData, regulationName);
+      }
+    },
+    error: (err) => {
+      console.error('Error loading Notice TOC documents:', err);
+      this.notifier.notify('error', 'Failed to load notice documents');
+      // Fallback to displaying TOC info
+      this.displayNoticeTOCInfo(tocData, regulationName);
+    }
+  });
+}
+
+/**
+ * Display Notice TOC information in grid (when no documents available)
+ */
+displayNoticeTOCInfo(tocData: TypeOfCompliance, regulationName: string): void {
+  this.files = [{
+    id: tocData.id,
+    fileName: tocData.typeOfComplianceName,
+    fullName: tocData.typeOfComplianceName,
+    folderName: regulationName,
+    ruleType: tocData.ruleType,
+    frequency: tocData.frequency,
+    typeOfComplianceUID: tocData.typeOfComplianceUID,
+    dueDate: tocData.dueDate,
+    forTheMonth: tocData.forTheMonth,
+    parentRegulationName: tocData.parentRegulationName,
+    parentComplianceName: tocData.parentComplianceName,
+    createdOn: tocData.lastModified,
+    fileType: 'notice-toc',
+    parameters: tocData.parameters
+  }];
 }
 
 /**

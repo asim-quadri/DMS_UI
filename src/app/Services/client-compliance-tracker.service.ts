@@ -116,6 +116,17 @@ export class ClientComplianceTrackerService {
   }
 
   /**
+   * Get notices regulations list with type of compliance (TOC) by entity ID
+   * API: /Questionnaires/GetRegulationListByEntityId?entityId={entityId}&accessType=Notices
+   */
+  getNoticesRegulationListByEntityId(entityId: number): Observable<RegulationWithTOC[]> {
+    return this.http.get<RegulationWithTOC[]>(
+      `${this.CLIENT_API_URL}/Questionnaires/GetRegulationListByEntityId?entityId=${entityId}&accessType=Notices`,
+      this.getAuthHeaders()
+    );
+  }
+
+  /**
    * Build compliance tracker tree structure based on the flow:
    * Entity → Compliance Tracker → Financial Year → Regulations → Type of Compliances → Location → Documents
    */
