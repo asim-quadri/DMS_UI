@@ -10,4 +10,7 @@ export interface FolderTreeNode {
   treeType?: 'DMS' | 'COMPSEQR360'; // ✅ add this
   isFile?: boolean;
   fileData?: any;
+  sourceId?: number; // Original ID from API for regulations/organizations/announcements
+  isToc?: boolean; // Indicates this is a TOC folder
+  isCompliance?: boolean; // Indicates this is a Compliance folder
 }

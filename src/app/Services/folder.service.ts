@@ -126,4 +126,35 @@ uploadFile( fileModel: FileModel,file: File): Observable<any> {
 
   return this.http.post<any>(`${this.BASEURL}/FileUpload/FileUpload?folderId=${fileModel.folderId}&userId=${fileModel.userId}`, formData, { headers });
 }
+
+/**
+ * Get data by type and id for regulations, organizations, and announcements
+ * @param type - 'regulation', 'organization', or 'announcement'
+ * @param id - The ID of the item
+ * @param subType - Optional subType for regulations ('regulation' or 'tocdues')
+ */
+getDataByTypeAndId(type: string, id: number, subType?: string): Observable<any> {
+  let url = `${this.BASEURL}/Dms/GetDataByTypeAndId?type=${type}&id=${id}`;
+  if (subType) {
+    url += `&subType=${subType}`;
+  }
+  return this.http.get<any>(url, this.getAuthHeadersJSON());
+}
+
+/**
+ * Get file by ID to view/download
+ * @param fileId - The ID of the file
+ * @param type - Optional type: 'regulation', 'organization', 'announcement'
+ * @param subType - Optional subType for regulations: 'regulation', 'tocdues'
+ */
+getFileById(fileId: number, type?: string, subType?: string): Observable<any> {
+  let url = `${this.BASEURL}/FileUpload/GetFileById?fileId=${fileId}`;
+  if (type) {
+    url += `&type=${type}`;
+  }
+  if (subType) {
+    url += `&subType=${subType}`;
+  }
+  return this.http.get<any>(url, this.getAuthHeadersJSON());
+}
 }
