@@ -116,12 +116,35 @@ export class ClientComplianceTrackerService {
   }
 
   /**
+   * Get data by type and id (for regulations, organizations, announcements, notices)
+   * API: /api/Dms/GetDataByTypeAndId?type={type}&id={id}&subType={subType}
+   */
+  getDataByTypeAndId(type: string, id: number, subType?: string): Observable<any> {
+    let url = `${this.CLIENT_API_URL}/api/Dms/GetDataByTypeAndId?type=${type}&id=${id}`;
+    if (subType) {
+      url += `&subType=${subType}`;
+    }
+    return this.http.get<any>(url, this.getAuthHeaders());
+  }
+
+  /**
    * Get notices regulations list with type of compliance (TOC) by entity ID
    * API: /Questionnaires/GetRegulationListByEntityId?entityId={entityId}&accessType=Notices
    */
   getNoticesRegulationListByEntityId(entityId: number): Observable<RegulationWithTOC[]> {
     return this.http.get<RegulationWithTOC[]>(
       `${this.CLIENT_API_URL}/Questionnaires/GetRegulationListByEntityId?entityId=${entityId}&accessType=Notices`,
+      this.getAuthHeaders()
+    );
+  }
+
+  /**
+   * Get list of notices by entity and regulation IDs
+   * API: /api/Notices/GetListOfNoticesByIds?entityId={entityId}&regulationId={regulationId}
+   */
+  getListOfNoticesByIds(entityId: number, regulationId: number): Observable<any> {
+    return this.http.get<any>(
+      `${this.CLIENT_API_URL}/Notices/GetListOfNoticesByIds?entityId=${entityId}&regulationId=${regulationId}`,
       this.getAuthHeaders()
     );
   }
