@@ -1670,19 +1670,35 @@ findDmsRoot(): FolderTreeNode | null {
     // Structure: Announcement -> Regulation Name -> Announcement Subjects
     const announcementsByRegulation: { [key: string]: any[] } = {};
     
+    console.log('Processing announcements, total count:', (data.announcement || []).length);
+    
     // First, group announcements by regulationName
-    (data.announcement || []).forEach((ann: any) => {
+    (data.announcement || []).forEach((ann: any, index: number) => {
       const regName = ann.regulationName || 'Unknown';
       if (!announcementsByRegulation[regName]) {
         announcementsByRegulation[regName] = [];
       }
-      // Get the announcements array from each item (which contains the actual announcements with subjects)
+      
+      // Check if this item has nested announcements array
       if (Array.isArray(ann.announcements) && ann.announcements.length > 0) {
+        // Nested structure: push all nested announcements
         announcementsByRegulation[regName].push(...ann.announcements);
+        console.log(`Announcement ${index}: ${regName} has ${ann.announcements.length} nested announcements`);
+      } else if (ann.subject || ann.id) {
+        // Flat structure: this item IS the announcement itself
+        announcementsByRegulation[regName].push(ann);
+        console.log(`Announcement ${index}: ${regName} - ${ann.subject || ann.id}`);
       }
     });
 
     console.log('Announcements grouped by regulation:', announcementsByRegulation);
+    
+    // Count total announcements
+    let totalAnnouncements = 0;
+    Object.keys(announcementsByRegulation).forEach(key => {
+      totalAnnouncements += announcementsByRegulation[key].length;
+    });
+    console.log('Total announcements to display:', totalAnnouncements);
 
     // Create folder structure for each regulation that has announcements
     Object.keys(announcementsByRegulation).forEach((regName: string) => {
