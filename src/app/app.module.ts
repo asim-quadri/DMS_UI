@@ -43,7 +43,7 @@ import { GlobalErrorHandler } from './@core/utils/global-error-handler';
 import { RegulationGroupService } from './Services/regulation.service';
 import { NgxLoadingModule } from 'ngx-loading';
 import { CommonService } from './Services/common.service';
-import { DatePipe } from '@angular/common';
+import { DatePipe,LocationStrategy,HashLocationStrategy } from '@angular/common';
 import { OrganizationSetupComponent } from './Product_Owner/organization-setup/organization-setup.component';
 import { BillingDetailsComponent } from './Product_Owner/organization-setup/billing-details/billing-details.component';
 import { EntityDetailsComponent } from './Product_Owner/organization-setup/entity-details/entity-details.component';
@@ -142,6 +142,10 @@ import { NgxDocViewerModule } from 'ngx-doc-viewer';
     {
       provide: RouteReuseStrategy,
       useClass: RouteReusableStrategy,
+    },
+    {
+      provide: LocationStrategy,
+      useClass: HashLocationStrategy,
     },
     {
       provide: ErrorHandler,
