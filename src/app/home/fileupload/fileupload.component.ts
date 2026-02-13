@@ -320,10 +320,10 @@ export class FileuploadComponent implements OnInit {
   }
 
   /**
-   * Load compliance tracker documents by CompId
+   * Load compliance tracker documents by complianceTrackerDocumentId
    */
-  loadComplianceDocuments(compId: string): void {
-    this.clientComplianceService.getComplianceTrackerDocuments(compId).subscribe({
+  loadComplianceDocuments(complianceTrackerDocumentId: number): void {
+    this.clientComplianceService.getComplianceTrackerDocuments(complianceTrackerDocumentId).subscribe({
       next: (documents: ComplianceTrackerDocument[]) => {
         if (documents && documents.length > 0) {
           this.files = documents.map((doc, index) => ({
@@ -571,12 +571,11 @@ export class FileuploadComponent implements OnInit {
     console.log("selected item ==",this.selectedFolderTreeNodeItem);
     this.buildBreadcrumbPath(item);
     
-    // Check if the item has a compId (compliance tracker document)
-    // CompId format example: TOC202681R1824
-    if (item.fileData?.compId || item.fileData?.cmpId || item.fileData?.typeOfComplianceUID) {
-      const compId = item.fileData.compId || item.fileData.cmpId || item.fileData.typeOfComplianceUID;
-      console.log("Loading compliance documents for compId:", compId);
-      this.loadComplianceDocuments(compId);
+    // Check if the item has a complianceTrackerDocumentId (compliance tracker document)
+    if (item.fileData?.complianceTrackerDocumentId) {
+      const docId = parseInt(item.fileData.complianceTrackerDocumentId, 10);
+      console.log("Loading compliance documents for complianceTrackerDocumentId:", docId);
+      this.loadComplianceDocuments(docId);
     } else {
       // Regular folder - load files by folder ID
       this.getAllFilesbyFolderId(item.id);

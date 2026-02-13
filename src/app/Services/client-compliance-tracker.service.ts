@@ -53,22 +53,22 @@ export class ClientComplianceTrackerService {
 
   /**
    * Get pending compliance tracker list by entity
-   * API: /ComplianceTracker/GetPendingComplianceTrackerListByEntityId?entityId={entityId}&userId={userId}
+   * API: /ComplianceTracker/GetPendingComplianceTrackerListByEntityId?EntityId={entityId}&userId={userId}
    */
   getPendingComplianceTrackerByEntity(entityId: number, userId: number): Observable<PendingComplianceTracker[]> {
     return this.http.get<PendingComplianceTracker[]>(
-      `${this.CLIENT_API_URL}/ComplianceTracker/GetPendingComplianceTrackerListByEntityId?entityId=${entityId}&userId=${userId}`,
+      `${this.CLIENT_API_URL}/ComplianceTracker/GetPendingComplianceTrackerListByEntityId?EntityId=${entityId}&userId=${userId}`,
       this.getAuthHeaders()
     );
   }
 
   /**
    * Get location master data by entity
-   * API: /LocationMaster/GetLocationMasterDataByEntityId/{entityId}
+   * API: /LocationMaster/GetLocationMasterDataByEntityId?entityId={entityId}
    */
   getLocationMasterByEntity(entityId: number): Observable<LocationMaster[]> {
     return this.http.get<LocationMasterResponse>(
-      `${this.CLIENT_API_URL}/LocationMaster/GetLocationMasterDataByEntityId/${entityId}`,
+      `${this.CLIENT_API_URL}/LocationMaster/GetLocationMasterDataByEntityId?entityId=${entityId}`,
       this.getAuthHeaders()
     ).pipe(
       map((response: LocationMasterResponse) => {
@@ -81,13 +81,14 @@ export class ClientComplianceTrackerService {
   }
 
   /**
-   * Get compliance tracker documents by CompId
-   * API: /ComplianceTracker/GetComplianceTrackerDocuments?CompId={compId}
+   * Get compliance tracker documents by complianceTrackerDocumentId
+   * API: /ComplianceTracker/GetComplianceTrackerDocuments?complianceTrackerDocumentId={complianceTrackerDocumentId}
    * Note: API may return a single object or an array, so we normalize to array
+   * Supports single ID (number) or multiple IDs (comma-separated string like "17,18,19")
    */
-  getComplianceTrackerDocuments(compId: string): Observable<ComplianceTrackerDocument[]> {
+  getComplianceTrackerDocuments(complianceTrackerDocumentId: number | string): Observable<ComplianceTrackerDocument[]> {
     return this.http.get<ComplianceTrackerDocument | ComplianceTrackerDocument[]>(
-      `${this.CLIENT_API_URL}/ComplianceTracker/GetComplianceTrackerDocuments?CompId=${compId}`,
+      `${this.CLIENT_API_URL}/ComplianceTracker/GetComplianceTrackerDocuments?complianceTrackerDocumentId=${complianceTrackerDocumentId}`,
       this.getAuthHeaders()
     ).pipe(
       map((response: ComplianceTrackerDocument | ComplianceTrackerDocument[]) => {

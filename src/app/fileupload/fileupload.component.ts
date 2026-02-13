@@ -183,6 +183,12 @@ export class FileuploadComponent implements OnInit {
         this.pendingComplianceData = complianceData;
         this.locationMasterData = locationData;
         
+        // Debug: Log to verify complianceTrackerDocumentId is present in API response
+        
+        if (complianceData.length > 0) {
+          
+        }
+        
         
         this.loadRegulationsForEntity(entityId, () => {
           
@@ -440,6 +446,17 @@ export class FileuploadComponent implements OnInit {
               }
               
               const tocNodeId = this.folderId++;
+              // Get matching compliance data for this TOC to extract complianceTrackerDocumentId
+              const tocComplianceData = this.pendingComplianceData.filter(
+                item => item.tocId === toc.id && item.regulationName === matchingReg.regulationName
+              );
+              
+              // Copy complianceTrackerDocumentId from first matching PendingComplianceTracker to TOC fileData
+              const tocWithDocId = {
+                ...toc,
+                complianceTrackerDocumentId: tocComplianceData.length > 0 ? tocComplianceData[0].complianceTrackerDocumentId : null
+              };
+              
               const tocNode: FolderTreeNode = {
                 id: tocNodeId,
                 label: toc.typeOfComplianceName,
@@ -451,13 +468,8 @@ export class FileuploadComponent implements OnInit {
                 treeType: 'COMPSEQR360',
                 path: [...(node.path || []), toc.typeOfComplianceName],
                 isFile: false,
-                fileData: toc
+                fileData: tocWithDocId
               };
-              
-              
-              const tocComplianceData = this.pendingComplianceData.filter(
-                item => item.tocId === toc.id && item.regulationName === matchingReg.regulationName
-              );
               
               if (tocComplianceData.length > 0) {
                 
@@ -488,6 +500,9 @@ export class FileuploadComponent implements OnInit {
                   locData.forEach((item: PendingComplianceTracker) => {
                     const docLabel = `${item.cmpId} - ${item.forTheMonth}`;
                     const docId = this.folderId++;
+                    
+                    // Debug: Log complianceTrackerDocumentId when creating Document node
+                    
                     
                     const docNode: FolderTreeNode = {
                       id: docId,
@@ -719,7 +734,7 @@ export class FileuploadComponent implements OnInit {
             
             noticesNode.children?.push(noticeRegNode);
           });
-          console.log(noticesNode)
+          
         }
         
         
@@ -1483,21 +1498,15 @@ selectItem(item: FolderTreeNode, event: MouseEvent): void {
   this.selectedFolderTreeNodeItem = realNode;
   this.buildBreadcrumbPath(realNode);
 
-  if (realNode.isFile && realNode.fileData) {
+  // For COMPSEQR360 Document nodes, always call handleComplianceTrackerSelection to trigger API
+  if (realNode.treeType === 'COMPSEQR360' && realNode.foldertitle === 'Document') {
+    this.handleComplianceTrackerSelection(realNode);
+  } else if (realNode.isFile && realNode.fileData) {
     
-    if (realNode.foldertitle === 'Document' && realNode.fileData) {
-      this.files = [{
-        ...realNode.fileData,
-        fileName: realNode.label,
-        fullName: realNode.label,
-        folderName: realNode.path?.[realNode.path.length - 2] || 'Documents'
-      }];
-    } else {
-      this.files = [{
-        ...realNode.fileData,
-        fullName: realNode.label
-      }];
-    }
+    this.files = [{
+      ...realNode.fileData,
+      fullName: realNode.label
+    }];
   } else if (realNode.treeType === 'COMPSEQR360') {
     
     this.handleComplianceTrackerSelection(realNode);
@@ -1517,23 +1526,39 @@ handleComplianceTrackerSelection(node: FolderTreeNode): void {
       
       if (node.fileData) {
         const compData = node.fileData as PendingComplianceTracker;
-        this.loadComplianceDocuments(compData.cmpId, node);
+        
+        
+        const docId = compData.complianceTrackerDocumentId ? parseInt(compData.complianceTrackerDocumentId, 10) : 0;
+        if (docId) {
+          this.loadComplianceDocuments(docId, node);
+        } else {
+          console.warn('No complianceTrackerDocumentId found for Document node:', node.label, compData);
+          // Display the compliance data as a row
+          this.files = [{
+            id: compData.id,
+            fileName: `${compData.cmpId} - ${compData.forTheMonth}`,
+            fullName: node.label,
+            folderName: node.path?.[node.path.length - 2] || 'Location',
+            regulationName: compData.regulationName,
+            frequency: compData.frequency,
+            dueDate: compData.dueDate,
+            dueAmount: compData.dueAmount,
+            amountPaid: compData.amountPaid,
+            status: compData.approvalStatus,
+            documentCount: compData.documentCount,
+            financialYear: compData.financialYear,
+            createdOn: compData.createdOn
+          }];
+        }
+      } else {
+        console.warn('No fileData found for Document node:', node.label);
+        this.files = [];
       }
-      break;
-    
-    case 'Regulation':
-      
-      this.handleRegulationNodeSelection(node);
       break;
     
     case 'RegulationItem':
       
       this.handleRegulationItemSelection(node);
-      break;
-    
-    case 'TOC':
-      
-      this.handleTOCNodeSelection(node);
       break;
     
     case 'NoticeRegulation':
@@ -1557,14 +1582,16 @@ handleComplianceTrackerSelection(node: FolderTreeNode): void {
       break;
     
     case 'Location':
-    case 'TypeOfCompliance':
     case 'FinancialYear':
+    case 'TOC':
+    case 'Regulation':
+    case 'TypeOfCompliance':
     case 'ComplianceTracker':
     case 'RegulatoryCompliance':
     case 'Notices':
     case 'Entity':
-      
-      this.files = this.collectComplianceTrackerFiles(node);
+      // Collect all complianceTrackerDocumentIds from child Document nodes and call API
+      this.loadComplianceDocumentsForParent(node);
       break;
     
     default:
@@ -1819,14 +1846,14 @@ handleNoticeTOCSelection(node: FolderTreeNode): void {
       : 'Notice Regulation';
     
     
-    const compId = tocData.typeOfComplianceUID;
+    const complianceTrackerDocumentId = tocData.complianceTrackerDocumentId ? parseInt(tocData.complianceTrackerDocumentId, 10) : 0;
     
-    if (compId) {
+    if (complianceTrackerDocumentId) {
       
-      this.loadNoticeTOCDocuments(compId, node, tocData, regulationName);
+      this.loadNoticeTOCDocuments(complianceTrackerDocumentId, node, tocData, regulationName);
     } else {
       
-      console.warn('No typeOfComplianceUID found for Notice TOC:', node.label);
+      console.warn('No complianceTrackerDocumentId found for Notice TOC:', node.label);
       this.displayNoticeTOCInfo(tocData, regulationName);
     }
   } else {
@@ -1837,11 +1864,13 @@ handleNoticeTOCSelection(node: FolderTreeNode): void {
 
 /**
  * Load documents for a Notice TOC item from API
- * API: /ComplianceTracker/GetComplianceTrackerDocuments?CompId={compId}
+ * API: /ComplianceTracker/GetComplianceTrackerDocuments?complianceTrackerDocumentId={complianceTrackerDocumentId}
  */
-loadNoticeTOCDocuments(compId: string, node: FolderTreeNode, tocData: TypeOfCompliance, regulationName: string): void {
+loadNoticeTOCDocuments(complianceTrackerDocumentId: number, node: FolderTreeNode, tocData: TypeOfCompliance, regulationName: string): void {
+  // Get location name from tree structure
+  const locationFolderName = this.getLocationNameForDocument(node, this.locationMasterData);
   
-  this.clientComplianceService.getComplianceTrackerDocuments(compId).subscribe({
+  this.clientComplianceService.getComplianceTrackerDocuments(complianceTrackerDocumentId).subscribe({
     next: (documents: ComplianceTrackerDocument[]) => {
       
       if (documents && documents.length > 0) {
@@ -1850,10 +1879,11 @@ loadNoticeTOCDocuments(compId: string, node: FolderTreeNode, tocData: TypeOfComp
           id: index + 1,
           fileName: doc.fileName,
           fullName: doc.fileName,
-          folderName: tocData.typeOfComplianceName,
+          folderName: locationFolderName,
           compId: doc.compId,
           fileContent: doc.fileContent,
           createdBy: doc.createdBy,
+          createdByName: doc.createdByName,
           isDelete: doc.isDelete,
           createdOn: doc.createdDate,
           regulationName: regulationName,
@@ -1922,16 +1952,16 @@ handleTOCNodeSelection(node: FolderTreeNode): void {
       this.selectedRegulation = parentReg;
       this.typeOfComplianceList = parentReg.toc || [];
     }
+    console.log("tocData", tocData);
     
+    const complianceTrackerDocumentId = tocData.complianceTrackerDocumentId ? parseInt(tocData.complianceTrackerDocumentId, 10) : 0;
     
-    const compId = tocData.typeOfComplianceUID;
-    
-    if (compId) {
+    if (complianceTrackerDocumentId) {
       
-      this.loadTOCDocuments(compId, node, tocData, regulationName);
+      this.loadTOCDocuments(complianceTrackerDocumentId, node, tocData, regulationName);
     } else {
       
-      console.warn('No typeOfComplianceUID found for TOC:', node.label);
+      console.warn('No complianceTrackerDocumentId found for TOC:', node.label);
       this.displayTOCInfo(tocData, regulationName);
     }
   } else {
@@ -1942,24 +1972,26 @@ handleTOCNodeSelection(node: FolderTreeNode): void {
 
 /**
  * Load documents for a TOC item from API
- * API: /ComplianceTracker/GetComplianceTrackerDocuments?CompId={compId}
+ * API: /ComplianceTracker/GetComplianceTrackerDocuments?complianceTrackerDocumentId={complianceTrackerDocumentId}
  */
-loadTOCDocuments(compId: string, node: FolderTreeNode, tocData: TypeOfCompliance, regulationName: string): void {
+loadTOCDocuments(complianceTrackerDocumentId: number, node: FolderTreeNode, tocData: TypeOfCompliance, regulationName: string): void {
   
-  this.clientComplianceService.getComplianceTrackerDocuments(compId).subscribe({
+  this.clientComplianceService.getComplianceTrackerDocuments(complianceTrackerDocumentId).subscribe({
     next: (documents: ComplianceTrackerDocument[]) => {
       
       if (documents && documents.length > 0) {
-        
+        // Get the location folder name from tree structure
+        const locationFolderName = this.getLocationNameForDocument(node, this.locationMasterData);
         
         this.files = documents.map((doc, index) => ({
           id: index + 1,
           fileName: doc.fileName,
           fullName: doc.fileName,
-          folderName: tocData.typeOfComplianceName,
+          folderName: locationFolderName,
           compId: doc.compId,
           fileContent: doc.fileContent, 
           createdBy: doc.createdBy,
+          createdByName: doc.createdByName,
           isDelete: doc.isDelete,
           createdOn: doc.createdDate,
           
@@ -2053,9 +2085,11 @@ displayAllRegulations(): void {
 /**
  * Load compliance tracker documents from API
  */
-loadComplianceDocuments(compId: string, node: FolderTreeNode): void {
+loadComplianceDocuments(complianceTrackerDocumentId: number, node: FolderTreeNode): void {
+  // Get location name from node's fileData or parent
+  const locationFolderName = this.getLocationNameForDocument(node, this.locationMasterData);
   
-  this.clientComplianceService.getComplianceTrackerDocuments(compId).subscribe({
+  this.clientComplianceService.getComplianceTrackerDocuments(complianceTrackerDocumentId).subscribe({
     next: (documents: ComplianceTrackerDocument[]) => {
       
       if (documents && documents.length > 0) {
@@ -2063,10 +2097,11 @@ loadComplianceDocuments(compId: string, node: FolderTreeNode): void {
           id: index + 1,
           fileName: doc.fileName,
           fullName: doc.fileName,
-          folderName: node.path?.[node.path.length - 2] || 'Documents',
+          folderName: locationFolderName,
           compId: doc.compId,
           fileContent: doc.fileContent,
           createdBy: doc.createdBy,
+          createdByName: doc.createdByName,
           isDelete: doc.isDelete,
           createdOn: doc.createdDate,
           
@@ -2080,7 +2115,7 @@ loadComplianceDocuments(compId: string, node: FolderTreeNode): void {
             id: compData.id,
             fileName: `${compData.cmpId} - ${compData.forTheMonth}`,
             fullName: node.label,
-            folderName: node.path?.[node.path.length - 2] || 'Location',
+            folderName: locationFolderName,
             regulationName: compData.regulationName,
             frequency: compData.frequency,
             dueDate: compData.dueDate,
@@ -2143,6 +2178,185 @@ collectComplianceTrackerFiles(node: FolderTreeNode): any[] {
   }
   
   return files;
+}
+
+/**
+ * Collect all complianceTrackerDocumentIds from child Document nodes recursively
+ */
+collectComplianceTrackerDocumentIds(node: FolderTreeNode): string[] {
+  let ids: string[] = [];
+  
+  if (node.children && node.children.length > 0) {
+    for (const child of node.children) {
+      if (child.foldertitle === 'Document' && child.fileData) {
+        const compData = child.fileData as PendingComplianceTracker;
+        if (compData.complianceTrackerDocumentId) {
+          ids.push(compData.complianceTrackerDocumentId);
+        }
+      } else {
+        ids = [...ids, ...this.collectComplianceTrackerDocumentIds(child)];
+      }
+    }
+  }
+  
+  return ids;
+}
+
+/**
+ * Collect all unique location IDs from child Document nodes recursively
+ */
+collectLocationIds(node: FolderTreeNode): number[] {
+  let locationIds: number[] = [];
+  
+  if (node.children && node.children.length > 0) {
+    for (const child of node.children) {
+      if (child.foldertitle === 'Document' && child.fileData) {
+        const compData = child.fileData as PendingComplianceTracker;
+        if (compData.locationId) {
+          locationIds.push(compData.locationId);
+        }
+      } else {
+        locationIds = [...locationIds, ...this.collectLocationIds(child)];
+      }
+    }
+  }
+  
+  // Return unique location IDs
+  return [...new Set(locationIds)];
+}
+
+/**
+ * Get location folder name from node's children recursively
+ * Returns the first Location node's label (format: locationId-LocationName)
+ */
+getLocationFolderName(node: FolderTreeNode): string | null {
+  if (!node.children || node.children.length === 0) {
+    return null;
+  }
+  
+  for (const child of node.children) {
+    // If child is a Location node, return its label
+    if (child.foldertitle === 'Location') {
+      return child.label;
+    }
+    // Recurse into children
+    const found = this.getLocationFolderName(child);
+    if (found) {
+      return found;
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Get location name for a document by looking up its locationId from tree fileData
+ */
+getLocationNameForDocument(node: FolderTreeNode, locationMasterData: any[]): string {
+  // Try to get locationId from the node's fileData
+  if (node.fileData) {
+    const compData = node.fileData as PendingComplianceTracker;
+    if (compData.locationId) {
+      const location = locationMasterData.find(l => l.Id === compData.locationId);
+      if (location) {
+        return `${compData.locationId}-${location.LocationName}`;
+      }
+    }
+  }
+  
+  // Fallback: get from Location node children
+  const locationFolderName = this.getLocationFolderName(node);
+  if (locationFolderName) {
+    return locationFolderName;
+  }
+  
+  return node.label;
+}
+
+/**
+ * Display location info (ID-Name) for parent folders like FinancialYear
+ * Shows location folders with format: locationId-LocationName (e.g., "48-SK1_Location name")
+ */
+displayLocationInfo(node: FolderTreeNode): void {
+  const locationIds = this.collectLocationIds(node);
+  
+  if (locationIds.length === 0) {
+    this.files = [];
+    this.notifier.notify('info', 'No locations found in this folder');
+    return;
+  }
+  
+  this.files = locationIds.map((locId, index) => {
+    const location = this.locationMasterData.find(l => l.Id === locId);
+    // Format: locationId-LocationName (e.g., "48-SK1_Location name")
+    const folderDisplayName = location ? `${locId}-${location.LocationName}` : `${locId}-Location`;
+    return {
+      id: locId,
+      fileName: folderDisplayName,
+      fullName: folderDisplayName,
+      folderName: folderDisplayName,
+      locationId: locId,
+      locationName: location?.LocationName || '',
+      buName: location?.BUName || '',
+      country: location?.Country || '',
+      state: location?.State || '',
+      address: location?.Address || '',
+      responsiblePerson: location?.ResponsiblePerson || '',
+      fileType: 'folder'
+    };
+  });
+}
+
+/**
+ * Load compliance documents for parent folder by collecting all child Document IDs
+ * API: /ComplianceTracker/GetComplianceTrackerDocuments?complianceTrackerDocumentId=17,18,19
+ */
+loadComplianceDocumentsForParent(node: FolderTreeNode): void {
+  const documentIds = this.collectComplianceTrackerDocumentIds(node);
+  
+  if (documentIds.length === 0) {
+    // No document IDs found, fallback to local collection
+    this.files = this.collectComplianceTrackerFiles(node);
+    return;
+  }
+  
+  // Determine location folder name - if clicking Location node, use its label
+  // Otherwise get it from children
+  const locationFolderName = node.foldertitle === 'Location' 
+    ? node.label 
+    : this.getLocationFolderName(node) || node.label;
+  
+  // Join IDs with comma for API call
+  const idsParam = documentIds.join(',');
+  console.log('Loading documents for parent with IDs:', idsParam);
+  
+  this.clientComplianceService.getComplianceTrackerDocuments(idsParam).subscribe({
+    next: (documents: ComplianceTrackerDocument[]) => {
+      if (documents && documents.length > 0) {
+        this.files = documents.map((doc, index) => ({
+          id: index + 1,
+          fileName: doc.fileName,
+          fullName: doc.fileName,
+          folderName: locationFolderName,
+          compId: doc.compId,
+          fileContent: doc.fileContent,
+          createdBy: doc.createdBy,
+          createdByName: doc.createdByName,
+          isDelete: doc.isDelete,
+          createdOn: doc.createdDate,
+          fileType: this.getMimeType(doc.fileName)
+        }));
+      } else {
+        // No documents returned, fallback to local collection
+        this.files = this.collectComplianceTrackerFiles(node);
+      }
+    },
+    error: (err) => {
+      console.error('Error loading documents for parent:', err);
+      // Fallback to local collection on error
+      this.files = this.collectComplianceTrackerFiles(node);
+    }
+  });
 }
 
 collectAllFiles(node: FolderTreeNode): any[] {

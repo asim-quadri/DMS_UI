@@ -62,6 +62,7 @@ export interface PendingComplianceTracker {
     reason: string | null;
     createdOn: string;
     createdBy: number;
+    managerId: number | null;
     modifiedOn: string | null;
     modifiedBy: number | null;
     uid: string | null;
@@ -75,7 +76,11 @@ export interface PendingComplianceTracker {
     approvalStatus: string;
     regulationName: string;
     complianceName: string | null;
+    managerName: string | null;
+    userName: string | null;
     locationId: number;
+    complianceTrackerDocumentId: string | null;
+    pendingDueDateStatus: string | null;
 }
 
 export interface LocationMaster {
@@ -106,6 +111,7 @@ export interface ComplianceTrackerDocument {
     fileName: string;
     fileContent: string; // Base64 encoded file content
     createdBy: number;
+    createdByName: string;
     isDelete: boolean;
     createdDate: string;
 }
@@ -127,6 +133,7 @@ export interface TypeOfCompliance {
     lastModified: string | null;
     forTheMonth: string | null;
     dueDate: string | null;
+    complianceTrackerDocumentId: string | null;
 }
 
 // Model for Regulation Parameter
