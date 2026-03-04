@@ -129,6 +129,11 @@ export class FileuploadComponent implements OnInit {
     private route: Router,
     private clientComplianceService: ClientComplianceTrackerService
   ) {
+    var userdata=sessionStorage.getItem('currentUser');
+    if(userdata){
+      var user=JSON.parse(userdata);
+      this.currentUserId=user.id;
+    } 
     this.formgroupCreateFolder = this.formBuilder.group({
       folderName: ['', Validators.required],
       isParent: [false]
