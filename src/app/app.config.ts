@@ -5,6 +5,6 @@ export class AppConfig {
    public readonly BaseUrl = 'http://74.208.221.20/complianceclientapi';
    public readonly ServiceUrl='http://74.208.221.20/complianceclientapi/api';
 
-  //  public readonly BaseUrl = 'https://localhost:44314';
-  //  public readonly ServiceUrl = 'https://localhost:44314/api';
+  //  public readonly BaseUrl = 'https://localhost:44315';
+  //  public readonly ServiceUrl = 'https://localhost:44315/api';
 }
