@@ -64,6 +64,7 @@ import { MapColorPipe } from './@core/pipes/map-color.pipe';
 import { FilterPipe } from './@core/pipes/filter.pipe';
 import { ReportListItemComponent } from './Product_Owner/Reports/report-list-item/report-list-item.component';
 import { FileuploadComponent } from './fileupload/fileupload.component';
+import { FileuploadnewComponent } from './fileuploadnew/fileuploadnew.component';
 import { FileViewerComponent } from './file-viewer/file-viewer.component';
 import { NgxDocViewerModule } from 'ngx-doc-viewer';
 
@@ -100,6 +101,7 @@ import { NgxDocViewerModule } from 'ngx-doc-viewer';
     FilterPipe,
     ReportListItemComponent,
     FileuploadComponent,
+    FileuploadnewComponent,
     FileViewerComponent
   ],
   imports: [
