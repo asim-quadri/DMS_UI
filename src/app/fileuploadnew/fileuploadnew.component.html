@@ -511,7 +511,7 @@
               <h5 class="mb-0">
                 {{ selectedFolderTreeNodeItem?.label || "Files" }}
               </h5>
-              <small class="text-muted">{{ files.length }} items</small>
+              <small class="text-muted">{{ files?.length || 0 }} items</small>
             </div>
             <div class="content-actions">
               <div class="view-options">
@@ -560,7 +560,7 @@
           </div>
 
           <!-- Empty State -->
-          <div class="empty-state" *ngIf="files.length === 0">
+          <div class="empty-state" *ngIf="(files?.length || 0) === 0">
             <div class="empty-state-content">
               <i class="bi bi-folder2-open empty-icon"></i>
               <h6 class="empty-title">This folder is empty</h6>

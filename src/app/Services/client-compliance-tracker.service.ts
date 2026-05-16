@@ -87,8 +87,11 @@ export class ClientComplianceTrackerService {
    * Supports single ID (number) or multiple IDs (comma-separated string like "17,18,19")
    */
   getComplianceTrackerDocuments(complianceTrackerDocumentId: number | string): Observable<ComplianceTrackerDocument[]> {
+    const idParam = typeof complianceTrackerDocumentId === 'string'
+      ? Array.from(new Set(complianceTrackerDocumentId.split(',').map(s => s.trim()).filter(s => s.length > 0))).join(',')
+      : complianceTrackerDocumentId;
     return this.http.get<ComplianceTrackerDocument | ComplianceTrackerDocument[]>(
-      `${this.CLIENT_API_URL}/ComplianceTracker/GetComplianceTrackerDocuments?complianceTrackerDocumentId=${complianceTrackerDocumentId}`,
+      `${this.CLIENT_API_URL}/ComplianceTracker/GetComplianceTrackerDocuments?complianceTrackerDocumentId=${idParam}`,
       this.getAuthHeaders()
     ).pipe(
       map((response: ComplianceTrackerDocument | ComplianceTrackerDocument[]) => {

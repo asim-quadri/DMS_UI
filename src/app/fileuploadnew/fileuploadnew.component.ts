@@ -12,6 +12,8 @@ import { ClientComplianceTrackerService } from '../Services/client-compliance-tr
 import { UserAssignedEntity, PendingComplianceTracker, LocationMaster, ComplianceTrackerDocument, RegulationWithTOC, TypeOfCompliance } from '../Models/compliancetracker';
 import { forkJoin, Observable } from 'rxjs';
 import { AppConfig } from '../app.config';
+import { UserEntityService } from '../Services/userentity.service';
+import { EntitiesCityCoordinate } from '../Models/userEntityModel';
 
 // Interface for the Unified Tree API response
 interface UnifiedTreeResponse {
@@ -41,6 +43,8 @@ interface UnifiedTreeNode {
   isFile: boolean;
   nodeType: string | null;
   complianceTrackerDocumentId: string | null;
+  regulationId?: number | null;
+  fileData?: any;
 }
 
 @Component({
@@ -88,15 +92,27 @@ export class FileuploadnewComponent implements OnInit {
   selectedEntityId: number = 1;
   
   public columnDefs = [
-    { headerName: 'ID', valueGetter: 'node.rowIndex + 1', sortable: true, filter: true },
-    { headerName: 'File Name', field: 'fullName', cellRenderer: this.fileCellRenderer.bind(this), sortable: true, filter: true },
-    { headerName: 'Folder', field: 'folderName', sortable: true, filter: true },
-    { headerName: 'Last modified', field: 'createdOn', sortable: true, filter: true },
-    { headerName: 'Owner', field: 'createdByName', sortable: true, filter: true },
+    { headerName: 'ID', valueGetter: 'node.rowIndex + 1', sortable: true, filter: true, width: 70, flex: 0 },
+    {
+      headerName: 'File Name',
+      field: 'fullName',
+      cellRenderer: this.fileCellRenderer.bind(this),
+      sortable: true,
+      filter: true,
+      flex: 3,
+      minWidth: 260,
+      tooltipField: 'fullName',
+      wrapText: true,
+      autoHeight: true
+    },
+    { headerName: 'Folder', field: 'folderName', sortable: true, filter: true, flex: 1, tooltipField: 'folderName' },
+    { headerName: 'Last modified', field: 'createdOn', sortable: true, filter: true, flex: 1 },
+    { headerName: 'Owner', field: 'createdByName', sortable: true, filter: true, flex: 1 },
     {
       headerName: 'Options',
       cellRenderer: (params: any) => this.optionsRenderer(params),
-      width: 100
+      width: 100,
+      flex: 0
     }
   ];
 
@@ -151,7 +167,8 @@ export class FileuploadnewComponent implements OnInit {
     private persistenceService: PersistenceService,
     private route: Router,
     private clientComplianceService: ClientComplianceTrackerService,
-    private config: AppConfig
+    private config: AppConfig,
+    private userEntityService: UserEntityService
   ) {
     this.unifiedTreeApiUrl = `${this.config.ServiceUrl}/UnifiedTree/tree`;
     var userdata = sessionStorage.getItem('currentUser');
@@ -169,8 +186,44 @@ export class FileuploadnewComponent implements OnInit {
   }
 
   ngOnInit() {
-    // Load the unified tree at loading time
-    this.loadUnifiedTree();
+    this.loadClientEntities();
+  }
+
+  /**
+   * Load the user's entities for the dropdown, then load the tree for the first entity by default.
+   * API: api/ClientEntity/GetEntitiesLocations/{userId}
+   */
+  loadClientEntities() {
+    const organizationId = this.persistenceService.getOrganizationId();
+    if (!organizationId) {
+      this.notifier.notify('error', 'Organization not found in session');
+      return;
+    }
+
+    this.isLoading = true;
+    this.userEntityService.GetClientEntitiesLocations(organizationId).subscribe({
+      next: (entities: EntitiesCityCoordinate[]) => {
+        this.userAssignedEntities = (entities || []).map(e => ({
+          id: e.id,
+          entityName: e.entityName
+        } as UserAssignedEntity));
+
+        if (this.userAssignedEntities.length > 0) {
+          this.selectedEntity = this.userAssignedEntities[0];
+          this.selectedEntityId = this.selectedEntity.id;
+          this.loadUnifiedTreeForEntity(this.selectedEntityId);
+        } else {
+          this.isLoading = false;
+          this.treeData = [];
+          this.notifier.notify('info', 'No entities assigned to this user');
+        }
+      },
+      error: (err) => {
+        console.error('Error loading client entities:', err);
+        this.notifier.notify('error', 'Failed to load entities');
+        this.isLoading = false;
+      }
+    });
   }
 
   /**
@@ -180,42 +233,42 @@ export class FileuploadnewComponent implements OnInit {
   loadUnifiedTree() {
     const userId = this.persistenceService.getUserId() || 16;
     const entityId = 231; // Default entity ID, can be made dynamic
-    
+
     this.isLoading = true;
-    
+
     const apiUrl = `${this.unifiedTreeApiUrl}?entityId=${entityId}`;
-    
+
     this.http.get<UnifiedTreeResponse>(apiUrl).subscribe({
       next: (response) => {
         console.log('Unified Tree API Response:', response);
-        
+
         // Store metadata
         this.metadata = response.metadata;
-        
+
         // Store user entities
         this.userAssignedEntities = response.userEntities || [];
-        
+
         // Store selected entity
         if (response.selectedEntity) {
           this.selectedEntity = response.selectedEntity;
           this.selectedEntityId = response.selectedEntity.id;
         }
-        
+
         // Convert the unified tree data to FolderTreeNode format
         this.treeData = this.convertUnifiedTreeToFolderTree(response.treeData);
-        
+
         // Attach parent references for breadcrumb navigation
         this.attachParentReferences(this.treeData);
-        
+
         this.isLoading = false;
-        
+
         console.log('Converted Tree Data:', this.treeData);
       },
       error: (err) => {
         console.error('Error loading unified tree:', err);
         this.notifier.notify('error', 'Failed to load tree data');
         this.isLoading = false;
-        
+
         // Fallback to empty tree
         this.treeData = [];
       }
@@ -231,6 +284,14 @@ export class FileuploadnewComponent implements OnInit {
     }
 
     return unifiedNodes.map(node => {
+      const fileData: any = node.fileData ? { ...node.fileData } : {};
+      if (node.complianceTrackerDocumentId) {
+        fileData.complianceTrackerDocumentId = node.complianceTrackerDocumentId;
+      }
+      if (node.regulationId != null) {
+        fileData.id = node.regulationId;
+      }
+
       const folderNode: FolderTreeNode = {
         id: node.id,
         label: node.label,
@@ -242,7 +303,7 @@ export class FileuploadnewComponent implements OnInit {
         path: node.path,
         isFile: node.isFile,
         nodeType: node.nodeType || undefined,
-        fileData: node.complianceTrackerDocumentId ? { complianceTrackerDocumentId: node.complianceTrackerDocumentId } : undefined,
+        fileData: Object.keys(fileData).length ? fileData : undefined,
         parent: parent || undefined
       };
 
@@ -274,8 +335,8 @@ export class FileuploadnewComponent implements OnInit {
     
     this.isLoading = true;
     
-    const apiUrl = `${this.unifiedTreeApiUrl}?userId=${userId}&entityId=${entityId}`;
-    
+  //  const apiUrl = `${this.unifiedTreeApiUrl}?userId=${userId}&entityId=${entityId}`;
+      const apiUrl = `${this.unifiedTreeApiUrl}?entityId=${entityId}`;
     this.http.get<UnifiedTreeResponse>(apiUrl).subscribe({
       next: (response) => {
         console.log('Unified Tree API Response for entity:', entityId, response);
@@ -303,7 +364,11 @@ export class FileuploadnewComponent implements OnInit {
     const fileType = params.data.fileType;
     const fileName = params.data.fileName;
     const iconSrc = this.getFileIcon(fileType);
-    return `<img src="${iconSrc}" style="margin-right: 8px;width: 24px;height: 24px;" alt="file">${fileName}`;
+    const safeName = String(fileName ?? '').replace(/"/g, '&quot;');
+    return `<span class="file-name-cell" title="${safeName}" style="display:flex;align-items:center;white-space:normal;word-break:break-word;line-height:1.2;">
+              <img src="${iconSrc}" style="margin-right: 8px;width: 24px;height: 24px;flex:0 0 auto;" alt="file">
+              <span style="white-space:normal;word-break:break-word;">${fileName}</span>
+            </span>`;
   }
 
   optionsRenderer(params: any) {
@@ -561,9 +626,10 @@ export class FileuploadnewComponent implements OnInit {
   getAllFilesbyFolderId(folderId: number, type: any = 'proedox') {
     this.files = [];
     this.folderService.getFilesbyFolderId(folderId, type).subscribe((result: any) => {
-      this.files = result;
+      this.files = result || [];
     }, (error: any) => {
       console.error("Error fetching files:", error);
+      this.files = [];
     });
   }
 
@@ -649,6 +715,14 @@ export class FileuploadnewComponent implements OnInit {
     this.selectedFolderTreeNodeItem = realNode;
     this.buildBreadcrumbPath(realNode);
 
+    console.log('selectItem clicked node:', realNode);
+
+    // Notice regulation: a node whose parent path segment is "Notices"
+    if (this.isNoticeRegulationNode(realNode)) {
+      this.loadNoticesForRegulation(realNode);
+      return;
+    }
+
     // Handle selection based on node type
     if (realNode.treeType === 'COMPSEQR360') {
       this.handleComplianceTrackerSelection(realNode);
@@ -658,10 +732,35 @@ export class FileuploadnewComponent implements OnInit {
   }
 
   /**
+   * Treat a click as "notices" when:
+   *   - foldertitle/nodeType/label is Notices/NoticeRegulation, OR
+   *   - the immediate parent path segment is "Notices" (a regulation under Notices)
+   */
+  isNoticeRegulationNode(node: FolderTreeNode): boolean {
+    const ft = (node.foldertitle || '').toLowerCase();
+    const nt = (node.nodeType || '').toLowerCase();
+    const lbl = (node.label || '').toLowerCase();
+    if (ft === 'noticeregulation' || nt === 'noticeregulation') return true;
+    if (ft === 'notices' || nt === 'notices' || lbl === 'notices') return true;
+    const path = node.path || [];
+    if (path.length >= 2) {
+      const parentSegment = path[path.length - 2];
+      if ((parentSegment || '').toLowerCase() === 'notices') return true;
+    }
+    return false;
+  }
+
+  /**
    * Handle selection of Compliance Tracker nodes
    */
   handleComplianceTrackerSelection(node: FolderTreeNode): void {
     const foldertitle = node.foldertitle;
+
+    // Notice regulation node: load notices for this regulation
+    if (foldertitle === 'NoticeRegulation' || node.nodeType === 'NoticeRegulation') {
+      this.loadNoticesForRegulation(node);
+      return;
+    }
 
     // Get complianceTrackerDocumentId from node's fileData
     const complianceTrackerDocumentId = node.fileData?.complianceTrackerDocumentId;
@@ -682,6 +781,57 @@ export class FileuploadnewComponent implements OnInit {
         fileType: 'folder'
       }];
     }
+  }
+
+  /**
+   * Load notices for the clicked notice-regulation node.
+   * API: /Notices/GetListOfNoticesByIds?entityId={entityId}&regulationId={regulationId}
+   */
+  loadNoticesForRegulation(node: FolderTreeNode): void {
+    const entityId = this.selectedEntityId;
+    const regulationId = node.fileData?.id ?? node.id;
+
+    if (!entityId || !regulationId) {
+      this.notifier.notify('error', 'Missing entity or regulation');
+      this.files = [];
+      return;
+    }
+
+    this.isLoadingNotices = true;
+    this.clientComplianceService.getListOfNoticesByIds(entityId, regulationId).subscribe({
+      next: (response: any) => {
+        const noticesData = response?.data || response?.notices || response || [];
+        const notices = Array.isArray(noticesData) ? noticesData : [noticesData];
+
+        if (notices.length > 0 && notices[0]) {
+          this.noticesListByRegulation.set(regulationId, notices);
+          this.files = notices.map((notice: any, index: number) => {
+            const noticeName = notice.subject || notice.complianceName || notice.fileName || `Notice ${index + 1}`;
+            return {
+              id: notice.id ?? index + 1,
+              fileName: noticeName,
+              fullName: noticeName,
+              folderName: node.label,
+              fileContent: notice.fileContent || notice.filecontent || notice.FileContent,
+              createdBy: notice.createdBy,
+              createdByName: notice.createdByName,
+              createdOn: notice.createdDate || notice.createdOn,
+              fileType: this.getMimeType(noticeName)
+            };
+          });
+        } else {
+          this.files = [];
+          this.notifier.notify('info', 'No notices found for this regulation');
+        }
+        this.isLoadingNotices = false;
+      },
+      error: (err) => {
+        console.error('Error loading notices:', err);
+        this.notifier.notify('error', 'Failed to load notices');
+        this.files = [];
+        this.isLoadingNotices = false;
+      }
+    });
   }
 
   /**
@@ -739,7 +889,7 @@ export class FileuploadnewComponent implements OnInit {
       ? node.label
       : node.path?.[node.path.length - 1] || node.label;
 
-    const idsParam = documentIds.join(',');
+    const idsParam = Array.from(new Set(documentIds)).join(',');
 
     this.clientComplianceService.getComplianceTrackerDocuments(idsParam).subscribe({
       next: (documents: ComplianceTrackerDocument[]) => {

@@ -2331,8 +2331,8 @@ loadComplianceDocumentsForParent(node: FolderTreeNode): void {
     ? node.label 
     : this.getLocationFolderName(node) || node.label;
   
-  // Join IDs with comma for API call
-  const idsParam = documentIds.join(',');
+  // Join IDs with comma for API call (dedupe to avoid repeated IDs)
+  const idsParam = Array.from(new Set(documentIds)).join(',');
   console.log('Loading documents for parent with IDs:', idsParam);
   
   this.clientComplianceService.getComplianceTrackerDocuments(idsParam).subscribe({

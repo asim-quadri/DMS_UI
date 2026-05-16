@@ -72,6 +72,12 @@ export class UserEntityService {
       this.getAuthHeadersJSON()
     );
   }
+  GetClientEntitiesLocations(organizationId: any) {
+    return this.http.get<Array<EntitiesCityCoordinate>>(
+      this.BASEURL + '/UserEntity/GetEntitiesByOrganization/' + organizationId,
+      this.getAuthHeadersJSON()
+    );
+  }
   GetEntitiesLocationByUserId() {
     return this.http.get<clientEntitesLocation[]>(
       this.BASEURL + '/Location/GetClientEntitiesLocations/',
