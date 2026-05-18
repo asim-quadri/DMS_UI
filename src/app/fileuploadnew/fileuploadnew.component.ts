@@ -11,6 +11,7 @@ import { Router } from '@angular/router';
 import { ClientComplianceTrackerService } from '../Services/client-compliance-tracker.service';
 import { UserAssignedEntity, PendingComplianceTracker, LocationMaster, ComplianceTrackerDocument, RegulationWithTOC, TypeOfCompliance } from '../Models/compliancetracker';
 import { forkJoin, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { AppConfig } from '../app.config';
 import { UserEntityService } from '../Services/userentity.service';
 import { EntitiesCityCoordinate } from '../Models/userEntityModel';
@@ -838,7 +839,7 @@ export class FileuploadnewComponent implements OnInit {
    * Load compliance tracker documents from API
    */
   loadComplianceDocuments(complianceTrackerDocumentId: number, node: FolderTreeNode): void {
-    const locationFolderName = node.path?.[node.path.length - 2] || node.label;
+    const folderNameForDocs = this.getFolderNameForLeaf(node);
 
     this.clientComplianceService.getComplianceTrackerDocuments(complianceTrackerDocumentId).subscribe({
       next: (documents: ComplianceTrackerDocument[]) => {
@@ -847,7 +848,7 @@ export class FileuploadnewComponent implements OnInit {
             id: index + 1,
             fileName: doc.fileName,
             fullName: doc.fileName,
-            folderName: locationFolderName,
+            folderName: folderNameForDocs,
             compId: doc.compId,
             fileContent: doc.fileContent,
             createdBy: doc.createdBy,
@@ -861,7 +862,7 @@ export class FileuploadnewComponent implements OnInit {
             id: node.id,
             fileName: node.label,
             fullName: node.label,
-            folderName: locationFolderName,
+            folderName: folderNameForDocs,
             fileType: 'compliance'
           }];
         }
@@ -875,38 +876,58 @@ export class FileuploadnewComponent implements OnInit {
   }
 
   /**
-   * Collect all complianceTrackerDocumentIds from child nodes and load documents
+   * Collect all complianceTrackerDocumentIds from child nodes and load documents.
+   * Atomic ids are grouped by their financial-year folder so we fire one batched
+   * API call per folder (instead of one per leaf), and every returned document is
+   * tagged with its folder for the grid's "Folder" column.
    */
   loadComplianceDocumentsForParent(node: FolderTreeNode): void {
-    const documentIds = this.collectComplianceTrackerDocumentIds(node);
+    const idsByFolder = this.collectAtomicDocumentIdsByFolder(node);
 
-    if (documentIds.length === 0) {
+    if (idsByFolder.size === 0) {
       this.files = this.collectAllFiles(node);
       return;
     }
 
-    const locationFolderName = node.foldertitle === 'Location'
-      ? node.label
-      : node.path?.[node.path.length - 1] || node.label;
+    const requests: Observable<{ folderName: string; documents: ComplianceTrackerDocument[] }>[] = [];
+    idsByFolder.forEach((ids, folderName) => {
+      const idsParam = Array.from(ids).join(',');
+      if (!idsParam) return;
+      requests.push(
+        this.clientComplianceService.getComplianceTrackerDocuments(idsParam).pipe(
+          map(docs => ({ folderName, documents: docs || [] }))
+        )
+      );
+    });
 
-    const idsParam = Array.from(new Set(documentIds)).join(',');
+    if (requests.length === 0) {
+      this.files = this.collectAllFiles(node);
+      return;
+    }
 
-    this.clientComplianceService.getComplianceTrackerDocuments(idsParam).subscribe({
-      next: (documents: ComplianceTrackerDocument[]) => {
-        if (documents && documents.length > 0) {
-          this.files = documents.map((doc, index) => ({
-            id: index + 1,
-            fileName: doc.fileName,
-            fullName: doc.fileName,
-            folderName: locationFolderName,
-            compId: doc.compId,
-            fileContent: doc.fileContent,
-            createdBy: doc.createdBy,
-            createdByName: doc.createdByName,
-            isDelete: doc.isDelete,
-            createdOn: doc.createdDate,
-            fileType: this.getMimeType(doc.fileName)
-          }));
+    forkJoin(requests).subscribe({
+      next: (results) => {
+        const merged: any[] = [];
+        results.forEach(({ folderName, documents }) => {
+          documents.forEach(doc => {
+            merged.push({
+              id: merged.length + 1,
+              fileName: doc.fileName,
+              fullName: doc.fileName,
+              folderName,
+              compId: doc.compId,
+              fileContent: doc.fileContent,
+              createdBy: doc.createdBy,
+              createdByName: doc.createdByName,
+              isDelete: doc.isDelete,
+              createdOn: doc.createdDate,
+              fileType: this.getMimeType(doc.fileName)
+            });
+          });
+        });
+
+        if (merged.length > 0) {
+          this.files = merged;
         } else {
           this.files = this.collectAllFiles(node);
         }
@@ -916,6 +937,54 @@ export class FileuploadnewComponent implements OnInit {
         this.files = this.collectAllFiles(node);
       }
     });
+  }
+
+  /**
+   * Returns the folder label that best describes where a leaf document lives.
+   * Preference order: nearest FinancialYear ancestor, then path[1] (year slot in the
+   * compliance tree), then the leaf's immediate parent label, then the leaf label.
+   */
+  getFolderNameForLeaf(leaf: FolderTreeNode): string {
+    let current: FolderTreeNode | undefined = leaf;
+    while (current) {
+      if ((current.nodeType || '').toLowerCase() === 'financialyear') {
+        return current.label;
+      }
+      current = current.parent;
+    }
+    const path = leaf.path || [];
+    if (path.length >= 2) {
+      const fyCandidate = path.find(seg => /^\d{4}\s*-\s*\d{4}$/.test(seg || ''));
+      if (fyCandidate) return fyCandidate;
+    }
+    return leaf.parent?.label || path[path.length - 2] || leaf.label;
+  }
+
+  /**
+   * Walk the subtree and group atomic complianceTrackerDocumentIds by their
+   * resolved folder name (financial year). Comma-joined id strings on a single
+   * node are split, so each id is counted once. Returns Map<folderName, Set<id>>.
+   */
+  collectAtomicDocumentIdsByFolder(node: FolderTreeNode): Map<string, Set<string>> {
+    const result = new Map<string, Set<string>>();
+    const walk = (current: FolderTreeNode) => {
+      const raw = current.fileData?.complianceTrackerDocumentId;
+      if (raw !== undefined && raw !== null && String(raw).trim() !== '') {
+        const folderName = this.getFolderNameForLeaf(current);
+        const bucket = result.get(folderName) ?? new Set<string>();
+        String(raw)
+          .split(',')
+          .map(s => s.trim())
+          .filter(s => s.length > 0)
+          .forEach(id => bucket.add(id));
+        result.set(folderName, bucket);
+      }
+      if (current.children) {
+        for (const child of current.children) walk(child);
+      }
+    };
+    walk(node);
+    return result;
   }
 
   /**
