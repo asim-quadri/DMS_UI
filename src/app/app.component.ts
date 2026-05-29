@@ -15,13 +15,20 @@ export class AppComponent implements OnInit {
     private persistance: PersistenceService,
     public loaderService: LoaderService,
   ) {
-    // Check for auto-login parameter in URL first
-    const urlParams = new URLSearchParams(window.location.search);
+    // Check for auto-login parameter in URL first.
+    // The app uses HashLocationStrategy, so query params live in the hash
+    // (e.g. "#/home?autoLogin=..."), not window.location.search.
+    const hash = window.location.hash;
+    const hashQueryIndex = hash.indexOf('?');
+    const queryString =
+      hashQueryIndex >= 0 ? hash.substring(hashQueryIndex + 1) : window.location.search;
+    const urlParams = new URLSearchParams(queryString);
     const autoLoginData = urlParams.get('autoLogin');
 
     if (autoLoginData) {
       try {
-        const userData = JSON.parse(decodeURIComponent(autoLoginData));
+        // URLSearchParams already decodes the value
+        const userData = JSON.parse(autoLoginData);
 
         // Store in session storage
         this.persistance.setSessionStorage('currentUser', userData);
@@ -30,9 +37,11 @@ export class AppComponent implements OnInit {
           'Auto-login successful, user data stored in session storage',
         );
 
-        // Remove the parameter from URL and reload to ensure all components initialize properly
-        const url = window.location.pathname;
-        window.history.replaceState({}, document.title, url);
+        // Strip autoLogin from the hash but keep the route, then reload so all
+        // components initialize with the session in place.
+        const cleanHash = hashQueryIndex >= 0 ? hash.substring(0, hashQueryIndex) : hash;
+        const cleanUrl = window.location.pathname + cleanHash;
+        window.history.replaceState({}, document.title, cleanUrl);
         window.location.reload();
         return;
       } catch (error) {
