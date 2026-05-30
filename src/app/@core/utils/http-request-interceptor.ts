@@ -29,9 +29,6 @@ export class HttpRequestInterceptor implements HttpInterceptor {
     request = request.clone({
       setHeaders: {
         Accept: 'application/json',
-        source: 'web',
-        'Cache-Control': 'no-cache',
-        Pragma: 'no-cache',
       },
     });
 
@@ -52,7 +49,7 @@ export class HttpRequestInterceptor implements HttpInterceptor {
     }
 
     if (!/^(http|https):/i.test(request.url)) {
-      request = request.clone({ url: this.config.BaseUrl+"/" + request.url });
+      request = request.clone({ url: this.config.BaseUrl + request.url });
     }
     return next.handle(request).pipe(
       catchError((error: HttpErrorResponse) => {
