@@ -29,9 +29,9 @@ export class HttpRequestInterceptor implements HttpInterceptor {
     request = request.clone({
       setHeaders: {
         Accept: 'application/json',
-        source: 'web',
-        'Cache-Control': 'no-cache',
-        Pragma: 'no-cache',
+        // source: 'web',
+        // 'Cache-Control': 'no-cache',
+        // Pragma: 'no-cache',
       },
     });
 
