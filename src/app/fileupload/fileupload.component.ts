@@ -204,6 +204,26 @@ export class FileuploadComponent implements OnInit {
     console.log('View clicked - fileData:', fileData);
     console.log('View clicked - entityId:', entityId, 'type:', type, 'subType:', subType);
 
+    // Prefer the fileContent we already have on the row — avoid a second API call.
+    if (fileData.fileContent) {
+      const cacheKey = `fileViewer_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
+      const payload = {
+        fileContent: fileData.fileContent,
+        fileName: fileData.fileName || fileData.fullName || 'file',
+        fileType: fileData.fileType || ''
+      };
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify(payload));
+        const url = `/#/fileview?cacheKey=${encodeURIComponent(cacheKey)}`;
+        console.log('Opening viewer with cached content:', url);
+        window.open(url, '_blank');
+        return;
+      } catch (err) {
+        console.warn('Cache stash failed, falling back to API fetch:', err);
+        // fall through to API-based viewer
+      }
+    }
+
     if (entityId && type) {
       // Build URL with query params and open in new tab.
       // App uses HashLocationStrategy, so routes live behind '#'.

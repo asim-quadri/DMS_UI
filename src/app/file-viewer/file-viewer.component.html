@@ -47,7 +47,7 @@
   <!-- Generic embed fallback for other blob types -->
   <div *ngIf="blobResourceUrl && fileType !== 'pdf' && !loading" class="viewer-embed">
     <object [data]="blobResourceUrl" type="" width="100%" height="800px">
-      <p>Your browser cannot display this file. <a [href]="fileUrl" target="_blank">Download</a> to open it locally.</p>
+      <p>Your browser cannot display this file. <a *ngIf="downloadUrl" [href]="downloadUrl" [attr.download]="downloadFileName" target="_blank">Download</a> to open it locally.</p>
     </object>
   </div>
 
@@ -59,6 +59,6 @@
   <!-- Final fallback: direct link -->
   <div *ngIf="!sheetHtml && !docHtml && !imageSrc && !blobResourceUrl && !textContent && !loading && !error" class="viewer-fallback">
     <p>Unable to render inline — open or download the file.</p>
-    <a [href]="fileUrl" target="_blank">Open file</a>
+    <a *ngIf="downloadUrl" [href]="downloadUrl" [attr.download]="downloadFileName" target="_blank">Open file</a>
   </div>
 </div>

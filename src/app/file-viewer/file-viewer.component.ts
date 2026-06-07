@@ -15,8 +15,13 @@ import { FolderService } from '../Services/folder.service';
   styleUrls: ['./file-viewer.component.scss']
 })
 export class FileViewerComponent implements OnInit {
-  // URL to the file to view. In real usage, pass this as an @Input()
-  fileUrl: string = 'https://localhost:44314/UploadedFiles/All_Candidates_Report_export_1761821355001.xlsx';
+  // URL to the file (set when loading from a server path, empty when loading from base64)
+  fileUrl: string = '';
+
+  // Download target — a blob:object URL when content came from base64,
+  // or the same as fileUrl when content came from a server path.
+  downloadUrl: string = '';
+  downloadFileName: string = '';
 
   // Rendered outputs for different types
   sheetHtml: SafeHtml | null = null; // for Excel
@@ -30,6 +35,7 @@ export class FileViewerComponent implements OnInit {
   error: string | null = null;
 
   private _objectUrl: string | null = null;
+  private _downloadObjectUrl: string | null = null;
   // Workbook and sheet data for table rendering
   private _workbook: any | null = null;
   private _lastXLSXModule: any = null;
@@ -45,6 +51,29 @@ export class FileViewerComponent implements OnInit {
     const type = this.route.snapshot.queryParams['type'];
     const subType = this.route.snapshot.queryParams['subType'];
     const fileurl = this.route.snapshot.queryParams['fileurl'];
+    const cacheKey = this.route.snapshot.queryParams['cacheKey'];
+
+    // Prefer cached fileContent stashed by the opener — no extra API call.
+    if (cacheKey) {
+      try {
+        const raw = localStorage.getItem(cacheKey);
+        if (raw) {
+          localStorage.removeItem(cacheKey);
+          const payload = JSON.parse(raw);
+          const fileName = payload.fileName || 'file';
+          const ext = this.getExtension(fileName);
+          const mimeType =
+            payload.fileType && payload.fileType.includes('/')
+              ? payload.fileType
+              : this.guessMimeFromExt(ext) || 'application/octet-stream';
+          this.loadAndRenderFromBase64(payload.fileContent, fileName, mimeType);
+          return;
+        }
+        console.warn('cacheKey not found in localStorage, falling back to API');
+      } catch (err) {
+        console.warn('Failed to read cached fileContent, falling back to API:', err);
+      }
+    }
 
     if (fileId && type) {
       // Call GetDataByTypeAndId API to get file
@@ -91,6 +120,40 @@ export class FileViewerComponent implements OnInit {
       try { URL.revokeObjectURL(this._objectUrl); } catch (e) { /* ignore */ }
       this._objectUrl = null;
     }
+    if (this._downloadObjectUrl) {
+      try { URL.revokeObjectURL(this._downloadObjectUrl); } catch (e) { /* ignore */ }
+      this._downloadObjectUrl = null;
+    }
+  }
+
+  private prepareDownloadFromBase64(base64Content: string, fileName: string, mimeType: string): void {
+    try {
+      if (this._downloadObjectUrl) {
+        try { URL.revokeObjectURL(this._downloadObjectUrl); } catch (e) { /* ignore */ }
+        this._downloadObjectUrl = null;
+      }
+      if (!base64Content) {
+        this.downloadUrl = '';
+        return;
+      }
+      let cleanBase64 = base64Content;
+      if (cleanBase64.includes(',')) {
+        cleanBase64 = cleanBase64.split(',')[1];
+      }
+      const byteCharacters = atob(cleanBase64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType || 'application/octet-stream' });
+      this._downloadObjectUrl = URL.createObjectURL(blob);
+      this.downloadUrl = this._downloadObjectUrl;
+      this.downloadFileName = fileName || 'file';
+    } catch (err) {
+      console.warn('prepareDownloadFromBase64 failed:', err);
+      this.downloadUrl = '';
+    }
   }
 
   private getExtension(url: string): string {
@@ -118,6 +181,15 @@ export class FileViewerComponent implements OnInit {
 
     const ext = this.getExtension(url);
     this.fileType = ext;
+    // Default the Download anchor to the source URL until/unless we replace
+    // it with a blob URL after fetching.
+    this.downloadUrl = url;
+    try {
+      const last = (url.split('/').pop() || '').split('?')[0];
+      this.downloadFileName = last || 'file';
+    } catch {
+      this.downloadFileName = 'file';
+    }
 
     try {
       if (!ext) {
@@ -237,6 +309,7 @@ export class FileViewerComponent implements OnInit {
     const url = URL.createObjectURL(blob);
     this._objectUrl = url;
     this.blobResourceUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    this.downloadUrl = url;
   }
 
   private setImageUrl(blob: Blob) {
@@ -246,6 +319,7 @@ export class FileViewerComponent implements OnInit {
     const url = URL.createObjectURL(blob);
     this._objectUrl = url;
     this.imageSrc = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    this.downloadUrl = url;
   }
 
   private guessMimeFromExt(ext: string): string {
@@ -278,11 +352,17 @@ export class FileViewerComponent implements OnInit {
     this.textContent = null;
     this.blobResourceUrl = null;
     this.imageSrc = null;
+    this.downloadFileName = fileName || 'file';
 
     try {
       // Get extension from filename
       const ext = this.getExtension(fileName);
       this.fileType = ext || this.getMimeExtension(mimeType);
+
+      // Build a blob-backed download URL up front so the Download anchor
+      // always has a valid target, even when the file type renders via
+      // a custom renderer (xlsx/docx) that doesn't call setObjectUrl().
+      this.prepareDownloadFromBase64(base64Content, fileName, mimeType);
 
       // Remove data URL prefix if present
       let cleanBase64 = base64Content;
