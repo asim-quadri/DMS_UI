@@ -205,8 +205,9 @@ export class FileuploadComponent implements OnInit {
     console.log('View clicked - entityId:', entityId, 'type:', type, 'subType:', subType);
 
     if (entityId && type) {
-      // Build URL with query params and open in new tab
-      let url = `/fileview?fileId=${entityId}&type=${type}`;
+      // Build URL with query params and open in new tab.
+      // App uses HashLocationStrategy, so routes live behind '#'.
+      let url = `/#/fileview?fileId=${entityId}&type=${type}`;
       if (subType) {
         url += `&subType=${subType}`;
       }
@@ -214,7 +215,7 @@ export class FileuploadComponent implements OnInit {
       window.open(url, '_blank');
     } else if (fileData.filePath) {
       // Fallback: Open file viewer with file path in new tab
-      const url = `/fileview?fileurl=${encodeURIComponent(fileData.filePath)}`;
+      const url = `/#/fileview?fileurl=${encodeURIComponent(fileData.filePath)}`;
       window.open(url, '_blank');
     } else {
       console.error('No entity ID or path available for viewing');
