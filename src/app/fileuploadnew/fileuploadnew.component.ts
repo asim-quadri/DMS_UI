@@ -285,32 +285,42 @@ export class FileuploadnewComponent implements OnInit {
     }
 
     return unifiedNodes.map(node => {
-      const fileData: any = node.fileData ? { ...node.fileData } : {};
-      if (node.complianceTrackerDocumentId) {
-        fileData.complianceTrackerDocumentId = node.complianceTrackerDocumentId;
+      // Destructure known structural fields; everything else is metadata that
+      // belongs in fileData (e.g. createdByName, createdDate, fileName, fileContent).
+      const {
+        id, label, parentId, expanded, folderTitle, children,
+        treeType, path, isFile, nodeType,
+        complianceTrackerDocumentId, regulationId,
+        fileData: rawFileData,
+        ...extraNodeFields
+      } = node as any;
+
+      const fileData: any = { ...rawFileData, ...extraNodeFields };
+      if (complianceTrackerDocumentId) {
+        fileData.complianceTrackerDocumentId = complianceTrackerDocumentId;
       }
-      if (node.regulationId != null) {
-        fileData.id = node.regulationId;
+      if (regulationId != null) {
+        fileData.id = regulationId;
       }
 
       const folderNode: FolderTreeNode = {
-        id: node.id,
-        label: node.label,
-        parentId: node.parentId,
-        expanded: node.expanded,
-        foldertitle: node.folderTitle,
+        id,
+        label,
+        parentId,
+        expanded,
+        foldertitle: folderTitle,
         children: [],
-        treeType: node.treeType as 'DMS' | 'COMPSEQR360',
-        path: node.path,
-        isFile: node.isFile,
-        nodeType: node.nodeType || undefined,
+        treeType: treeType as 'DMS' | 'COMPSEQR360',
+        path,
+        isFile,
+        nodeType: nodeType || undefined,
         fileData: Object.keys(fileData).length ? fileData : undefined,
         parent: parent || undefined
       };
 
       // Recursively convert children
-      if (node.children && node.children.length > 0) {
-        folderNode.children = this.convertUnifiedTreeToFolderTree(node.children, folderNode);
+      if (children && children.length > 0) {
+        folderNode.children = this.convertUnifiedTreeToFolderTree(children, folderNode);
       }
 
       return folderNode;
@@ -432,6 +442,78 @@ export class FileuploadnewComponent implements OnInit {
   }
 
   // ====== File Operations ======
+
+  /** Template-friendly view — handles opinions/audits API, base64, and filePath */
+  viewFileContent(file: any, event?: Event): void {
+    event?.stopPropagation();
+    if (file?.mtype === 'opinions' || file?.mtype === 'audits') {
+      this.streamOpinionAuditFile(file, false);
+      return;
+    }
+    if (file?.fileContent) {
+      this.viewBase64File(file.fileContent, file.fileName || 'document');
+    } else if (file?.filePath) {
+      window.open(file.filePath, '_blank');
+    } else {
+      this.notifier.notify('warning', 'No viewable content available');
+    }
+  }
+
+  /** Template-friendly download */
+  downloadFileContent(file: any, event?: Event): void {
+    event?.stopPropagation();
+    if (file?.mtype === 'opinions' || file?.mtype === 'audits') {
+      this.streamOpinionAuditFile(file, true);
+      return;
+    }
+    if (file?.fileContent) {
+      this.downloadBase64File(file.fileContent, file.fileName || 'document');
+    } else if (file?.filePath) {
+      const link = document.createElement('a');
+      link.href = file.filePath;
+      link.download = file.fileName || 'document';
+      link.click();
+    } else {
+      this.notifier.notify('warning', 'No downloadable content available');
+    }
+  }
+
+  /** Fetch opinion/audit document via API and open or download the blob */
+  private streamOpinionAuditFile(file: any, download: boolean): void {
+    const apiType: 'Opinions' | 'Audits' = file.mtype === 'audits' ? 'Audits' : 'Opinions';
+    const recordId: number = file.recordId;
+    const documentId: number = file.documentId;
+
+    if (!recordId || !documentId) {
+      this.notifier.notify('warning', 'Document reference missing — cannot open file');
+      return;
+    }
+
+    this.folderService.getOpinionAuditDocument(apiType, recordId, documentId).subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        if (download) {
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = file.fileName || 'document';
+          link.click();
+          setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+        } else {
+          const win = window.open(url, '_blank');
+          if (!win) this.notifier.notify('warning', 'Popup blocked — please allow popups');
+          setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+        }
+      },
+      error: () => this.notifier.notify('error', 'Failed to load document')
+    });
+  }
+
+  canAccessFile(file: any): boolean {
+    if (file?.mtype === 'opinions' || file?.mtype === 'audits') {
+      return !!(file?.recordId && file?.documentId);
+    }
+    return !!(file?.fileContent || file?.filePath);
+  }
 
   onViewClick(params: any): void {
     const data = params.data;
@@ -624,9 +706,13 @@ export class FileuploadnewComponent implements OnInit {
     );
   }
 
-  getAllFilesbyFolderId(folderId: number, type: any = 'proedox') {
+  getAllFilesbyFolderId(folderId: number, type: any = 'proedox', filters?: {
+    regulationId?: number;
+    auditType?: string;
+    financialYear?: string;
+  }) {
     this.files = [];
-    this.folderService.getFilesbyFolderId(folderId, type).subscribe((result: any) => {
+    this.folderService.getFilesbyFolderId(folderId, type, filters).subscribe((result: any) => {
       this.files = result || [];
     }, (error: any) => {
       console.error("Error fetching files:", error);
@@ -724,6 +810,21 @@ export class FileuploadnewComponent implements OnInit {
       return;
     }
 
+    // Opinions / Audits nodes — also catches sub-folders (regulation, year,
+    // named folder) whose ancestors include "opinions" or "audits" in the path.
+    const _ft = (realNode.foldertitle || '').toLowerCase();
+    const _nt = (realNode.nodeType   || '').toLowerCase();
+    const _pathLower = (realNode.path || []).map((s: string) => (s || '').toLowerCase());
+    const _inOpinionsOrAudits = _pathLower.some(s => s === 'opinions' || s === 'audits');
+
+    if (_ft === 'opinions' || _nt === 'opinions' ||
+        _ft === 'audits'   || _nt === 'audits'   || _inOpinionsOrAudits) {
+      const mtype: 'opinions' | 'audits' =
+        (_ft === 'audits' || _nt === 'audits' || _pathLower.includes('audits')) ? 'audits' : 'opinions';
+      this.files = this.collectTreeFiles(realNode, mtype);
+      return;
+    }
+
     // Handle selection based on node type
     if (realNode.treeType === 'COMPSEQR360') {
       this.handleComplianceTrackerSelection(realNode);
@@ -755,11 +856,21 @@ export class FileuploadnewComponent implements OnInit {
    * Handle selection of Compliance Tracker nodes
    */
   handleComplianceTrackerSelection(node: FolderTreeNode): void {
-    const foldertitle = node.foldertitle;
+    const foldertitle = (node.foldertitle || '').toLowerCase();
+    const nodeType   = (node.nodeType   || '').toLowerCase();
 
     // Notice regulation node: load notices for this regulation
-    if (foldertitle === 'NoticeRegulation' || node.nodeType === 'NoticeRegulation') {
+    if (node.foldertitle === 'NoticeRegulation' || node.nodeType === 'NoticeRegulation') {
       this.loadNoticesForRegulation(node);
+      return;
+    }
+
+    // Opinions / Audits: tree already carries the docs — no API call needed
+    if (foldertitle === 'opinions' || nodeType === 'opinions' ||
+        foldertitle === 'audits'   || nodeType === 'audits') {
+      const mtype: 'opinions' | 'audits' =
+        (foldertitle === 'audits' || nodeType === 'audits') ? 'audits' : 'opinions';
+      this.files = this.collectTreeFiles(node, mtype);
       return;
     }
 
@@ -1024,6 +1135,91 @@ export class FileuploadnewComponent implements OnInit {
         }
       }
     }
+    return files;
+  }
+
+  /**
+   * Collect displayable file rows from a tree node and its descendants.
+   * Used for Opinions and Audits nodes whose docs are already embedded in the
+   * tree returned by the UnifiedTree API — no extra HTTP call is needed.
+   * Each child node's fileData is spread into a flat row; leaf nodes that
+   * have no children are also included so a single-document node shows up.
+   */
+  /** Recursively find the first child node's docId/recordId plus any fileContent/filePath */
+  private findChildFilePayload(n: FolderTreeNode): {
+    fileContent?: string; filePath?: string; fileName?: string;
+    documentId?: number; recordId?: number;
+  } {
+    for (const child of (n.children || [])) {
+      const fd = child.fileData || {};
+      // docId and recordId are explicit API fields on document nodes
+      const documentId: number = fd.docId ?? fd.id ?? child.id;
+      const recordId: number | undefined = fd.recordId;
+      if (fd.fileContent || fd.filePath) {
+        return { fileContent: fd.fileContent, filePath: fd.filePath, fileName: fd.fileName, documentId, recordId };
+      }
+      if (documentId) return { documentId, recordId, fileName: fd.fileName };
+      const deeper = this.findChildFilePayload(child);
+      if (deeper.documentId) return deeper;
+    }
+    return {};
+  }
+
+  collectTreeFiles(node: FolderTreeNode, mtype: 'opinions' | 'audits' | 'dms' = 'dms'): any[] {
+    const files: any[] = [];
+
+    const walk = (n: FolderTreeNode, parentLabel: string) => {
+      const fd = n.fileData || {};
+      const isDocRecord = !!(fd.createdByName || fd.createdDate);
+
+      if (isDocRecord) {
+        // Always walk children to get explicit docId / recordId from the document node
+        const childPayload = this.findChildFilePayload(n);
+
+        // recordId: child's explicit field first, then parent fileData.id, then tree node id
+        const recordId: number = childPayload.recordId ?? fd.id ?? n.id;
+
+        files.push({
+          ...fd,
+          // Only spread child file bytes if the parent doesn't already carry them
+          ...(fd.fileContent || fd.filePath ? {} : childPayload),
+          fileContent: fd.fileContent || childPayload.fileContent,
+          filePath: fd.filePath || childPayload.filePath,
+          id: recordId,
+          recordId,
+          documentId: childPayload.documentId ?? null,
+          mtype,
+          fileName: fd.fileName || childPayload.fileName || n.label,
+          fullName: fd.fileName || childPayload.fileName || n.label,
+          folderName: parentLabel,
+          createdOn: fd.createdOn || fd.createdDate || null,
+          createdByName: fd.createdByName || '',
+          fileType: fd.fileType || this.getMimeType(fd.fileName || childPayload.fileName || n.label || '')
+        });
+        return;
+      }
+
+      const isLeaf = !n.children || n.children.length === 0;
+      if (isLeaf && (n.isFile || Object.keys(fd).length > 0)) {
+        files.push({
+          ...fd,
+          id: fd.id ?? n.id,
+          fileName: fd.fileName || n.label,
+          fullName: fd.fileName || n.label,
+          folderName: parentLabel,
+          createdOn: fd.createdOn || fd.createdDate || null,
+          createdByName: fd.createdByName || '',
+          fileType: fd.fileType || this.getMimeType(fd.fileName || n.label || '')
+        });
+        return;
+      }
+
+      if (!isLeaf) {
+        n.children!.forEach(child => walk(child, n.label || parentLabel));
+      }
+    };
+
+    walk(node, node.label);
     return files;
   }
 

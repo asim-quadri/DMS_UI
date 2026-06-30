@@ -1373,17 +1373,16 @@ attachParentReferences(nodes: FolderTreeNode[], parent: FolderTreeNode | null = 
 
 
   
-  getAllFilesbyFolderId(folderId: number,type:any='proedox'){
+  getAllFilesbyFolderId(folderId: number, type: any = 'proedox', filters?: {
+    regulationId?: number;
+    auditType?: string;
+    financialYear?: string;
+  }) {
     this.files = [];
-    this.folderService.getFilesbyFolderId(folderId,type).subscribe((result: any) => {
-      result.forEach((element: any) => {
-
-      });
-      
+    this.folderService.getFilesbyFolderId(folderId, type, filters).subscribe((result: any) => {
       this.files = result;
-    },(error: any) => {
+    }, (error: any) => {
       console.error("Error fetching files:", error);
-      
     });
   }
   createSubFolder() {

@@ -439,61 +439,234 @@
   gap: 8px;
 }
 
-/* File Grid */
-.file-grid {
+/* ── File List Table ───────────────────────────────────── */
+.file-list-wrapper {
   flex: 1;
-  padding: 20px;
-  min-height: 400px;
+  padding: 20px 24px;
   overflow: auto;
 }
 
-.file-grid-table {
+.file-table {
   width: 100%;
-  height: 400px;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13.5px;
+
+  thead tr {
+    background: transparent;
+  }
+
+  th {
+    padding: 10px 14px;
+    font-weight: 600;
+    color: #3d3d3d;
+    border-bottom: 2px solid #1a1a2e;
+    white-space: nowrap;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  tbody .file-row {
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: #f0f7ff;
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #ebebeb;
+      vertical-align: middle;
+      color: #2d2d2d;
+    }
+  }
 }
 
-/* AG Grid Customization */
-.file-grid-table .ag-header {
-  background-color: #f8f9fa;
-  border-bottom: 2px solid #e0e0e0;
+.col-num  { width: 48px; text-align: center; color: #888; font-size: 12px; }
+.col-name { min-width: 220px; }
+.col-folder { width: 130px; }
+.col-date { width: 180px; }
+.col-owner { width: 180px; }
+.col-actions { width: 100px; text-align: center; }
+
+/* File name cell */
+.file-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.file-grid-table .ag-header-cell {
-  font-weight: 600;
-  color: #495057;
+.file-type-icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 4px;
+}
+
+.file-label {
+  font-weight: 500;
+  color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+
+/* Folder tag */
+.folder-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  background: #eef2ff;
+  color: #4361ee;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Date */
+.date-text {
+  color: #555;
   font-size: 13px;
 }
 
-.file-grid-table .ag-row {
-  border-bottom: 1px solid #f1f1f1;
-  transition: background-color 0.2s ease;
-}
-
-.file-grid-table .ag-row:hover {
-  background-color: #f8f9fa;
-}
-
-.file-grid-table .ag-cell {
+/* Owner avatar */
+.owner-cell {
   display: flex;
   align-items: center;
-  font-size: 14px;
-  padding-left: 16px;
-  padding-right: 16px;
+  gap: 8px;
 }
 
-/* AG Grid Pagination Panel */
-.file-grid-table .ag-paging-panel {
-  background-color: #f8f9fa;
-  border-top: 1px solid #e0e0e0;
-  padding: 10px 16px;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
+.owner-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4361ee, #3a0ca3);
+  color: #fff;
   font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.owner-name {
+  font-size: 13px;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+
+.no-data {
+  color: #bbb;
+  font-size: 14px;
+}
+
+/* Action buttons */
+.action-btn-group {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.file-action-btn {
+  width: 32px;
   height: 32px;
-  min-height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 15px;
+
+  &.view-btn {
+    color: #4361ee;
+    &:hover:not(:disabled) { background: #eef2ff; }
+  }
+
+  &.download-btn {
+    color: #2ec4b6;
+    &:hover:not(:disabled) { background: #e8faf9; }
+  }
+
+  &.disabled-btn, &:disabled {
+    color: #ccc;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+/* Content header refinements */
+.path-folder-icon {
+  color: #4361ee;
+  margin-right: 6px;
+  font-size: 13px;
+}
+
+.path-segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.path-crumb {
+  font-size: 12px;
+  color: #888;
+  &.path-crumb-active { color: #1a1a2e; font-weight: 600; }
+}
+
+.path-sep {
+  color: #bbb;
+  font-size: 13px;
+}
+
+.content-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.content-folder-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.item-count-badge {
+  font-size: 12px;
+  color: #fff;
+  background: #4361ee;
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-weight: 500;
+}
+
+.action-btn {
+  border: 1px solid #dee2e6;
+  background: #fff;
+  color: #555;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 13px;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #f0f7ff;
+    border-color: #4361ee;
+    color: #4361ee;
+  }
 }
 
 .file-grid-table .ag-paging-row-summary-panel,
@@ -760,139 +933,3 @@
   }
 }
 
-/* Files List Table Specific Styling */
-::ng-deep .files-list-table {
-  border: none !important;
-  background: none !important;
-  background-color: transparent !important;
-}
-
-
-::ng-deep .files-list-table .ag-root-wrapper {
-  border: none !important;
-  background: none !important;
-  background-color: transparent !important;
-}
-
-::ng-deep .files-list-table .ag-header {
-  border: none !important;
-  border-bottom: 2px solid colors.$black-bg !important;
-  background: none !important;
-  background-color: transparent !important;
-}
-
-::ng-deep .files-list-table .ag-header-row {
-  border: none !important;
-  background: none !important;
-  background-color: transparent !important;
-}
-
-::ng-deep .files-list-table .ag-header-cell {
-  border: none !important;
-  border-right: none !important;
-  border-left: none !important;
-  border-top: none !important;
-  background: none !important;
-  background-color: transparent !important;
-  color: colors.$black-bg !important;
-}
-
-::ng-deep .files-list-table .ag-header-cell .ag-header-cell-text {
-  font-weight: 600 !important;
-  color: colors.$black-bg !important;
-}
-
-::ng-deep .files-list-table .ag-header-cell::after {
-  display: none !important;
-}
-
-::ng-deep .files-list-table .ag-header-cell-resize {
-  display: none !important;
-}
-
-::ng-deep .files-list-table .ag-row {
-  border-left: none !important;
-  border-right: none !important;
-  border-top: none !important;
-  border-bottom: 1px solid #e0e0e0 !important;
-  background: none !important;
-  background-color: transparent !important;
-}
-
-::ng-deep .files-list-table .ag-row:hover {
-  background: none !important;
-  background-color: transparent !important;
-}
-
-::ng-deep .files-list-table .ag-row-even {
-  background: none !important;
-  background-color: transparent !important;
-}
-
-::ng-deep .files-list-table .ag-row-odd {
-  background: none !important;
-  background-color: transparent !important;
-}
-
-::ng-deep .files-list-table .ag-cell {
-  border: none !important;
-  border-right: none !important;
-  border-left: none !important;
-  border-top: none !important;
-  border-bottom: none !important;
-  background: none !important;
-  background-color: transparent !important;
-  color: #000000 !important;
-}
-
-::ng-deep .files-list-table .ag-cell::before,
-::ng-deep .files-list-table .ag-cell::after {
-  display: none !important;
-}
-
-::ng-deep .files-list-table.ag-theme-alpine {
-  --ag-border-color: transparent !important;
-  --ag-header-background-color: transparent !important;
-  --ag-odd-row-background-color: transparent !important;
-  --ag-row-background-color: transparent !important;
-  --ag-row-hover-color: transparent !important;
-  --ag-cell-horizontal-border: transparent !important;
-  --ag-header-cell-hover-background-color: transparent !important;
-  --ag-header-cell-moving-background-color: transparent !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-::ng-deep .files-list-table .ag-ltr .ag-cell {
-  border-right: none !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-::ng-deep .files-list-table .ag-ltr .ag-header-cell {
-  border-right: none !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-::ng-deep .files-list-table * {
-  box-shadow: none !important;
-  outline: none !important;
-  border-left: none !important;
-  border-right: none !important;
-  border-top: none !important;
-}
-
-::ng-deep .files-list-table .ag-header-cell-resize::after {
-  display: none !important;
-}
-
-::ng-deep .files-list-table .ag-pinned-left-header {
-  box-shadow: none !important;
-  border-right: none !important;
-}
-
-::ng-deep .files-list-table .ag-pinned-right-header {
-  box-shadow: none !important;
-  border-left: none !important;
-}
