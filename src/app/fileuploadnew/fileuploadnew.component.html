@@ -1,294 +1,405 @@
-<div class="main-container">
-  <div class="home-header">
-    <h3 class="file-manager-title">Files & Folders (Unified Tree)</h3>
-    <div class="entity-selector" *ngIf="userAssignedEntities.length > 0">
-      <label for="entitySelect" class="entity-label">Select Entity:</label>
-      <select
-        id="entitySelect"
-        class="form-select entity-dropdown"
-        [(ngModel)]="selectedEntity"
-        (change)="onEntityChange(selectedEntity!)"
-        [compareWith]="compareEntities">
-        <option *ngFor="let entity of userAssignedEntities" [ngValue]="entity">
-          {{ entity.entityName }}
-        </option>
-      </select>
+<div class="dms-page">
+
+  <!-- ── Breadcrumb ───────────────────────────────────── -->
+  <nav class="dms-breadcrumb" *ngIf="breadcrumbChain.length" aria-label="Breadcrumb">
+    <a class="crumb crumb-link" (click)="navigateToBreadcrumb({ label: 'Home' })">Home</a>
+    <ng-container *ngFor="let node of breadcrumbChain; let last = last">
+      <i class="bi bi-chevron-right crumb-sep"></i>
+      <a class="crumb crumb-link" *ngIf="!last" (click)="selectItem(node, $event)">{{ node.label }}</a>
+      <span class="crumb crumb-current" *ngIf="last">{{ node.label }}</span>
+    </ng-container>
+  </nav>
+
+  <!-- ── Page Header + Stat Cards (single row) ─────────── -->
+  <!-- Entity/org switcher now lives in the global header (top bar), shared across all pages -->
+  <div class="dms-header">
+    <div class="dms-header-left">
+      <h2 class="dms-title" *ngIf="context === 'compseqr'; else dmsTitle">Regulatory Compliance</h2>
+      <ng-template #dmsTitle><h2 class="dms-title">Files & Folders</h2></ng-template>
+      <p class="dms-subtitle" *ngIf="context === 'compseqr'; else dmsSubtitle">
+        Compliance tracker documents, notices, opinions and audits
+      </p>
+      <ng-template #dmsSubtitle><p class="dms-subtitle">All documents and files in one secure place</p></ng-template>
+      <a class="dms-tracker-link" *ngIf="context === 'compseqr'" routerLink="/client-setup/compliance-tracker">
+        <i class="bi bi-cash-coin"></i> Open Due-Date Tracker
+      </a>
     </div>
-  </div>
 
-  <!-- Loading State -->
-  <div class="loading-overlay" *ngIf="isLoading">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-    <p class="loading-text">Loading tree data...</p>
-  </div>
-
-  <div class="home-content" *ngIf="!isLoading">
-    <div class="file-manager-container">
-
-      <!-- Top Toolbar -->
-      <div class="toolbar">
-        <div class="toolbar-left">
-          <div class="create-upload-btns">
-            <button class="btn btn-primary toolbar-btn" (click)="openSm(content, 'subfolder')">
-              <i class="bi bi-folder-plus"></i> Create Folder
-            </button>
-            <button class="btn btn-primary toolbar-btn" (click)="triggerFileInput()">
-              <i class="bi bi-upload"></i> Upload File
-            </button>
-          </div>
-          <input type="file" #fileInput style="display:none" (change)="onFileSelected($event)" />
-          <div class="toolbar-separator"></div>
-          <div class="search-container">
-            <i class="bi bi-search search-icon"></i>
-            <input type="text" class="search-input" placeholder="Search in ProEDox" />
-          </div>
+    <div class="dms-stats" *ngIf="!isLoading">
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-folder"><i class="bi bi-folder-fill"></i></div>
+        <div class="stat-info">
+          <span class="stat-value">{{ totalFolderCount }}</span>
+          <span class="stat-label">Folders</span>
         </div>
-        <div class="toolbar-right">
-          <button class="btn btn-outline-secondary toolbar-btn"><i class="bi bi-list-ul"></i></button>
-          <button class="btn btn-outline-secondary toolbar-btn"><i class="bi bi-grid-3x3-gap"></i></button>
-          <button class="btn btn-outline-secondary toolbar-btn"><i class="bi bi-three-dots"></i></button>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-file"><i class="bi bi-file-earmark-text-fill"></i></div>
+        <div class="stat-info">
+          <span class="stat-value">{{ files.length }}</span>
+          <span class="stat-label">Files in this folder</span>
+        </div>
+      </div>
+      <div class="stat-card stat-card-placeholder" title="Not available yet">
+        <div class="stat-icon stat-icon-shared"><i class="bi bi-people-fill"></i></div>
+        <div class="stat-info">
+          <span class="stat-value stat-value-placeholder">—</span>
+          <span class="stat-label">Shared Items</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Loading ──────────────────────────────────────── -->
+  <div class="dms-loading" *ngIf="isLoading">
+    <div class="spinner-border text-success" role="status">
+      <span class="visually-hidden">Loading…</span>
+    </div>
+    <p class="dms-loading-text">Loading tree data…</p>
+  </div>
+
+  <!-- ── Main Body ─────────────────────────────────────── -->
+  <div *ngIf="!isLoading">
+
+    <!-- Toolbar -->
+    <div class="dms-toolbar">
+      <div class="toolbar-left">
+        <ng-container *ngIf="context === 'dms'">
+          <button class="btn-action btn-primary-action" (click)="openSm(content, 'subfolder')">
+            <i class="bi bi-folder-plus"></i> Create Folder
+          </button>
+          <button class="btn-action btn-ghost-action" (click)="triggerFileInput()">
+            <i class="bi bi-cloud-upload"></i> Upload File
+          </button>
+          <span class="toolbar-divider"></span>
+        </ng-container>
+        <input type="file" #fileInput style="display:none" (change)="onFileSelected($event)" />
+
+        <button
+          class="btn-action btn-ghost-action"
+          [disabled]="selectedCount === 0"
+          [title]="selectedCount > 0 ? 'Download ' + selectedCount + ' selected file(s)' : 'Select files to download'"
+          (click)="bulkDownloadSelected()"
+        >
+          <i class="bi bi-download"></i> Download<span *ngIf="selectedCount > 0">&nbsp;({{ selectedCount }})</span>
+        </button>
+        <button class="btn-action btn-ghost-action" disabled title="Coming soon">
+          <i class="bi bi-share"></i> Share
+        </button>
+        <div class="dms-search">
+          <i class="bi bi-search dms-search-icon"></i>
+          <input
+            class="dms-search-input"
+            type="text"
+            placeholder="Search in this folder…"
+            [(ngModel)]="fileSearchText"
+            (ngModelChange)="onFileSearchChange()"
+          />
+        </div>
+      </div>
+      <div class="toolbar-right">
+        <button class="view-mode-btn active"><i class="bi bi-list-ul"></i></button>
+        <button class="view-mode-btn"><i class="bi bi-grid-3x3-gap"></i></button>
+        <button class="view-mode-btn"><i class="bi bi-three-dots"></i></button>
+      </div>
+    </div>
+
+    <!-- Two-Panel Layout -->
+    <div class="dms-panels">
+
+      <!-- ── Folders Panel ──────────────────────────── -->
+      <div class="panel-card folders-panel">
+        <div class="panel-hd">
+          <div class="panel-hd-left">
+            <span class="panel-hd-title">Folders</span>
+            <button *ngIf="context === 'dms'" class="panel-hd-new-folder" (click)="openSm(content, 'subfolder')" title="New Folder">
+              <i class="bi bi-folder-plus"></i> New Folder
+            </button>
+          </div>
+          <button class="panel-hd-btn" (click)="toggleSidebar()">
+            <i class="bi" [class.bi-chevron-up]="!sidebarCollapsed" [class.bi-chevron-down]="sidebarCollapsed"></i>
+          </button>
+        </div>
+
+        <div class="folder-search" *ngIf="!sidebarCollapsed">
+          <i class="bi bi-search folder-search-icon"></i>
+          <input
+            class="folder-search-input"
+            type="text"
+            placeholder="Search folders…"
+            [(ngModel)]="folderSearchText"
+          />
+        </div>
+
+        <div class="panel-scroll" *ngIf="!sidebarCollapsed">
+          <!-- Flat tree: depth encoded as CSS class on frow -->
+          <ul class="ftree">
+            <ng-container *ngFor="let n0 of filteredTreeData">
+              <li class="fnode" [class.fnode-sel]="isSelected(n0)">
+                <div class="frow" (click)="selectItem(n0, $event)">
+                  <span class="fcaret" *ngIf="n0.children?.length && !n0.isFile" (click)="toggle(n0, $event)">
+                    <i class="bi" [class.bi-chevron-right]="!n0.expanded" [class.bi-chevron-down]="n0.expanded"></i>
+                  </span>
+                  <span class="fcaret" *ngIf="!n0.children?.length || n0.isFile"></span>
+                  <i class="bi ficon" [class.bi-folder-fill]="!n0.isFile" [class.bi-file-earmark-text]="n0.isFile"></i>
+                  <span class="fname">{{ n0.label }}</span>
+                  <span class="fcount" *ngIf="!n0.isFile && getNodeChildCount(n0) > 0">{{ getNodeChildCount(n0) }}</span>
+                </div>
+              </li>
+
+              <ng-container *ngIf="n0.expanded && n0.children?.length">
+                <ng-container *ngFor="let n1 of n0.children">
+                  <li class="fnode" [class.fnode-sel]="isSelected(n1)">
+                    <div class="frow frow-lv1" (click)="selectItem(n1, $event)">
+                      <span class="fcaret" *ngIf="n1.children?.length && !n1.isFile" (click)="toggle(n1, $event)">
+                        <i class="bi" [class.bi-chevron-right]="!n1.expanded" [class.bi-chevron-down]="n1.expanded"></i>
+                      </span>
+                      <span class="fcaret" *ngIf="!n1.children?.length || n1.isFile"></span>
+                      <i class="bi ficon" [class.bi-folder-fill]="!n1.isFile" [class.bi-file-earmark-text]="n1.isFile"></i>
+                      <span class="fname">{{ n1.label }}</span>
+                      <span class="fcount" *ngIf="!n1.isFile && getNodeChildCount(n1) > 0">{{ getNodeChildCount(n1) }}</span>
+                    </div>
+                  </li>
+
+                  <ng-container *ngIf="n1.expanded && n1.children?.length">
+                    <ng-container *ngFor="let n2 of n1.children">
+                      <li class="fnode" [class.fnode-sel]="isSelected(n2)">
+                        <div class="frow frow-lv2" (click)="selectItem(n2, $event)">
+                          <span class="fcaret" *ngIf="n2.children?.length && !n2.isFile" (click)="toggle(n2, $event)">
+                            <i class="bi" [class.bi-chevron-right]="!n2.expanded" [class.bi-chevron-down]="n2.expanded"></i>
+                          </span>
+                          <span class="fcaret" *ngIf="!n2.children?.length || n2.isFile"></span>
+                          <i class="bi ficon" [class.bi-folder-fill]="!n2.isFile" [class.bi-file-earmark-text]="n2.isFile"></i>
+                          <span class="fname">{{ n2.label }}</span>
+                          <span class="fcount" *ngIf="!n2.isFile && getNodeChildCount(n2) > 0">{{ getNodeChildCount(n2) }}</span>
+                        </div>
+                      </li>
+
+                      <ng-container *ngIf="n2.expanded && n2.children?.length">
+                        <ng-container *ngFor="let n3 of n2.children">
+                          <li class="fnode" [class.fnode-sel]="isSelected(n3)">
+                            <div class="frow frow-lv3" (click)="selectItem(n3, $event)">
+                              <span class="fcaret" *ngIf="n3.children?.length && !n3.isFile" (click)="toggle(n3, $event)">
+                                <i class="bi" [class.bi-chevron-right]="!n3.expanded" [class.bi-chevron-down]="n3.expanded"></i>
+                              </span>
+                              <span class="fcaret" *ngIf="!n3.children?.length || n3.isFile"></span>
+                              <i class="bi ficon" [class.bi-folder-fill]="!n3.isFile" [class.bi-file-earmark-text]="n3.isFile"></i>
+                              <span class="fname">{{ n3.label }}</span>
+                              <span class="fcount" *ngIf="!n3.isFile && getNodeChildCount(n3) > 0">{{ getNodeChildCount(n3) }}</span>
+                            </div>
+                          </li>
+
+                          <ng-container *ngIf="n3.expanded && n3.children?.length">
+                            <ng-container *ngFor="let n4 of n3.children">
+                              <li class="fnode" [class.fnode-sel]="isSelected(n4)">
+                                <div class="frow frow-lv4" (click)="selectItem(n4, $event)">
+                                  <span class="fcaret" *ngIf="n4.children?.length && !n4.isFile" (click)="toggle(n4, $event)">
+                                    <i class="bi" [class.bi-chevron-right]="!n4.expanded" [class.bi-chevron-down]="n4.expanded"></i>
+                                  </span>
+                                  <span class="fcaret" *ngIf="!n4.children?.length || n4.isFile"></span>
+                                  <i class="bi ficon" [class.bi-folder-fill]="!n4.isFile" [class.bi-file-earmark-text]="n4.isFile"></i>
+                                  <span class="fname">{{ n4.label }}</span>
+                                  <span class="fcount" *ngIf="!n4.isFile && getNodeChildCount(n4) > 0">{{ getNodeChildCount(n4) }}</span>
+                                </div>
+                              </li>
+
+                              <ng-container *ngIf="n4.expanded && n4.children?.length">
+                                <ng-container *ngFor="let n5 of n4.children">
+                                  <li class="fnode" [class.fnode-sel]="isSelected(n5)">
+                                    <div class="frow frow-lv5" (click)="selectItem(n5, $event)">
+                                      <span class="fcaret" *ngIf="n5.children?.length && !n5.isFile" (click)="toggle(n5, $event)">
+                                        <i class="bi" [class.bi-chevron-right]="!n5.expanded" [class.bi-chevron-down]="n5.expanded"></i>
+                                      </span>
+                                      <span class="fcaret" *ngIf="!n5.children?.length || n5.isFile"></span>
+                                      <i class="bi ficon" [class.bi-folder-fill]="!n5.isFile" [class.bi-file-earmark-text]="n5.isFile"></i>
+                                      <span class="fname">{{ n5.label }}</span>
+                                      <span class="fcount" *ngIf="!n5.isFile && getNodeChildCount(n5) > 0">{{ getNodeChildCount(n5) }}</span>
+                                    </div>
+                                  </li>
+                                </ng-container>
+                              </ng-container>
+
+                            </ng-container>
+                          </ng-container>
+                        </ng-container>
+                      </ng-container>
+                    </ng-container>
+                  </ng-container>
+                </ng-container>
+              </ng-container>
+            </ng-container>
+          </ul>
+          <p class="folder-no-results" *ngIf="folderSearchText && filteredTreeData.length === 0">
+            No folders match "{{ folderSearchText }}"
+          </p>
+        </div>
+
+        <div class="panel-ft" *ngIf="context === 'dms'">
+          <button class="btn-add-primary" (click)="openSm(primaryFolder, 'primary')">
+            <i class="bi bi-plus-circle"></i> Add Primary Folder
+          </button>
         </div>
       </div>
 
-      <!-- Main Content Area -->
-      <div class="main-content">
-
-        <!-- Sidebar -->
-        <div class="sidebar" [class.sidebar-collapsed]="sidebarCollapsed">
-          <div class="sidebar-header">
-            <h6 class="sidebar-title">Folders</h6>
+      <!-- ── Files Panel ───────────────────────────── -->
+      <div class="panel-card files-panel">
+        <div class="panel-hd">
+          <div class="files-hd-left">
+            <span class="panel-hd-title">Files</span>
+            <span class="files-badge">{{ filteredFiles.length }} items</span>
           </div>
-          <div class="folder-tree-container">
-            <div class="folder-tree">
-              <ul class="tree-list">
-                <li class="tree-item" *ngFor="let item of treeData" [class.selected]="isSelected(item)">
-                  <div class="tree-node" (click)="selectItem(item, $event)">
-                    <div class="tree-node-content">
-                      <div class="d-flex align-items-center">
-                        <span class="tree-toggle" *ngIf="item.children?.length && !item.isFile" (click)="toggle(item, $event)">
-                          <i class="bi" [class.bi-chevron-right]="!item.expanded" [class.bi-chevron-down]="item.expanded"></i>
-                        </span>
-                        <span class="tree-toggle" *ngIf="!item.children?.length && !item.isFile"></span>
-                        <i class="bi" [class.bi-folder-fill]="!item.isFile" [class.bi-file-earmark-text]="item.isFile" [class.folder-icon]="!item.isFile" [class.file-icon]="item.isFile"></i>
-                        <span class="folder-name">{{ item.label }}</span>
-                      </div>
-                      <ul class="tree-list nested" *ngIf="item.expanded && item.children?.length">
-                        <li class="tree-item" *ngFor="let child of item.children" [class.selected]="isSelected(child)">
-                          <div class="tree-node" (click)="selectItem(child, $event)">
-                            <div class="tree-node-content nested-content">
-                              <span class="tree-toggle" *ngIf="child.children?.length && !child.isFile" (click)="toggle(child, $event)">
-                                <i class="bi" [class.bi-chevron-right]="!child.expanded" [class.bi-chevron-down]="child.expanded"></i>
-                              </span>
-                              <span class="tree-toggle" *ngIf="!child.children?.length && !child.isFile"></span>
-                              <i class="bi" [class.bi-folder-fill]="!child.isFile" [class.bi-file-earmark-text]="child.isFile" [class.folder-icon]="!child.isFile" [class.file-icon]="child.isFile"></i>
-                              <span class="folder-name">{{ child.label }}</span>
-                            </div>
-                          </div>
-                          <ul class="tree-list nested third-level-nesting" *ngIf="child.expanded && child.children?.length">
-                            <ng-container *ngFor="let grandchild of child.children">
-                              <li class="tree-item" [class.selected]="isSelected(grandchild)">
-                                <div class="tree-node nested-tree-deep" (click)="selectItem(grandchild, $event)">
-                                  <div class="tree-node-content nested-content-deep">
-                                    <span class="tree-toggle" *ngIf="grandchild.children?.length && !grandchild.isFile" (click)="toggle(grandchild, $event)">
-                                      <i class="bi" [class.bi-chevron-right]="!grandchild.expanded" [class.bi-chevron-down]="grandchild.expanded"></i>
-                                    </span>
-                                    <span class="tree-toggle" *ngIf="!grandchild.children?.length && !grandchild.isFile"></span>
-                                    <i class="bi" [class.bi-folder-fill]="!grandchild.isFile" [class.bi-file-earmark-text]="grandchild.isFile" [class.folder-icon]="!grandchild.isFile" [class.file-icon]="grandchild.isFile"></i>
-                                    <span class="folder-name">{{ grandchild.label }}</span>
-                                  </div>
-                                  <ul class="tree-list nested fourth-level-nesting" *ngIf="grandchild.expanded && grandchild.children?.length">
-                                    <ng-container *ngFor="let sub of grandchild.children">
-                                      <li class="tree-item" [class.selected]="isSelected(sub)">
-                                        <div class="tree-node" (click)="selectItem(sub, $event)">
-                                          <div class="tree-node-content nested-content-deep">
-                                            <span class="tree-toggle" *ngIf="sub.children?.length && !sub.isFile" (click)="toggle(sub, $event)">
-                                              <i class="bi" [class.bi-chevron-right]="!sub.expanded" [class.bi-chevron-down]="sub.expanded"></i>
-                                            </span>
-                                            <span class="tree-toggle" *ngIf="!sub.children?.length && !sub.isFile"></span>
-                                            <i class="bi" [class.bi-folder-fill]="!sub.isFile" [class.bi-file-earmark-text]="sub.isFile" [class.folder-icon]="!sub.isFile" [class.file-icon]="sub.isFile"></i>
-                                            <span class="folder-name">{{ sub.label }}</span>
-                                          </div>
-                                          <ul class="tree-list nested fifth-level-nesting" *ngIf="sub.expanded && sub.children?.length">
-                                            <ng-container *ngFor="let deeper of sub.children">
-                                              <li class="tree-item" [class.selected]="isSelected(deeper)">
-                                                <div class="tree-node" (click)="selectItem(deeper, $event)">
-                                                  <div class="tree-node-content nested-content-deep">
-                                                    <span class="tree-toggle" *ngIf="deeper.children?.length && !deeper.isFile" (click)="toggle(deeper, $event)">
-                                                      <i class="bi" [class.bi-chevron-right]="!deeper.expanded" [class.bi-chevron-down]="deeper.expanded"></i>
-                                                    </span>
-                                                    <span class="tree-toggle" *ngIf="!deeper.children?.length && !deeper.isFile"></span>
-                                                    <i class="bi" [class.bi-folder-fill]="!deeper.isFile" [class.bi-file-earmark-text]="deeper.isFile" [class.folder-icon]="!deeper.isFile" [class.file-icon]="deeper.isFile"></i>
-                                                    <span class="folder-name">{{ deeper.label }}</span>
-                                                  </div>
-                                                </div>
-                                                <ul class="tree-list nested" *ngIf="deeper.expanded && deeper.children?.length">
-                                                  <ng-container *ngTemplateOutlet="recursiveBlock; context: { $implicit: deeper.children }"></ng-container>
-                                                </ul>
-                                              </li>
-                                            </ng-container>
-                                          </ul>
-                                        </div>
-                                      </li>
-                                    </ng-container>
-                                  </ul>
-                                </div>
-                              </li>
-                            </ng-container>
-                          </ul>
-
-                          <ng-template #recursiveBlock let-items>
-                            <ng-container *ngFor="let item of items">
-                              <li class="tree-item" [class.selected]="isSelected(item)">
-                                <div class="tree-node" (click)="selectItem(item, $event)">
-                                  <div class="tree-node-content nested-content-deep">
-                                    <span class="tree-toggle" *ngIf="item.children?.length && !item.isFile" (click)="toggle(item, $event)">
-                                      <i class="bi" [class.bi-chevron-right]="!item.expanded" [class.bi-chevron-down]="item.expanded"></i>
-                                    </span>
-                                    <span class="tree-toggle" *ngIf="!item.children?.length && !item.isFile"></span>
-                                    <i class="bi" [class.bi-folder-fill]="!item.isFile" [class.bi-file-earmark-text]="item.isFile" [class.folder-icon]="!item.isFile" [class.file-icon]="item.isFile"></i>
-                                    <span class="folder-name">{{ item.label }}</span>
-                                  </div>
-                                </div>
-                                <ul class="tree-list nested" *ngIf="item.expanded && item.children?.length">
-                                  <ng-container *ngTemplateOutlet="recursiveBlock; context: { $implicit: item.children }"></ng-container>
-                                </ul>
-                              </li>
-                            </ng-container>
-                          </ng-template>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div class="folder-sidebar-footer">
-            <button class="btn btn-add-folder" (click)="openSm(primaryFolder, 'primary')" *ngIf="!sidebarCollapsed">
-              Add Primary Folder
+          <div class="files-hd-right">
+            <button class="filter-action-btn" type="button">
+              <i class="bi bi-funnel-fill"></i>&nbsp;Filter&nbsp;<i class="bi bi-chevron-down"></i>
             </button>
+            <button class="panel-hd-btn"><i class="bi bi-arrow-clockwise"></i></button>
+            <button class="panel-hd-btn"><i class="bi bi-info-circle"></i></button>
           </div>
         </div>
 
-        <!-- Content Area -->
-        <div class="content-area">
+        <div class="panel-body">
 
-          <!-- Content Header -->
-          <div class="content-header">
-            <div class="content-title">
-              <div class="file-path-display" *ngIf="breadcrumbPath?.length">
-                <i class="bi bi-folder-fill path-folder-icon"></i>
-                <span *ngFor="let crumb of breadcrumbPath; let last = last" class="path-segment">
-                  <span class="path-crumb" [class.path-crumb-active]="last">{{ crumb.label }}</span>
-                  <span *ngIf="!last" class="path-sep">›</span>
-                </span>
-              </div>
-              <div class="content-meta">
-                <h5 class="content-folder-name">{{ selectedFolderTreeNodeItem?.label || 'Files' }}</h5>
-                <span class="item-count-badge">{{ files?.length || 0 }} items</span>
-              </div>
-            </div>
-            <div class="content-actions">
-              <div class="dropdown">
-                <button class="btn btn-sm action-btn dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                  <i class="bi bi-funnel"></i> Filter
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                  <li><a class="dropdown-item" href="#">All files</a></li>
-                  <li><a class="dropdown-item" href="#">Documents</a></li>
-                  <li><a class="dropdown-item" href="#">Images</a></li>
-                  <li><a class="dropdown-item" href="#">Recently modified</a></li>
-                </ul>
-              </div>
-              <button class="btn btn-sm action-btn"><i class="bi bi-arrow-clockwise"></i></button>
-              <button class="btn btn-sm action-btn"><i class="bi bi-info-circle"></i></button>
-            </div>
-          </div>
-
-          <!-- File List Table -->
-          <div class="file-list-wrapper" *ngIf="(files?.length || 0) > 0">
+          <!-- File Table -->
+          <div class="file-table-wrap" *ngIf="(files?.length || 0) > 0">
             <table class="file-table">
               <thead>
                 <tr>
+                  <th class="col-check">
+                    <input type="checkbox" [checked]="isAllOnPageSelected" (change)="toggleSelectAllOnPage()" />
+                  </th>
                   <th class="col-num">#</th>
                   <th class="col-name">File Name</th>
+                  <th class="col-type">Type</th>
                   <th class="col-folder">Folder</th>
                   <th class="col-date">Last Modified</th>
                   <th class="col-owner">Owner</th>
+                  <th class="col-status">Status</th>
                   <th class="col-actions">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <tr class="file-row" *ngFor="let file of files; let i = index">
-                  <td class="col-num">{{ i + 1 }}</td>
+                <tr class="file-row" *ngFor="let file of pagedFiles; let i = index" [class.file-row-sel]="isFileSelected(file)">
+                  <td class="col-check">
+                    <input type="checkbox" [checked]="isFileSelected(file)" (change)="toggleFileSelection(file)" (click)="$event.stopPropagation()" />
+                  </td>
+                  <td class="col-num">{{ (filesCurrentPage - 1) * filesPageSize + i + 1 }}</td>
                   <td class="col-name">
                     <div class="file-name-cell">
                       <img [src]="getFileIcon(file.fileType)" class="file-type-icon" alt="file" />
                       <span class="file-label" [title]="file.fullName">{{ file.fullName }}</span>
                     </div>
                   </td>
+                  <td class="col-type">
+                    <span class="type-pill">{{ getFileTypeLabel(file.fileType) }}</span>
+                  </td>
                   <td class="col-folder">
                     <span class="folder-tag">{{ file.folderName }}</span>
                   </td>
                   <td class="col-date">
-                    <span class="date-text" *ngIf="file.createdOn">
-                      {{ file.createdOn | date:'dd MMM yyyy, hh:mm a' }}
-                    </span>
-                    <span class="no-data" *ngIf="!file.createdOn">—</span>
+                    <span *ngIf="file.createdOn" class="date-text">{{ file.createdOn | date:'dd MMM yyyy, hh:mm a' }}</span>
+                    <span *ngIf="!file.createdOn" class="no-data">—</span>
                   </td>
                   <td class="col-owner">
                     <div class="owner-cell" *ngIf="file.createdByName">
                       <span class="owner-avatar">{{ file.createdByName?.charAt(0)?.toUpperCase() }}</span>
                       <span class="owner-name">{{ file.createdByName }}</span>
                     </div>
-                    <span class="no-data" *ngIf="!file.createdByName">—</span>
+                    <span *ngIf="!file.createdByName" class="no-data">—</span>
+                  </td>
+                  <td class="col-status">
+                    <span class="no-data" title="Approval status not tracked yet">—</span>
                   </td>
                   <td class="col-actions">
-                    <div class="action-btn-group">
-                      <button
-                        class="file-action-btn view-btn"
-                        [class.disabled-btn]="!canAccessFile(file)"
-                        [title]="canAccessFile(file) ? 'View' : 'No file available'"
-                        [disabled]="!canAccessFile(file)"
-                        (click)="viewFileContent(file, $event)">
+                    <div class="row-actions">
+                      <button class="act-btn view-act"
+                              [disabled]="!canAccessFile(file)"
+                              [title]="canAccessFile(file) ? 'View' : 'No file available'"
+                              (click)="viewFileContent(file, $event)">
                         <i class="bi bi-eye"></i>
                       </button>
-                      <button
-                        class="file-action-btn download-btn"
-                        [class.disabled-btn]="!canAccessFile(file)"
-                        [title]="canAccessFile(file) ? 'Download' : 'No file available'"
-                        [disabled]="!canAccessFile(file)"
-                        (click)="downloadFileContent(file, $event)">
+                      <button class="act-btn dl-act"
+                              [disabled]="!canAccessFile(file)"
+                              [title]="canAccessFile(file) ? 'Download' : 'No file available'"
+                              (click)="downloadFileContent(file, $event)">
                         <i class="bi bi-download"></i>
+                      </button>
+                      <button *ngIf="context === 'dms'" class="act-btn del-act"
+                              title="Delete"
+                              (click)="deleteSingleFile(file, $event)">
+                        <i class="bi bi-trash"></i>
                       </button>
                     </div>
                   </td>
                 </tr>
               </tbody>
             </table>
+
+            <p class="folder-no-results" *ngIf="fileSearchText && filteredFiles.length === 0">
+              No files match "{{ fileSearchText }}"
+            </p>
+
+            <div class="file-pagination" *ngIf="filteredFiles.length > filesPageSize">
+              <span class="pagination-info">
+                Showing {{ (filesCurrentPage - 1) * filesPageSize + 1 }}–{{ pageRangeEnd() }}
+                of {{ filteredFiles.length }}
+              </span>
+              <div class="pagination-controls">
+                <button class="page-btn" [disabled]="filesCurrentPage === 1" (click)="goToFilesPage(filesCurrentPage - 1)">
+                  <i class="bi bi-chevron-left"></i>
+                </button>
+                <ng-container *ngFor="let p of pageNumbers">
+                  <button
+                    *ngIf="p !== '...'"
+                    class="page-num-btn"
+                    [class.page-num-active]="p === filesCurrentPage"
+                    (click)="goToFilesPage(p)"
+                  >{{ p }}</button>
+                  <span class="page-ellipsis" *ngIf="p === '...'">…</span>
+                </ng-container>
+                <button class="page-btn" [disabled]="filesCurrentPage === totalFilesPages" (click)="goToFilesPage(filesCurrentPage + 1)">
+                  <i class="bi bi-chevron-right"></i>
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- Empty State -->
           <div class="empty-state" *ngIf="(files?.length || 0) === 0">
-            <div class="empty-state-content">
-              <i class="bi bi-folder2-open empty-icon"></i>
-              <h6 class="empty-title">This folder is empty</h6>
-              <p class="empty-text">Add files by clicking the Upload button</p>
-              <button class="btn btn-primary btn-sm" (click)="triggerFileInput()">
-                <i class="bi bi-upload"></i> Upload Files
-              </button>
+            <div class="empty-art">
+              <div class="empty-ring">
+                <i class="bi bi-folder2-open empty-ico"></i>
+              </div>
+              <span class="sparkle sp1">✦</span>
+              <span class="sparkle sp2">✦</span>
+              <span class="sparkle sp3">·</span>
             </div>
+            <h5 class="empty-title">This folder is empty</h5>
+            <p class="empty-sub" *ngIf="context === 'dms'">Add files by clicking the Upload button</p>
+            <p class="empty-sub" *ngIf="context !== 'dms'">No documents in this folder yet</p>
+            <button *ngIf="context === 'dms'" class="btn-upload-empty" (click)="triggerFileInput()">
+              <i class="bi bi-cloud-upload"></i> Upload Files
+            </button>
           </div>
 
         </div>
+      </div>
+
+    </div>
+
+    <div class="dms-footer">
+      <span>© 2024 ProeDox. All rights reserved.</span>
+      <div class="dms-footer-links">
+        <a href="javascript:void(0)">Privacy Policy</a>
+        <span>•</span>
+        <a href="javascript:void(0)">Terms of Service</a>
+        <span>•</span>
+        <a href="javascript:void(0)">Support</a>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Modals -->
+<!-- ── Modals ──────────────────────────────────────────── -->
 <ng-template #primaryFolder let-modal>
   <div class="modal-header">
     <h5 class="modal-title mb-0">Create Primary Folder</h5>
@@ -302,7 +413,7 @@
       </div>
       <div class="d-flex justify-content-between gap-2">
         <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancel</button>
-        <button type="submit" class="btn btn-primary" [disabled]="!fbCreatePrimaryFolder.valid">
+        <button type="submit" class="btn btn-success" [disabled]="!fbCreatePrimaryFolder.valid">
           <i class="bi bi-folder-plus"></i> Create
         </button>
       </div>
@@ -320,11 +431,11 @@
       <div class="mb-3">
         <label class="form-label">Folder Name</label>
         <input type="text" class="form-control" formControlName="folderName" placeholder="Enter folder name" />
-        <div class="form-text">This folder will be created in: {{ selectedFolderTreeNodeItem?.label || 'Root' }}</div>
+        <div class="form-text">This folder will be created inside: <strong>{{ selectedFolderTreeNodeItem?.label || 'Root' }}</strong></div>
       </div>
       <div class="d-flex justify-content-between gap-2">
         <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancel</button>
-        <button type="submit" class="btn btn-primary" [disabled]="!formgroupCreateFolder.valid">
+        <button type="submit" class="btn btn-success" [disabled]="!formgroupCreateFolder.valid">
           <i class="bi bi-folder-plus"></i> Create
         </button>
       </div>

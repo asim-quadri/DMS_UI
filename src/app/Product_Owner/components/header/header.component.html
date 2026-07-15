@@ -1,133 +1,86 @@
-<div class="header">
-  <div class="d-flex justify-content-between align-items-center flex-wrap">
-      <!-- <img
-        src="./assets/images/comp-360-logo.svg"
-        alt="logo"
-        class="img-fluid"
-        routerLink="/home"
-      /> -->
+<div class="header-shell">
+  <div class="hd-logo" routerLink="/home">
+    <img src="./assets/images/ProEDox-logo.png" alt="ProEDox" class="header-logo" />
+    <span class="hd-brand">ProeDox</span>
+  </div>
 
-      <div class="header-title">
-        <img
-        src="./assets/images/ProEDox-logo.png"
-        alt="logo"
-        class="header-logo"
-        routerLink="/home"
-      />
-    </div>
-    <div class="">
-      <!-- <div class="row">
-        <div class="col-md-3" style="text-align: end;padding: 10px;">
-          <label for="entitydd" style="color: white;">Entity :</label>
-        </div>
-        <div class="col-md-8">
+  <nav class="hd-nav" aria-label="Primary">
+    <a
+      class="hd-nav-item"
+      *ngFor="let item of navItems"
+      [routerLink]="item.route"
+      [class.hd-nav-active]="isNavActive(item)"
+    >
+      <i class="bi hd-nav-icon" [ngClass]="item.icon"></i>
+      <span class="hd-nav-label">{{ item.title }}</span>
+    </a>
+  </nav>
 
-          <select class="col-12 form-select" (change)="onEntityChange($event)" formControlName="ddEntity">
-            <option value="">Please Select</option>
-            <option *ngFor="let entity of this.entityList" [ngValue]="entity.id">
-              {{ entity.entityName }}
-            </option>
-          </select>
-        </div>
-      </div> -->
+  <div class="hd-right">
+    <div class="hd-entity-wrap" *ngIf="entityList.length > 0">
+      <select
+        class="hd-entity-select"
+        [ngModel]="selectedHeaderEntity"
+        (ngModelChange)="onHeaderEntityChange($event)"
+        [compareWith]="compareHeaderEntities"
+      >
+        <option *ngFor="let entity of entityList" [ngValue]="entity">{{ entity.entityName }}</option>
+      </select>
     </div>
 
-      <div class="d-grid d-md-flex justify-content-md-end">
-        <!-- notification-popup.component.html -->
-        <ul class="header-list">
-          <li class="header-notification position-relative">
-            <div class="notification-count" *ngIf="unreadCount > 0">
-              {{ unreadCount }}
-            </div>
+    <div class="hd-notification-wrap">
+      <button type="button" class="hd-icon-btn" title="Notifications" (click)="toggleNotificationPopup()">
+        <i class="bi bi-bell"></i>
+        <span class="notification-count" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+      </button>
+
+      <div class="notification-popup" *ngIf="showNotificationPopup">
+        <div class="popup-header d-flex justify-content-between align-items-center notification-list">
+          <h4 class="mb-0">Notifications</h4>
+          <button class="custom-close" (click)="closeNotificationPopup()" aria-label="Close">&times;</button>
+        </div>
+        <div *ngIf="notifications.length > 0; else noNotifications">
+          <div
+            *ngFor="let notification of notifications"
+            [ngClass]="{ unread: !notification.markAsRead }"
+            class="notification-item d-flex align-items-center mb-2 mt-2"
+          >
             <button
-              type="button"
-              class="btn btn-profile-dropdown"
-              (click)="toggleNotificationPopup()"
+              class="single-notification inline-notification d-flex align-items-center w-100 text-start"
+              [ngClass]="{ unread: !notification.markAsRead }"
+              (click)="onNotificationClick(notification)"
             >
-              <img src="./assets/images/icons/bell.svg" alt="notification" width="16" height="16" />
+              <div class="notificatoin-avatar me-2">
+                <img src="./assets/images/icons/avstsr.svg" class="img-fluid mt-0" alt="notification" />
+              </div>
+              <div class="notificatoin-content flex-grow-1">
+                <p class="notification mb-0">
+                  <span [innerHTML]="notification.notificationTitle"></span><br />
+                  <span>{{ formatNotificationDate(notification.createdDate.toString()) }}</span>
+                </p>
+              </div>
+              <div class="clearfix"></div>
             </button>
-
-            <div class="notification-popup" *ngIf="showNotificationPopup">
-              <div
-                class="popup-header d-flex justify-content-between align-items-center notification-list"
-              >
-                <h4 class="mb-0">Notifications</h4>
-                <button
-                  class="custom-close"
-                  (click)="closeNotificationPopup()"
-                  aria-label="Close"
-                >
-                  &times;
-                </button>
-              </div>
-              <div *ngIf="notifications.length > 0; else noNotifications">
-                <div
-                  *ngFor="let notification of notifications"
-                  [ngClass]="{ unread: !notification.markAsRead }"
-                  class="notification-item d-flex align-items-center mb-2 mt-2"
-                >
-                  <button
-                    class="single-notification inline-notification d-flex align-items-center w-100 text-start"
-                    [ngClass]="{ unread: !notification.markAsRead }"
-                    (click)="onNotificationClick(notification)"
-                  >
-                    <div class="notificatoin-avatar me-2">
-                      <img
-                        src="./assets/images/icons/avstsr.svg"
-                        class="img-fluid mt-0"
-                        alt="notification"
-                      />
-                    </div>
-                    <div class="notificatoin-content flex-grow-1">
-                      <!-- <p class="notification mb-0">
-            <span><strong>{{ notification.senderUserName }}</strong></span>
-            {{ this.addedText }}
-            <span>{{ notification.notificationTitle }}</span><br />
-           
-          </p> -->
-                      <p class="notification mb-0">
-                        <span
-                          [innerHTML]="notification.notificationTitle"
-                        ></span
-                        ><br />
-                        <span>{{
-                          formatNotificationDate(
-                            notification.createdDate.toString()
-                          )
-                        }}</span>
-                      </p>
-                    </div>
-                    <div class="clearfix"></div>
-                  </button>
-                </div>
-              </div>
-              <div class="text-center mt-3">
-                <button
-                  class="btn btn-link p-0 view-all-btn"
-                  (click)="openAllNotifications()"
-                >
-                  View All
-                </button>
-              </div>
-              <ng-template #noNotifications>
-                <p>No notifications available.</p>
-              </ng-template>
-            </div>
-          </li>
-          <li class="header-list-divider"></li>
-          <li>
-            <button class="border-0 bg-transparent" (click)="logout($event)">
-              <i class="fa fa-sign-out logout-icon" aria-hidden="true"></i>
-            </button>
-          </li>
-          <li class="header-list-divider"></li>
-          <li>
-            <div class="user-profile">
-              {{ name }}
-            </div>
-          </li>
-        </ul>
+          </div>
+        </div>
+        <div class="text-center mt-3">
+          <button class="btn btn-link p-0 view-all-btn" (click)="openAllNotifications()">View All</button>
+        </div>
+        <ng-template #noNotifications>
+          <p class="mb-0 p-3">No notifications available.</p>
+        </ng-template>
       </div>
+    </div>
+
+    <button type="button" class="hd-icon-btn" title="Logout" (click)="logout($event)">
+      <i class="bi bi-box-arrow-right"></i>
+    </button>
+
+    <div class="hd-user">
+      <div class="hd-avatar">{{ name?.charAt(0)?.toUpperCase() || 'U' }}</div>
+      <span class="hd-username">{{ name }}</span>
+      <i class="bi bi-chevron-down hd-caret"></i>
+    </div>
   </div>
 
   <ng-template #allNotificationsModal let-modal>

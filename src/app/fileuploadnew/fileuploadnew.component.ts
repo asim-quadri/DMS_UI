@@ -7,7 +7,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { FolderTreeNode } from '../Models/filetreeNode';
 import { HttpClient } from '@angular/common/http';
 import { PersistenceService } from '../Services/persistence.service';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ClientComplianceTrackerService } from '../Services/client-compliance-tracker.service';
 import { UserAssignedEntity, PendingComplianceTracker, LocationMaster, ComplianceTrackerDocument, RegulationWithTOC, TypeOfCompliance } from '../Models/compliancetracker';
 import { forkJoin, Observable } from 'rxjs';
@@ -55,9 +55,17 @@ interface UnifiedTreeNode {
 })
 export class FileuploadnewComponent implements OnInit {
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
-  
-  // API Base URL for the Unified Tree
-  private unifiedTreeApiUrl: string;
+
+  /**
+   * Which product tab this page instance is serving — set via route data.
+   * 'dms' (ProEDox, /home) loads the DMS-only tree; 'compseqr' (/compseqr)
+   * loads the entity/compliance tree. Same component, different data source.
+   */
+  context: 'dms' | 'compseqr' = 'dms';
+
+  // API Base URLs for the (now split) Unified Tree endpoints
+  private dmsTreeApiUrl: string;
+  private entityTreeApiUrl: string;
 
   fileModel: FileModel = {
     fileName: '',
@@ -167,11 +175,13 @@ export class FileuploadnewComponent implements OnInit {
     private http: HttpClient,
     private persistenceService: PersistenceService,
     private route: Router,
+    private activatedRoute: ActivatedRoute,
     private clientComplianceService: ClientComplianceTrackerService,
     private config: AppConfig,
     private userEntityService: UserEntityService
   ) {
-    this.unifiedTreeApiUrl = `${this.config.ServiceUrl}/UnifiedTree/tree`;
+    this.dmsTreeApiUrl = `${this.config.ServiceUrl}/UnifiedTree/dms-tree`;
+    this.entityTreeApiUrl = `${this.config.ServiceUrl}/UnifiedTree/entity-tree`;
     var userdata = sessionStorage.getItem('currentUser');
     if (userdata) {
       var user = JSON.parse(userdata);
@@ -186,13 +196,43 @@ export class FileuploadnewComponent implements OnInit {
     });
   }
 
+  private routeContextInitialized = false;
+
   ngOnInit() {
+    // This app's RouteReuseStrategy keeps the SAME component instance alive when
+    // navigating between routes that share a component (e.g. /home <-> /compseqr),
+    // so ngOnInit only ever runs once. Subscribing to route *data* (not the
+    // snapshot) is what lets this instance react to later tab switches.
+    this.activatedRoute.data.subscribe((data) => {
+      const newContext = data['context'] === 'compseqr' ? 'compseqr' : 'dms';
+      const contextChanged = this.routeContextInitialized && newContext !== this.context;
+      this.context = newContext;
+      this.routeContextInitialized = true;
+
+      if (contextChanged) {
+        // Old selection/files/search belong to the previous tab's tree — clear them.
+        this.selectedFolderTreeNodeItem = null;
+        this.breadcrumbPath = [];
+        this.files = [];
+        this.folderSearchText = '';
+        this.fileSearchText = '';
+        this.filesCurrentPage = 1;
+        this.clearSelection();
+
+        if (this.selectedEntity) {
+          this.loadUnifiedTreeForEntity(this.selectedEntity.id);
+        }
+      }
+    });
+
     this.loadClientEntities();
   }
 
   /**
-   * Load the user's entities for the dropdown, then load the tree for the first entity by default.
-   * API: api/ClientEntity/GetEntitiesLocations/{userId}
+   * Entity selection now lives in the global header (shared via UserEntityService)
+   * so it's consistent across every page, not just this one. This just (a) kicks off
+   * the load if the header hasn't already, and (b) reacts whenever the header's
+   * selection changes.
    */
   loadClientEntities() {
     const organizationId = this.persistenceService.getOrganizationId();
@@ -202,77 +242,28 @@ export class FileuploadnewComponent implements OnInit {
     }
 
     this.isLoading = true;
-    this.userEntityService.GetClientEntitiesLocations(organizationId).subscribe({
-      next: (entities: EntitiesCityCoordinate[]) => {
-        this.userAssignedEntities = (entities || []).map(e => ({
-          id: e.id,
-          entityName: e.entityName
-        } as UserAssignedEntity));
-
-        if (this.userAssignedEntities.length > 0) {
-          this.selectedEntity = this.userAssignedEntities[0];
-          this.selectedEntityId = this.selectedEntity.id;
-          this.loadUnifiedTreeForEntity(this.selectedEntityId);
-        } else {
-          this.isLoading = false;
-          this.treeData = [];
-          this.notifier.notify('info', 'No entities assigned to this user');
-        }
-      },
+    this.userEntityService.loadEntitiesForOrganization(organizationId).subscribe({
       error: (err) => {
         console.error('Error loading client entities:', err);
         this.notifier.notify('error', 'Failed to load entities');
         this.isLoading = false;
       }
     });
-  }
 
-  /**
-   * Load the unified tree from the API
-   * API: http://74.208.221.20/complianceclientapi/api/UnifiedTree/tree?userId={userId}&entityId={entityId}
-   */
-  loadUnifiedTree() {
-    const userId = this.persistenceService.getUserId() || 16;
-    const entityId = 231; // Default entity ID, can be made dynamic
-
-    this.isLoading = true;
-
-    const apiUrl = `${this.unifiedTreeApiUrl}?entityId=${entityId}`;
-
-    this.http.get<UnifiedTreeResponse>(apiUrl).subscribe({
-      next: (response) => {
-        console.log('Unified Tree API Response:', response);
-
-        // Store metadata
-        this.metadata = response.metadata;
-
-        // Store user entities
-        this.userAssignedEntities = response.userEntities || [];
-
-        // Store selected entity
-        if (response.selectedEntity) {
-          this.selectedEntity = response.selectedEntity;
-          this.selectedEntityId = response.selectedEntity.id;
-        }
-
-        // Convert the unified tree data to FolderTreeNode format
-        this.treeData = this.convertUnifiedTreeToFolderTree(response.treeData);
-
-        // Attach parent references for breadcrumb navigation
-        this.attachParentReferences(this.treeData);
-
-        this.isLoading = false;
-
-        console.log('Converted Tree Data:', this.treeData);
-      },
-      error: (err) => {
-        console.error('Error loading unified tree:', err);
-        this.notifier.notify('error', 'Failed to load tree data');
-        this.isLoading = false;
-
-        // Fallback to empty tree
+    this.userEntityService.entities$.subscribe((entities: any[]) => {
+      this.userAssignedEntities = entities || [];
+      if (this.userAssignedEntities.length === 0 && !this.isLoading) {
         this.treeData = [];
       }
+    });
+
+    this.userEntityService.selectedEntity$.subscribe((entity: UserAssignedEntity | null) => {
+      if (!entity) {
+        return;
+      }
+      this.selectedEntity = entity;
+      this.selectedEntityId = entity.id;
+      this.loadUnifiedTreeForEntity(entity.id);
     });
   }
 
@@ -339,26 +330,28 @@ export class FileuploadnewComponent implements OnInit {
   }
 
   /**
-   * Load unified tree for a specific entity
+   * Load the tree for a specific entity, from whichever endpoint matches this
+   * page's context: entity-tree (CompSeqr: Regulatory Compliance / Notices /
+   * Opinions / Audits) or dms-tree (ProEDox: plain DMS folders).
    */
   loadUnifiedTreeForEntity(entityId: number) {
     const userId = this.persistenceService.getUserId() || 16;
-    
+
     this.isLoading = true;
-    
-  //  const apiUrl = `${this.unifiedTreeApiUrl}?userId=${userId}&entityId=${entityId}`;
-      const apiUrl = `${this.unifiedTreeApiUrl}?entityId=${entityId}`;
+
+    const baseUrl = this.context === 'compseqr' ? this.entityTreeApiUrl : this.dmsTreeApiUrl;
+    const apiUrl = `${baseUrl}?userId=${userId}&entityId=${entityId}`;
     this.http.get<UnifiedTreeResponse>(apiUrl).subscribe({
       next: (response) => {
         console.log('Unified Tree API Response for entity:', entityId, response);
-        
-        // Store metadata
+
+        // Store metadata (only present on the entity-tree/CompSeqr response)
         this.metadata = response.metadata;
-        
+
         // Convert and update tree data
         this.treeData = this.convertUnifiedTreeToFolderTree(response.treeData);
         this.attachParentReferences(this.treeData);
-        
+
         this.isLoading = false;
       },
       error: (err) => {
@@ -656,6 +649,229 @@ export class FileuploadnewComponent implements OnInit {
   files: any[] = [];
   treeData: FolderTreeNode[] = [];
 
+  // ====== Row selection (checkboxes) ======
+  selectedFileKeys: Set<any> = new Set();
+
+  private fileKey(file: any): any {
+    return file?.id ?? file?.recordId ?? file?.fullName;
+  }
+
+  isFileSelected(file: any): boolean {
+    return this.selectedFileKeys.has(this.fileKey(file));
+  }
+
+  toggleFileSelection(file: any, event?: Event): void {
+    event?.stopPropagation();
+    const key = this.fileKey(file);
+    if (this.selectedFileKeys.has(key)) {
+      this.selectedFileKeys.delete(key);
+    } else {
+      this.selectedFileKeys.add(key);
+    }
+  }
+
+  get isAllOnPageSelected(): boolean {
+    const page = this.pagedFiles;
+    return page.length > 0 && page.every(f => this.isFileSelected(f));
+  }
+
+  toggleSelectAllOnPage(): void {
+    const page = this.pagedFiles;
+    if (this.isAllOnPageSelected) {
+      page.forEach(f => this.selectedFileKeys.delete(this.fileKey(f)));
+    } else {
+      page.forEach(f => this.selectedFileKeys.add(this.fileKey(f)));
+    }
+  }
+
+  get selectedCount(): number {
+    return this.selectedFileKeys.size;
+  }
+
+  bulkDownloadSelected(): void {
+    const selected = this.filteredFiles.filter(f => this.isFileSelected(f));
+    selected.forEach(f => this.downloadFileContent(f));
+  }
+
+  /** Single-row delete (bypasses checkbox selection) */
+  deleteSingleFile(file: any, event?: Event): void {
+    event?.stopPropagation();
+    const name = file.fullName || file.fileName || 'this file';
+    if (!window.confirm(`Delete ${name}? This cannot be undone.`)) {
+      return;
+    }
+
+    this.folderService.deleteFile(file.id).subscribe({
+      next: () => {
+        this.notifier.notify('success', 'File deleted');
+        this.selectedFileKeys.delete(this.fileKey(file));
+        if (this.selectedFolderTreeNodeItem) {
+          this.getAllFilesbyFolderId(
+            this.selectedFolderTreeNodeItem.id,
+            this.getModuleType(this.selectedFolderTreeNodeItem.foldertitle || '')
+          );
+        }
+      },
+      error: (err) => {
+        console.error('Error deleting file:', err);
+        this.notifier.notify('error', 'Failed to delete file');
+      }
+    });
+  }
+
+  /**
+   * Deletes the selected files via FileUpload/deleteFile. Only offered in the
+   * ProEDox (dms) context — CompSeqr rows are compliance-tracker/notice/opinion/
+   * audit records, not FileUpload entries, so this endpoint doesn't apply to them.
+   */
+  bulkDeleteSelected(): void {
+    const selected = this.filteredFiles.filter(f => this.isFileSelected(f));
+    if (selected.length === 0) {
+      return;
+    }
+
+    const label = selected.length === 1 ? selected[0].fullName || selected[0].fileName : `${selected.length} files`;
+    const confirmed = window.confirm(`Delete ${label}? This cannot be undone.`);
+    if (!confirmed) {
+      return;
+    }
+
+    const deletions = selected.map(f => this.folderService.deleteFile(f.id));
+    forkJoin(deletions).subscribe({
+      next: () => {
+        this.notifier.notify('success', `Deleted ${selected.length} file(s)`);
+        this.clearSelection();
+        if (this.selectedFolderTreeNodeItem) {
+          this.getAllFilesbyFolderId(
+            this.selectedFolderTreeNodeItem.id,
+            this.getModuleType(this.selectedFolderTreeNodeItem.foldertitle || '')
+          );
+        }
+      },
+      error: (err) => {
+        console.error('Error deleting files:', err);
+        this.notifier.notify('error', 'Failed to delete one or more files');
+      }
+    });
+  }
+
+  clearSelection(): void {
+    this.selectedFileKeys.clear();
+  }
+
+  // ====== Search / pagination (real data only) ======
+  folderSearchText: string = '';
+  fileSearchText: string = '';
+  filesPageSize: number = 10;
+  filesCurrentPage: number = 1;
+
+  get filteredTreeData(): FolderTreeNode[] {
+    const term = this.folderSearchText.trim().toLowerCase();
+    if (!term) return this.treeData;
+    return this.filterTreeNodes(this.treeData, term);
+  }
+
+  private filterTreeNodes(nodes: FolderTreeNode[], term: string): FolderTreeNode[] {
+    const result: FolderTreeNode[] = [];
+    for (const node of nodes || []) {
+      const matches = (node.label || '').toLowerCase().includes(term);
+      const filteredChildren = node.children?.length ? this.filterTreeNodes(node.children, term) : [];
+      if (matches || filteredChildren.length) {
+        result.push({ ...node, expanded: true, children: filteredChildren.length ? filteredChildren : node.children });
+      }
+    }
+    return result;
+  }
+
+  get filteredFiles(): any[] {
+    const term = this.fileSearchText.trim().toLowerCase();
+    if (!term) return this.files;
+    return this.files.filter(f =>
+      (f.fullName || f.fileName || '').toLowerCase().includes(term)
+    );
+  }
+
+  get totalFilesPages(): number {
+    return Math.max(1, Math.ceil(this.filteredFiles.length / this.filesPageSize));
+  }
+
+  get pagedFiles(): any[] {
+    const totalPages = this.totalFilesPages;
+    if (this.filesCurrentPage > totalPages) this.filesCurrentPage = totalPages;
+    if (this.filesCurrentPage < 1) this.filesCurrentPage = 1;
+    const start = (this.filesCurrentPage - 1) * this.filesPageSize;
+    return this.filteredFiles.slice(start, start + this.filesPageSize);
+  }
+
+  goToFilesPage(page: number): void {
+    if (page < 1 || page > this.totalFilesPages) return;
+    this.filesCurrentPage = page;
+  }
+
+  pageRangeEnd(): number {
+    return Math.min(this.filesCurrentPage * this.filesPageSize, this.filteredFiles.length);
+  }
+
+  get pageNumbers(): (number | '...')[] {
+    const total = this.totalFilesPages;
+    const current = this.filesCurrentPage;
+    if (total <= 7) {
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+    const pages: (number | '...')[] = [1];
+    if (current > 3) pages.push('...');
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+    for (let p = start; p <= end; p++) pages.push(p);
+    if (current < total - 2) pages.push('...');
+    pages.push(total);
+    return pages;
+  }
+
+  onFileSearchChange(): void {
+    this.filesCurrentPage = 1;
+  }
+
+  get breadcrumbChain(): FolderTreeNode[] {
+    const chain: FolderTreeNode[] = [];
+    let current: FolderTreeNode | undefined = this.selectedFolderTreeNodeItem || undefined;
+    while (current) {
+      chain.unshift(current);
+      current = current.parent;
+    }
+    return chain;
+  }
+
+  get totalFolderCount(): number {
+    return this.countFolderNodes(this.treeData);
+  }
+
+  private countFolderNodes(nodes: FolderTreeNode[]): number {
+    let count = 0;
+    for (const node of nodes || []) {
+      if (!node.isFile) count++;
+      if (node.children?.length) count += this.countFolderNodes(node.children);
+    }
+    return count;
+  }
+
+  getNodeChildCount(node: FolderTreeNode): number {
+    return node.children?.length || 0;
+  }
+
+  getFileTypeLabel(fileType: string | null | undefined): string {
+    const t = (fileType || '').toLowerCase();
+    if (t.includes('pdf')) return 'PDF';
+    if (t.includes('sheet') || t.includes('excel') || t === 'xlsx' || t === 'xls') return 'Excel';
+    if (t.includes('word') || t === 'doc' || t === 'docx') return 'Word';
+    if (t.includes('presentation') || t === 'ppt' || t === 'pptx') return 'PowerPoint';
+    if (t.includes('image') || ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(t)) return 'Image';
+    if (t.includes('zip')) return 'ZIP';
+    if (t === 'folder' || t === 'compliance') return 'Folder';
+    if (!t) return 'File';
+    return t.toUpperCase();
+  }
+
   triggerFileInput() {
     var path = this.selectedFolderTreeNodeItem?.path;
     if (path && path.includes("COMPSEQR360")) {
@@ -801,6 +1017,8 @@ export class FileuploadnewComponent implements OnInit {
 
     this.selectedFolderTreeNodeItem = realNode;
     this.buildBreadcrumbPath(realNode);
+    this.clearSelection();
+    this.filesCurrentPage = 1;
 
     console.log('selectItem clicked node:', realNode);
 

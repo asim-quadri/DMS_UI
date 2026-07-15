@@ -24,7 +24,8 @@ import { FileuploadnewComponent } from './fileuploadnew/fileuploadnew.component'
 const routes: Routes = [
   { path: '', component: LoginComponent },
   { path: 'forget', component: ForgotPasswordComponent },
-  { path: 'home', component: FileuploadnewComponent, canActivate: [AuthGuardService] },
+  { path: 'home', component: FileuploadnewComponent, canActivate: [AuthGuardService], data: { context: 'dms' } },
+  { path: 'compseqr', component: FileuploadnewComponent, canActivate: [AuthGuardService], data: { context: 'compseqr' } },
   { path: 'roles', component: RolesComponent, canActivate: [AuthGuardService] },
   { path: 'users', component: UsersComponent, canActivate: [AuthGuardService] },
   { path: 'announcement', component: AnnouncementComponent, canActivate: [AuthGuardService] },

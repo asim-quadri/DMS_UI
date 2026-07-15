@@ -4,13 +4,11 @@
 <!-- homepage.component.html -->
 
 <div class="homepage-container">
-  <!-- Navigation Bar -->
   <app-headernav *ngIf="showMenus"></app-headernav>
-  <app-sidenav *ngIf="showMenus"></app-sidenav>
-
-  <!-- Main Content Area -->
-  <div class="content-wrapper">
-    <!-- Router Outlet to load child components -->
-    <router-outlet></router-outlet>
+  <div class="homepage-body">
+    <app-sidenav *ngIf="showMenus"></app-sidenav>
+    <main class="content-wrapper" [class.full-width]="!showMenus">
+      <router-outlet></router-outlet>
+    </main>
   </div>
 </div>

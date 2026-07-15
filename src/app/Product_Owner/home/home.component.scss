@@ -157,13 +157,13 @@
 }
 
 .greenColor {
-  background-color: #3ad12f;
+  background-color: #2f6cd1;
 
   &.selected {
-    outline: 3px solid #3ad12f;
+    outline: 3px solid #2f6cd1;
 
     &::before {
-      background-color: #3ad12f;
+      background-color: #2f6cd1;
     }
   }
 }
@@ -543,11 +543,11 @@ p {
 }
 
 .status-green {
-  background-color: #e3fce1;
+  background-color: #e1ebfc;
 }
 
 .status-green .service-id {
-  background-color: #43a047;
+  background-color: #4366a0;
 }
 
 .line-container {
@@ -573,7 +573,7 @@ p {
     }
 
     &.green {
-      background-color: #3ad12f;
+      background-color: #2f6cd1;
     }
   }
 
@@ -600,7 +600,7 @@ p {
     }
 
     &.green {
-      border: 5px solid #3ad12f;
+      border: 5px solid #2f6cd1;
     }
   }
 }

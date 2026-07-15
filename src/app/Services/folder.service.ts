@@ -103,6 +103,10 @@ export class FolderService {
     return this.http.get(url, { headers: auth.headers as any, responseType: 'blob' });
   }
 
+  deleteFile(fileId: number) {
+    return this.http.delete<any>(`${this.BASEURL}/FileUpload/deleteFile?fileId=${fileId}`, this.getAuthHeadersJSON());
+  }
+
 createFolder(folderModel: FolderModel) {
   return this.http.post<boolean>(this.BASEURL + '/FolderManagement/create-folder', folderModel,this.getAuthHeadersJSON());
 

@@ -1,22 +1,22 @@
-<div class="main-container">
-  <div class="home-header">
-    <div class="row">
-      <div class="col-md-5">
-        <button class="btn active-tab-btn">Roles</button>
-        <button class="btn btn-border ml-10" routerLink="/users" *ngIf="showUsersButton">Users</button>
+<div class="main-container roles-screen">
+  <div class="home-header modern-header">
+    <div class="row g-3 align-items-center">
+      <div class="col-md-5 col-lg-4">
+        <button class="btn tab-btn tab-btn-active">Roles</button>
+        <button class="btn tab-btn ml-10" routerLink="/users" *ngIf="showUsersButton">Users</button>
       </div>
-      <div class="col-md-4 d-flex justify-content-end">
-        <button class="btn btn-approval w-auto" (click)="openApprovalModel()">
+      <div class="col-md-4 col-lg-4 d-flex justify-content-md-center justify-content-start">
+        <button class="btn btn-approval role-approval-btn" (click)="openApprovalModel()">
           <i class="fa-solid fa-arrow-right-arrow-left"></i> &nbsp;
           Approvals <span class="approve-count">{{rolesApprovalCount}}</span>
         </button>
       </div>
-      <div class="col-md-3">
-        <form action="">
-          <div class="input-group">
+      <div class="col-md-3 col-lg-4">
+        <form>
+          <div class="input-group search-group">
             <input type="text" class="form-control" (keyup)="onFilterTextBoxChanged($event)" placeholder="Search by keyword  ..." />
             <div class="input-group-append">
-              <button class="btn btn-search" type="submit">
+              <button class="btn btn-search" type="button">
                 <i class="fas fa-search"></i>
               </button>
             </div>
@@ -25,10 +25,10 @@
       </div>
     </div>
   </div>
-      <div class="home-content role-table">
+      <div class="home-content modern-content role-table">
         <div class="row gx-2">
           <div class="col-md-9">
-            <div class="table-responsive">
+            <div class="table-responsive grid-shell">
               <ag-grid-angular #agGrid style="width: 100%; height: 70vh;" class="ag-theme-alpine" [rowData]="rowData!"
               [columnDefs]="columnDefs" [defaultColDef]="defaultColumnDef" [rowSelection]="rowSelection" 
               [suppressRowClickSelection]="true" (gridReady)="onGridReady($event)"  [pagination]="true"
@@ -38,7 +38,7 @@
             </div>
           </div>
           <div class="col-md-3">
-            <div class="complaince-card">
+            <div class="complaince-card edit-shell">
               <app-update-roles [roles]="rowData" [selectedUsers]="selectedRole" (reloaddata)="reload($event)"></app-update-roles>
             </div>
               
