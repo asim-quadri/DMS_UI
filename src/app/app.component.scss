@@ -2,5 +2,12 @@
 
 .body-wrapper {
   display: flex;
-  height: calc(100vh - 88px);
+  height: calc(100vh - 70px);
+  background: #f6f8fb;
+}
+
+.main-view {
+  min-width: 0;
+  overflow: auto;
+  padding: 14px 18px 10px;
 }

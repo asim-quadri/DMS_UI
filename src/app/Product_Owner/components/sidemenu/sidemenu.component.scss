@@ -1,169 +1,65 @@
-@use "/src/assets/scss/colors";
+$green: #2a4a7f;
 
-.sidemenu {
-  float: left;
+:host {
+  display: block;
+  width: 100%;
+  border-bottom: 1px solid #e6edf4;
+  background: #fff;
+}
+
+.tn-shell {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  height: 100%;
-  overflow-y: auto;
-  width: 146px;
-  padding-right: 8px;
-  
-  ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    li {
-      text-align: center;
-      margin-bottom: 12px;
-      transition: all 0.3s ease;
-      
-      &:hover {
-        background-color: rgba(50, 90, 156, 0.05);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      }
-      
-      &.active {
-        border-left: 6px solid colors.$white;
-      }
-      
-      a {
-        color: colors.$white;
-        text-decoration: none;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 15px 10px;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-        
-        &.active {
-          color: colors.$primary-blue;
-          font-weight: 700;
-        }
-        
-        span {
-          margin-top: 8px;
-          font-size: 14px;
-          font-weight: 600;
-          transition: color 0.3s ease;
-        }
-      }
-    }
+  align-items: center;
+  gap: 6px;
+  padding: 0 22px;
+  height: 50px;
+  font-family: "Montserrat", "Lato", "Roboto", sans-serif;
+}
+
+.tn-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #4f5f72;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+
+  &:hover:not(.tn-active) {
+    background: #eaeef5;
+    color: $green;
   }
 
-  .icon-collapsed {
-    width: 20px;
-    height: 20px;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
-    transition: all 0.3s ease;
-  }
-  
-  .icon-expanded {
-    width: 14px;
-    height: 14px;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
-    transition: all 0.3s ease;
-  }
+  &.tn-active {
+    background: $green;
+    color: #fff;
 
-  .bottom-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding-top: 15px;
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
-    margin-top: 15px;
-  }
-
-  .collapse-btn, .logout-btn {
-    width: 100%;
-    background: none;
-    border: none;
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    padding: 12px 8px;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    font-weight: 500;
-    
-    i {
-      font-size: 22px;
-    }
-    span {
-      margin-left: 8px;
-      font-size: 16px;
-      font-weight: 500;
-    }
-
-    &:hover {
-      background-color: rgba(0, 0, 0, 0.05);
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    }
-  }
-
-  .collapse-btn {
-    color: colors.$white;
-  }
-
-  .logout-btn {
-    color: #dc3545;
-    
-    &:hover {
-      background-color: rgba(220, 53, 69, 0.1);
-      color: darken(#dc3545, 10%);
-    }
+    .tn-icon { color: #fff; }
   }
 }
 
-.sidemenu.collapsed {
-  width: 60px;
-  padding-right: 0;
-  ul li a span,
-  .collapse-btn span,
-  .logout-btn span {
-    display: none;
+.tn-icon {
+  font-size: 15px;
+  color: #7c8ba0;
+  flex-shrink: 0;
+}
+
+.tn-label {
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .tn-shell {
+    padding: 0 10px;
+    gap: 2px;
+    overflow-x: auto;
   }
-  
-  .bottom-buttons {
-    gap: 15px;
-  }
-}
 
-.sidemenu::-webkit-scrollbar-track {
-  margin-top: 46px !important;
-}
-
-.sidemenu::-webkit-scrollbar {
-  width: 6px;
-}
-
-.sidemenu::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 3px;
-}
-
-.sidemenu::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.3);
-}
-
-// Animation for menu items
-.sidemenu ul li {
-  animation: slideInLeft 0.3s ease-out;
-}
-
-@keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
+  .tn-item {
+    padding: 0 10px;
   }
 }

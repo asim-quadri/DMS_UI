@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
 import { PersistenceService } from '../../../Services/persistence.service';
 import { CommonModule } from '@angular/common';
-import { EntityService } from '../../../Services/entity.service';
-import { EntityModel } from '../../../models/entityModel';
+import { UserEntityService } from '../../../Services/userentity.service';
+import { EntitiesCityCoordinate } from '../../../Models/userEntityModel';
 
 @Component({
   selector: 'app-headernav',
@@ -13,9 +13,11 @@ import { EntityModel } from '../../../models/entityModel';
 })
 export class HeaderComponent {
   name:string='';
-  entities: EntityModel[] = [];
+  entities: EntitiesCityCoordinate[] = [];
 
-  constructor(private persistance: PersistenceService,private entityService: EntityService,
+  constructor(
+    private persistance: PersistenceService,
+    private userEntityService: UserEntityService
   ){
     this.name = this.persistance.getUserName()
   }
@@ -29,11 +31,15 @@ export class HeaderComponent {
   }
 
   getAllEntityList(){
-    this.entityService.getAllEntityList().subscribe((result: any) => {
-      result.forEach((element: any) => {
-console.log("entities ==",result);
-      });
-      this.entities = result;
+    const organizationId = this.persistance.getOrganizationId();
+    if (!organizationId) return;
+    this.userEntityService.GetClientEntitiesLocations(organizationId).subscribe({
+      next: (result: EntitiesCityCoordinate[]) => {
+        this.entities = result || [];
+      },
+      error: (err: any) => {
+        console.error('Error loading entities:', err);
+      }
     });
   }
 

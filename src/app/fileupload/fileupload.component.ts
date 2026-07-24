@@ -10,6 +10,9 @@ import { FolderTreeNode } from '../Models/filetreeNode';
 import { HttpClient } from '@angular/common/http';
 import { PersistenceService } from '../Services/persistence.service';
 import { Router } from '@angular/router';
+import { ClientComplianceTrackerService } from '../Services/client-compliance-tracker.service';
+import { UserAssignedEntity, PendingComplianceTracker, LocationMaster, ComplianceTrackerDocument, RegulationWithTOC, TypeOfCompliance } from '../Models/compliancetracker';
+import { forkJoin, Observable } from 'rxjs';
 
 interface ComFolder {
   label: string;
@@ -22,9 +25,9 @@ interface ComFolder {
   path?: string[];
   isFile?: boolean;
   fileData?: any;
-  sourceId?: number; // Original ID from API for regulations/organizations/announcements
-  isToc?: boolean; // Indicates this is a TOC folder
-  isCompliance?: boolean; // Indicates this is a Compliance folder
+  nodeType?: string;
+  complianceData?: any;
+  locationData?: any;
 }
 
 @Component({
@@ -39,7 +42,7 @@ export class FileuploadComponent implements OnInit {
     fileType: '',
     userId: 1,
 
-    //lastModified: new Date(),
+    
     lastModifiedOn: 0,
     filePath: "",
     folderId: 1,
@@ -71,11 +74,11 @@ export class FileuploadComponent implements OnInit {
      { headerName: 'File Name', field: 'fullName',cellRenderer: this.fileCellRenderer.bind(this), sortable: true, filter: true },
      { headerName: 'Folder', field: 'folderName', sortable: true, filter: true },
     { headerName: 'Last modified', field: 'createdOn', sortable: true, filter: true },
-    { headerName: 'Owner', field: 'fullName', sortable: true, filter: true },
-    // { headerName: 'Access', field: 'filePath', cellRenderer: this.imageRenderer },
+    { headerName: 'Owner', field: 'createdByName', sortable: true, filter: true },
+    
     {
       headerName: 'Options',
-      cellRenderer: (params: any) => this.optionsRenderer(params),  // Use an arrow function
+      cellRenderer: (params: any) => this.optionsRenderer(params),  
       width: 100
     }
   ];
@@ -85,17 +88,52 @@ export class FileuploadComponent implements OnInit {
     sortable: true,
     filter: true,
     flex: 1
-
   };
+
+  // Pagination settings
+  paginationPageSize: number = 5;
+
   currentUserId: number= 1;
   selectedFolderTreeNodeItem: FolderTreeNode | null = null;
   breadcrumbPath: { label: string, node?: FolderTreeNode }[] = [];
-  sidebarCollapsed: boolean = false; // Add sidebar toggle property
-  complianceFolders: any[] = []; // Folders with Files data
-  selectedComplianceFolder: any = null; // Selected compliance folder
-  complianceFiles: any[] = []; // Files from selected compliance folder
+  sidebarCollapsed: boolean = false; 
+  complianceFolders: any[] = []; 
+  selectedComplianceFolder: any = null; 
+  complianceFiles: any[] = []; 
+  
+  
+  userAssignedEntities: UserAssignedEntity[] = [];
+  selectedEntity: UserAssignedEntity | null = null;
+  pendingComplianceData: PendingComplianceTracker[] = [];
+  locationMasterData: LocationMaster[] = [];
+  
+  
+  regulationsData: RegulationWithTOC[] = [];
+  selectedRegulation: RegulationWithTOC | null = null;
+  typeOfComplianceList: TypeOfCompliance[] = [];
+  selectedTOC: TypeOfCompliance | null = null;
+  isLoadingRegulations: boolean = false;
+  isLoadingTOC: boolean = false;
+  
+  
+  noticesData: RegulationWithTOC[] = [];
+  isLoadingNotices: boolean = false;
+  noticesListByRegulation: Map<number, any[]> = new Map(); 
 
-  constructor(private folderService: FolderService,private notifier:NotifierService,private formBuilder: FormBuilder,private http: HttpClient,private persistenceService: PersistenceService,private route:Router) {
+  constructor(
+    private folderService: FolderService,
+    private notifier: NotifierService,
+    private formBuilder: FormBuilder,
+    private http: HttpClient,
+    private persistenceService: PersistenceService,
+    private route: Router,
+    private clientComplianceService: ClientComplianceTrackerService
+  ) {
+    var userdata=sessionStorage.getItem('currentUser');
+    if(userdata){
+      var user=JSON.parse(userdata);
+      this.currentUserId=user.id;
+    } 
     this.formgroupCreateFolder = this.formBuilder.group({
       folderName: ['', Validators.required],
       isParent: [false]
@@ -106,28 +144,745 @@ export class FileuploadComponent implements OnInit {
   }
 
   ngOnInit() {
-    //this.getAllFolders();
-    this.getcompdata();
+    
+    this.loadClientComplianceTracker();
   }
+
+  /**
+   * Load Client Compliance Tracker data from API
+   */
+  loadClientComplianceTracker() {
+    const userId = this.persistenceService.getUserId() || 16; 
+    
+    
+    this.clientComplianceService.getUserAssignedEntities(userId).subscribe({
+      next: (entities) => {
+        this.userAssignedEntities = entities;
+        
+        if (entities.length > 0) {
+          
+          this.selectedEntity = entities[0];
+          this.loadComplianceDataForEntity(this.selectedEntity.id, userId);
+        } else {
+          
+          this.loadDmsTree();
+        }
+      },
+      error: (err) => {
+        console.error('Error loading user entities:', err);
+        this.loadDmsTree();
+      }
+    });
+  }
+
+  /**
+   * Load compliance data for selected entity
+   */
+  loadComplianceDataForEntity(entityId: number, userId: number) {
+    
+    forkJoin({
+      complianceData: this.clientComplianceService.getPendingComplianceTrackerByEntity(entityId, userId),
+      locationData: this.clientComplianceService.getLocationMasterByEntity(entityId)
+    }).subscribe({
+      next: ({ complianceData, locationData }) => {
+        this.pendingComplianceData = complianceData;
+        this.locationMasterData = locationData;
+        
+        // Debug: Log to verify complianceTrackerDocumentId is present in API response
+        
+        if (complianceData.length > 0) {
+          
+        }
+        
+        
+        this.loadRegulationsForEntity(entityId, () => {
+          
+          this.loadNoticesForEntity(entityId, () => {
+            
+            this.buildComplianceTrackerTreeUI();
+          });
+        });
+      },
+      error: (err) => {
+        console.error('Error loading compliance data:', err);
+        this.loadDmsTree();
+      }
+    });
+  }
+
+  /**
+   * Load regulations list with type of compliance (TOC) for entity
+   * API: /Questionnaires/GetRegulationListByEntityId?entityId={entityId}
+   */
+  loadRegulationsForEntity(entityId: number, callback?: () => void) {
+    this.isLoadingRegulations = true;
+    this.regulationsData = [];
+    this.selectedRegulation = null;
+    this.typeOfComplianceList = [];
+    
+    this.clientComplianceService.getRegulationListByEntityId(entityId).subscribe({
+      next: (regulations: RegulationWithTOC[]) => {
+        this.regulationsData = regulations;
+        this.isLoadingRegulations = false;
+        
+        
+        regulations.forEach(reg => {
+        });
+        
+        
+        if (callback) {
+          callback();
+        }
+      },
+      error: (err) => {
+        console.error('Error loading regulations:', err);
+        this.isLoadingRegulations = false;
+        this.notifier.notify('error', 'Failed to load regulations');
+        
+        if (callback) {
+          callback();
+        }
+      }
+    });
+  }
+
+  /**
+   * Load notices regulations list with type of compliance (TOC) for entity
+   * API: /Questionnaires/GetRegulationListByEntityId?entityId={entityId}&accessType=Notices
+   * Also preloads notices list for each regulation using GetListOfNoticesByIds API
+   */
+  loadNoticesForEntity(entityId: number, callback?: () => void) {
+    this.isLoadingNotices = true;
+    this.noticesData = [];
+    this.noticesListByRegulation.clear();
+    
+    this.clientComplianceService.getNoticesRegulationListByEntityId(entityId).subscribe({
+      next: (notices: RegulationWithTOC[]) => {
+        this.noticesData = notices;
+        
+        
+        if (notices && notices.length > 0) {
+          const noticesApiCalls: Observable<any>[] = [];
+          const regulationIds: number[] = [];
+          
+          notices.forEach(notice => {
+            if (notice.id) {
+              regulationIds.push(notice.id);
+              noticesApiCalls.push(
+                this.clientComplianceService.getListOfNoticesByIds(entityId, notice.id)
+              );
+            }
+          });
+          
+          
+          if (noticesApiCalls.length > 0) {
+            forkJoin(noticesApiCalls).subscribe({
+              next: (responses: any[]) => {
+                responses.forEach((response, index) => {
+                  const regulationId = regulationIds[index];
+                  const noticesList = response?.data || response?.notices || response || [];
+                  const noticesArray = Array.isArray(noticesList) ? noticesList : [noticesList];
+                  
+                  
+                  this.noticesListByRegulation.set(regulationId, noticesArray);
+                });
+                
+                this.isLoadingNotices = false;
+                
+                
+                if (callback) {
+                  callback();
+                }
+              },
+              error: (err) => {
+                console.error('Error preloading notices list:', err);
+                this.isLoadingNotices = false;
+                
+                if (callback) {
+                  callback();
+                }
+              }
+            });
+          } else {
+            this.isLoadingNotices = false;
+            if (callback) {
+              callback();
+            }
+          }
+        } else {
+          this.isLoadingNotices = false;
+          
+          if (callback) {
+            callback();
+          }
+        }
+      },
+      error: (err) => {
+        console.error('Error loading notices:', err);
+        this.isLoadingNotices = false;
+        
+        if (callback) {
+          callback();
+        }
+      }
+    });
+  }
+
+  /**
+   * Handle regulation selection - displays TOC list for selected regulation
+   */
+  onRegulationSelect(regulation: RegulationWithTOC) {
+    this.selectedRegulation = regulation;
+    this.typeOfComplianceList = regulation.toc || [];
+    this.selectedTOC = null;
+    
+    
+    
+    if (this.typeOfComplianceList.length > 0) {
+      this.files = this.typeOfComplianceList.map((toc, index) => ({
+        id: toc.id,
+        fileName: toc.typeOfComplianceName,
+        fullName: toc.typeOfComplianceName,
+        folderName: regulation.regulationName,
+        ruleType: toc.ruleType,
+        frequency: toc.frequency,
+        typeOfComplianceUID: toc.typeOfComplianceUID,
+        dueDate: toc.dueDate,
+        forTheMonth: toc.forTheMonth,
+        parentRegulationName: toc.parentRegulationName,
+        parentComplianceName: toc.parentComplianceName,
+        createdOn: toc.lastModified,
+        fileType: 'compliance'
+      }));
+    } else {
+      this.files = [];
+      this.notifier.notify('info', 'No type of compliance found for this regulation');
+    }
+  }
+
+  /**
+   * Handle TOC (Type of Compliance) selection
+   */
+  onTOCSelect(toc: TypeOfCompliance) {
+    this.selectedTOC = toc;
+    
+    
+    this.files = [{
+      id: toc.id,
+      fileName: toc.typeOfComplianceName,
+      fullName: toc.typeOfComplianceName,
+      folderName: this.selectedRegulation?.regulationName || 'Regulation',
+      ruleType: toc.ruleType,
+      frequency: toc.frequency,
+      typeOfComplianceUID: toc.typeOfComplianceUID,
+      dueDate: toc.dueDate,
+      forTheMonth: toc.forTheMonth,
+      parentRegulationName: toc.parentRegulationName,
+      parentComplianceName: toc.parentComplianceName,
+      createdOn: toc.lastModified,
+      fileType: 'compliance',
+      parameters: toc.parameters
+    }];
+  }
+
+  /**
+   * Get all TOC items from all regulations (flattened)
+   */
+  getAllTOCItems(): TypeOfCompliance[] {
+    const allTOC: TypeOfCompliance[] = [];
+    this.regulationsData.forEach(reg => {
+      if (reg.toc && reg.toc.length > 0) {
+        allTOC.push(...reg.toc);
+      }
+    });
+    return allTOC;
+  }
+
+  /**
+   * Filter TOC by rule type (Payments, Filing, Activity)
+   */
+  filterTOCByRuleType(ruleType: string): TypeOfCompliance[] {
+    return this.typeOfComplianceList.filter(toc => toc.ruleType === ruleType);
+  }
+
+  /**
+   * Clear regulation selection
+   */
+  clearRegulationSelection() {
+    this.selectedRegulation = null;
+    this.typeOfComplianceList = [];
+    this.selectedTOC = null;
+    this.files = [];
+  }
+
+  /**
+   * Add TOC nodes to the tree under their respective Regulation nodes
+   * This updates the sidebar to show TOC items as children of Regulations
+   * Structure: Entity → Compliance Tracker → Financial Year → Regulation → TOC items
+   */
+  addTOCNodesToTree(regulations: RegulationWithTOC[]) {
+    if (!regulations || regulations.length === 0) {
+      return;
+    }
+
+
+    
+    const addTOCToRegulationNodes = (nodes: FolderTreeNode[]) => {
+      for (const node of nodes) {
+        
+        if (node.foldertitle === 'Regulation') {
+          
+          
+          const matchingReg = regulations.find(r => r.regulationName === node.label);
+          
+          
+          if (matchingReg && matchingReg.toc && matchingReg.toc.length > 0) {
+            
+            node.fileData = matchingReg;
+            
+            
+            
+            const existingTOCLabels = node.children?.filter(c => c.foldertitle === 'TOC').map(c => c.label) || [];
+            
+            matchingReg.toc.forEach(toc => {
+              
+              if (existingTOCLabels.includes(toc.typeOfComplianceName)) {
+                return;
+              }
+              
+              const tocNodeId = this.folderId++;
+              // Get matching compliance data for this TOC to extract complianceTrackerDocumentId
+              const tocComplianceData = this.pendingComplianceData.filter(
+                item => item.tocId === toc.id && item.regulationName === matchingReg.regulationName
+              );
+              
+              // Copy complianceTrackerDocumentId from first matching PendingComplianceTracker to TOC fileData
+              const tocWithDocId = {
+                ...toc,
+                complianceTrackerDocumentId: tocComplianceData.length > 0 ? tocComplianceData[0].complianceTrackerDocumentId : null
+              };
+              
+              const tocNode: FolderTreeNode = {
+                id: tocNodeId,
+                label: toc.typeOfComplianceName,
+                parentId: node.id,
+                parent: node,
+                expanded: false,
+                foldertitle: 'TOC',
+                children: [],
+                treeType: 'COMPSEQR360',
+                path: [...(node.path || []), toc.typeOfComplianceName],
+                isFile: false,
+                fileData: tocWithDocId
+              };
+              
+              if (tocComplianceData.length > 0) {
+                
+                const byLocation = this.groupByKey(tocComplianceData, 'locationId');
+                
+                Object.keys(byLocation).forEach(locIdStr => {
+                  const locId = parseInt(locIdStr);
+                  const location = this.locationMasterData.find(l => l.Id === locId);
+                  const locationLabel = location 
+                    ? `${location.Id}-${location.LocationName}` 
+                    : `Location ${locId}`;
+
+                  const locationNodeId = this.folderId++;
+                  const locationNode: FolderTreeNode = {
+                    id: locationNodeId,
+                    label: locationLabel,
+                    parentId: tocNodeId,
+                    parent: tocNode,
+                    expanded: false,
+                    foldertitle: 'Location',
+                    children: [],
+                    treeType: 'COMPSEQR360',
+                    path: [...(tocNode.path || []), locationLabel]
+                  };
+
+                  
+                  const locData = byLocation[locIdStr];
+                  locData.forEach((item: PendingComplianceTracker) => {
+                    const docLabel = `${item.cmpId} - ${item.forTheMonth}`;
+                    const docId = this.folderId++;
+                    
+                    // Debug: Log complianceTrackerDocumentId when creating Document node
+                    
+                    
+                    const docNode: FolderTreeNode = {
+                      id: docId,
+                      label: docLabel,
+                      parentId: locationNodeId,
+                      parent: locationNode,
+                      expanded: false,
+                      foldertitle: 'Document',
+                      children: [],
+                      treeType: 'COMPSEQR360',
+                      path: [...(locationNode.path || []), docLabel],
+                      isFile: item.documentCount > 0,
+                      fileData: item
+                    };
+
+                    locationNode.children?.push(docNode);
+                  });
+
+                  tocNode.children?.push(locationNode);
+                });
+              }
+              
+              
+              if (!node.children) {
+                node.children = [];
+              }
+              node.children.unshift(tocNode);
+            });
+            
+          }
+        }
+        
+        
+        if (node.children && node.children.length > 0) {
+          addTOCToRegulationNodes(node.children);
+        }
+      }
+    };
+
+    addTOCToRegulationNodes(this.treeData);
+
+    
+    this.attachParentReferences(this.treeData);
+    
+    
+    this.treeData = [...this.treeData];
+    
+  }
+
+  /**
+   * Build the Compliance Tracker folder tree UI
+   */
+  buildComplianceTrackerTreeUI() {
+    const complianceTrackerRoot = this.buildClientComplianceTree();
+    
+    
+    this.folderService.getGetFolderTree(this.selectedEntityId, this.currentUserId)
+      .subscribe({
+        next: (dmsResult: any) => {
+          this.mergeDmsNodesWithComplianceTracker(complianceTrackerRoot, dmsResult);
+        },
+        error: (err: any) => {
+          console.error('Error fetching DMS data', err);
+          this.mergeDmsNodesWithComplianceTracker(complianceTrackerRoot, []);
+        }
+      });
+  }
+
+
+  /**
+   * Build client compliance tree based on flow:
+   * Entity → Compliance Tracker → Financial Year → Regulations → Type of Compliances → Location → Documents
+   */
+  buildClientComplianceTree(): FolderTreeNode[] {
+    const rootId = this.folderId++;
+    
+    
+    const entityRoots: FolderTreeNode[] = [];
+    
+    this.userAssignedEntities.forEach(entity => {
+      const entityId = this.folderId++;
+      const entityNode: FolderTreeNode = {
+        id: entityId,
+        label: entity.entityName,
+        parentId: 0,
+        expanded: entity.id === this.selectedEntity?.id,
+        foldertitle: 'Entity',
+        children: [],
+        treeType: 'COMPSEQR360',
+        path: [entity.entityName]
+      };
+
+      
+      if (entity.id === this.selectedEntity?.id) {
+        
+        const regulatoryComplianceId = this.folderId++;
+        const regulatoryComplianceNode: FolderTreeNode = {
+          id: regulatoryComplianceId,
+          label: 'Regulatory Compliance',
+          parentId: entityId,
+          expanded: true,
+          foldertitle: 'RegulatoryCompliance',
+          children: [],
+          treeType: 'COMPSEQR360',
+          path: [entity.entityName, 'Regulatory Compliance']
+        };
+
+        
+        const complianceTrackerId = this.folderId++;
+        const complianceTrackerNode: FolderTreeNode = {
+          id: complianceTrackerId,
+          label: 'Compliance Tracker',
+          parentId: regulatoryComplianceId,
+          expanded: true,
+          foldertitle: 'ComplianceTracker',
+          children: [],
+          treeType: 'COMPSEQR360',
+          path: [entity.entityName, 'Regulatory Compliance', 'Compliance Tracker']
+        };
+
+        
+        const byFinancialYear = this.groupByKey(this.pendingComplianceData, 'financialYear');
+        const sortedYears = Object.keys(byFinancialYear).sort().reverse();
+
+        sortedYears.forEach(year => {
+          const yearId = this.folderId++;
+          const yearNode: FolderTreeNode = {
+            id: yearId,
+            label: year,
+            parentId: complianceTrackerId,
+            expanded: false,
+            foldertitle: 'FinancialYear',
+            children: [],
+            treeType: 'COMPSEQR360',
+            path: [entity.entityName, 'Regulatory Compliance', 'Compliance Tracker', year]
+          };
+
+          const yearData = byFinancialYear[year];
+          
+          
+          const byRegulation = this.groupByKey(yearData, 'regulationName');
+          
+          Object.keys(byRegulation).forEach(regName => {
+            const regId = this.folderId++;
+            const regNode: FolderTreeNode = {
+              id: regId,
+              label: regName,
+              parentId: yearId,
+              expanded: false,
+              foldertitle: 'Regulation',
+              children: [], 
+              treeType: 'COMPSEQR360',
+              path: [entity.entityName, 'Regulatory Compliance', 'Compliance Tracker', year, regName]
+            };
+
+            
+            
+
+            yearNode.children?.push(regNode);
+          });
+
+          complianceTrackerNode.children?.push(yearNode);
+        });
+
+        
+        regulatoryComplianceNode.children?.push(complianceTrackerNode);
+        
+        
+        const noticesId = this.folderId++;
+        const noticesNode: FolderTreeNode = {
+          id: noticesId,
+          label: 'Notices',
+          parentId: regulatoryComplianceId,
+          expanded: false,
+          foldertitle: 'Notices',
+          children: [],
+          treeType: 'COMPSEQR360',
+          path: [entity.entityName, 'Regulatory Compliance', 'Notices']
+        };
+        
+        
+        if (this.noticesData && this.noticesData.length > 0) {
+          this.noticesData.forEach(noticeReg => {
+            const noticeRegId = this.folderId++;
+            const noticeRegNode: FolderTreeNode = {
+              id: noticeRegId,
+              label: noticeReg.regulationName,
+              parentId: noticesId,
+              expanded: false,
+              foldertitle: 'NoticeRegulation',
+              children: [],
+              treeType: 'COMPSEQR360',
+              path: [entity.entityName, 'Regulatory Compliance', 'Notices', noticeReg.regulationName],
+              fileData: noticeReg
+            };
+            
+            
+            const preloadedNotices = this.noticesListByRegulation.get(noticeReg.id);
+            if (preloadedNotices && preloadedNotices.length > 0) {
+              
+              
+              
+              preloadedNotices.forEach((notice: any, index: number) => {
+                const noticeItemId = this.folderId++;
+                const noticeName = notice.subject || notice.complianceIds || notice.fileName || `Notice ${index + 1}`;
+                
+                
+                const hasFile = notice.fileContent || notice.filecontent || notice.FileContent || 
+                               notice.file || notice.attachment || notice.document;
+                
+                const noticeItemNode: FolderTreeNode = {
+                  id: noticeItemId,
+                  label: noticeName,
+                  parentId: noticeRegId,
+                  expanded: false,
+                  foldertitle: 'NoticeItem',
+                  children: [],
+                  treeType: 'COMPSEQR360',
+                  path: [entity.entityName, 'Regulatory Compliance', 'Notices', noticeReg.regulationName, noticeName],
+                  isFile: false,
+                  fileData: notice
+                };
+                
+                noticeRegNode.children?.push(noticeItemNode);
+              });
+              
+            }
+            
+            
+            noticesNode.children?.push(noticeRegNode);
+          });
+          
+        }
+        
+        
+        regulatoryComplianceNode.children?.push(noticesNode);
+        
+        
+        entityNode.children?.push(regulatoryComplianceNode);
+
+        
+        const entityWiseFolderId = this.folderId++;
+        const entityWiseFolderNode: FolderTreeNode = {
+          id: entityWiseFolderId,
+          label: 'Entity wise Folder',
+          parentId: entityId,
+          expanded: false,
+          foldertitle: 'EntityWiseFolder',
+          children: [],
+          treeType: 'COMPSEQR360',
+          path: [entity.entityName, 'Entity wise Folder']
+        };
+        entityNode.children?.push(entityWiseFolderNode);
+      }
+
+      entityRoots.push(entityNode);
+    });
+
+    return entityRoots;
+  }
+
+  /**
+   * Merge DMS nodes with Compliance Tracker tree
+   */
+  mergeDmsNodesWithComplianceTracker(complianceTrackerNodes: FolderTreeNode[], dmsResult: any) {
+    
+    const filteredDmsResult = Array.isArray(dmsResult) ? dmsResult.filter((item: any) => 
+      (item.label || item.folderName) !== 'COMPSEQR360' &&
+      (item.label || item.folderName) !== 'Compliance Tracker'
+    ) : [];
+
+    const normalizedDmsNodes = this.normalizeNodes(filteredDmsResult, null, 'DMS');
+
+    const dmsRoot: FolderTreeNode = {
+      id: Math.floor(Math.random() * 1e9),
+      label: 'ProEDox',
+      expanded: true,
+      children: normalizedDmsNodes,
+      parentId: 0,
+      foldertitle: 'ProEDox',
+      treeType: 'DMS'
+    };
+
+    this.markTreeType([dmsRoot], 'DMS');
+    this.markTreeType(complianceTrackerNodes, 'COMPSEQR360');
+
+    this.attachParentReferences(complianceTrackerNodes);
+    this.attachParentReferences([dmsRoot]);
+
+    
+    this.treeData = [...complianceTrackerNodes, dmsRoot];
+    
+    if (this.treeData.length > 0) {
+    }
+    
+    
+    if (this.regulationsData && this.regulationsData.length > 0) {
+      this.addTOCNodesToTree(this.regulationsData);
+    }
+  }
+
+  /**
+   * Helper to group array by key
+   */
+  groupByKey(array: any[], key: string): { [key: string]: any[] } {
+    return array.reduce((result, item) => {
+      const keyValue = String(item[key] || 'Unknown');
+      (result[keyValue] = result[keyValue] || []).push(item);
+      return result;
+    }, {} as { [key: string]: any[] });
+  }
+
+  /**
+   * Load only DMS tree (fallback)
+   */
+  loadDmsTree() {
+    this.folderService.getGetFolderTree(this.selectedEntityId, this.currentUserId)
+      .subscribe({
+        next: (dmsResult: any) => {
+          const filteredDmsResult = Array.isArray(dmsResult) ? dmsResult.filter((item: any) => 
+            (item.label || item.folderName) !== 'COMPSEQR360'
+          ) : [];
+
+          const normalizedDmsNodes = this.normalizeNodes(filteredDmsResult, null, 'DMS');
+
+          const dmsRoot: FolderTreeNode = {
+            id: Math.floor(Math.random() * 1e9),
+            label: 'ProEDox',
+            expanded: true,
+            children: normalizedDmsNodes,
+            parentId: 0,
+            foldertitle: 'ProEDox',
+            treeType: 'DMS'
+          };
+
+          this.markTreeType([dmsRoot], 'DMS');
+          this.attachParentReferences([dmsRoot]);
+
+          this.treeData = [dmsRoot];
+        },
+        error: (err: any) => {
+          console.error('Error fetching DMS data', err);
+          this.treeData = [];
+        }
+      });
+  }
+
+  /**
+   * Handle entity selection change
+   */
+  onEntityChange(entity: UserAssignedEntity) {
+    this.selectedEntity = entity;
+    const userId = this.persistenceService.getUserId() || 16;
+    this.loadComplianceDataForEntity(entity.id, userId);
+  }
+
   getGetFolderTree(selectedEntityId: number, currentUserId: any) {
     this.folderService.getGetFolderTree(selectedEntityId, currentUserId).subscribe((result: any) => {
-      // Filter out COMPSEQR360 data if present in DMS result
+      
       const filteredResult = Array.isArray(result) ? result.filter((item: any) => 
         (item.label || item.folderName) !== 'COMPSEQR360'
       ) : [];
 
-      // Find ProEDox root
+      
       const dmsRoot = this.treeData.find(n => n.treeType === 'DMS' && n.label === 'ProEDox');
       
       if (dmsRoot) {
-        // Update DMS children
+        
         const normalizedDmsNodes = this.normalizeNodes(filteredResult, dmsRoot, 'DMS');
         dmsRoot.children = normalizedDmsNodes;
         this.markTreeType([dmsRoot], 'DMS');
         this.attachParentReferences([dmsRoot]);
       } else {
-        // Fallback if DMS root doesn't exist (shouldn't happen if getcompdata ran)
-        // But if it does, we might need to rebuild or just do nothing
+        
+        
         console.warn('DMS Root not found during refresh');
       }
     });
@@ -149,23 +904,45 @@ export class FileuploadComponent implements OnInit {
     return `<img src="${iconSrc}" style="margin-right: 8px;width: 24px;height: 24px;" alt="file">${fileName}`;
   }
 
-  // Custom cell renderer for the options column
+  
   optionsRenderer(params: any) {
+    
+    const hasFileContent = params.data.fileContent;
+    const hasFilePath = params.data.filePath;
+    const canViewDownload = hasFileContent || hasFilePath;
+    
+    
     const viewButton = document.createElement('button');
     viewButton.className = 'btn btn-sm btn-outline-secondary btn-view';
     viewButton.innerHTML = '<i class="bi bi-eye"></i>';
-
-    viewButton.addEventListener('click', () => {
-      this.onViewClick(params);
-    });
+    
+    
+    if (!canViewDownload) {
+      viewButton.disabled = true;
+      viewButton.style.opacity = '0.5';
+      viewButton.style.cursor = 'not-allowed';
+      viewButton.title = 'No document available';
+    } else {
+      viewButton.addEventListener('click', () => {
+        this.onViewClick(params);
+      });
+    }
 
     const downloadButton = document.createElement('button');
     downloadButton.className = 'btn btn-sm btn-outline-secondary btn-download';
     downloadButton.innerHTML = '<i class="bi bi-download"></i>';
-
-    downloadButton.addEventListener('click', () => {
-      this.onDownloadClick(params);
-    });
+    
+    
+    if (!canViewDownload) {
+      downloadButton.disabled = true;
+      downloadButton.style.opacity = '0.5';
+      downloadButton.style.cursor = 'not-allowed';
+      downloadButton.title = 'No document available';
+    } else {
+      downloadButton.addEventListener('click', () => {
+        this.onDownloadClick(params);
+      });
+    }
 
     const container = document.createElement('div');
     container.className = 'btn-group';
@@ -185,9 +962,9 @@ export class FileuploadComponent implements OnInit {
         return 'assets/images/icons/google.png';
       case 'application/vnd.ms-excel':
       case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-        return 'assets/images/icons/excel.png';
+        return 'assets/images/icons/excel.svg';
       default:
-        return 'assets/images/icons/file.png';
+        return 'assets/images/icons/docs.png';
     }
   }
 
@@ -195,150 +972,232 @@ export class FileuploadComponent implements OnInit {
       this.selectedFolderId= folderId;
   }
 
+  /**
+   * View file content - handles base64 content, file path, and activity data
+   */
   onViewClick(params: any): void {
-    const fileData = params.data;
-    const entityId = fileData.entityId; // Use entityId (regulation ID, TOC ID, org ID, announcement ID)
-    const type = fileData.type || '';
-    const subType = fileData.subType || '';
-
-    console.log('View clicked - fileData:', fileData);
-    console.log('View clicked - entityId:', entityId, 'type:', type, 'subType:', subType);
-
-    // Prefer the fileContent we already have on the row — avoid a second API call.
-    if (fileData.fileContent) {
-      const cacheKey = `fileViewer_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
-      const payload = {
-        fileContent: fileData.fileContent,
-        fileName: fileData.fileName || fileData.fullName || 'file',
-        fileType: fileData.fileType || ''
-      };
-      try {
-        localStorage.setItem(cacheKey, JSON.stringify(payload));
-        const url = `/#/fileview?cacheKey=${encodeURIComponent(cacheKey)}`;
-        console.log('Opening viewer with cached content:', url);
-        window.open(url, '_blank');
-        return;
-      } catch (err) {
-        console.warn('Cache stash failed, falling back to API fetch:', err);
-        // fall through to API-based viewer
-      }
+    const data = params.data;
+    
+    // Check for fileContent in the row data
+    if (data?.fileContent) {
+      const fileName = data.fileName || data.fullName || 'document';
+      this.viewBase64File(data.fileContent, fileName);
+      return;
     }
-
-    if (entityId && type) {
-      // Build URL with query params and open in new tab.
-      // App uses HashLocationStrategy, so routes live behind '#'.
-      let url = `/#/fileview?fileId=${entityId}&type=${type}`;
-      if (subType) {
-        url += `&subType=${subType}`;
-      }
-      console.log('Opening in new tab:', url);
-      window.open(url, '_blank');
-    } else if (fileData.filePath) {
-      // Fallback: Open file viewer with file path in new tab
-      const url = `/#/fileview?fileurl=${encodeURIComponent(fileData.filePath)}`;
-      window.open(url, '_blank');
-    } else {
-      console.error('No entity ID or path available for viewing');
+    
+    // Check for fileContent in activityData (for noticeActivity)
+    if (data?.activityData?.fileContent) {
+      const fileName = data.activityData.fileName || data.fileName || 'document';
+      this.viewBase64File(data.activityData.fileContent, fileName);
+      return;
     }
+    
+    // Check for fileContent in noticeData
+    if (data?.noticeData?.fileContent) {
+      const fileName = data.noticeData.fileName || data.fileName || 'document';
+      this.viewBase64File(data.noticeData.fileContent, fileName);
+      return;
+    }
+    
+    // Check for fileContent in fileData
+    if (data?.fileData?.fileContent) {
+      const fileName = data.fileData.fileName || data.fileName || 'document';
+      this.viewBase64File(data.fileData.fileContent, fileName);
+      return;
+    }
+    
+    // Fallback to first file in the list
+    if (this.files[0]?.fileContent) {
+      this.viewBase64File(this.files[0].fileContent, this.files[0].fileName);
+      return;
+    }
+    
+    // Try to open via file path in new tab
+    if (data?.filePath) {
+      window.open(data.filePath, '_blank');
+      return;
+    }
+    
+    // Try activityData filePath in new tab
+    if (data?.activityData?.filePath) {
+      window.open(data.activityData.filePath, '_blank');
+      return;
+    }
+    
+    // No viewable content found
+    this.notifier.notify('error', 'No file content available to view');
   }
 
   onDownloadClick(params: any): void {
-    const fileData = params.data;
-    const fileName = fileData.fileName || 'downloaded-file';
-    const fileContent = fileData.fileContent;
-    const fileType = fileData.fileType || 'application/octet-stream';
+    
+    if (params.data.fileContent) {
+      this.downloadBase64File(params.data.fileContent, params.data.fileName);
+    } else {
+      
+      const imagePath = params.data.filePath;
+      const fileName = params.data.fileName || 'downloaded-file';
 
-    if (fileContent) {
-      // Download from base64 fileContent
-      try {
-        // Remove data URL prefix if present (e.g., "data:image/jpeg;base64,")
-        let base64Data = fileContent;
-        if (base64Data.includes(',')) {
-          base64Data = base64Data.split(',')[1];
-        }
-
-        // Convert base64 to blob
-        const byteCharacters = atob(base64Data);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: fileType });
-
-        // Create download link
+      this.http.get(imagePath, { responseType: 'blob' }).subscribe((blob: Blob | MediaSource) => {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
         link.download = fileName;
         link.click();
-        window.URL.revokeObjectURL(url);
-      } catch (error) {
-        console.error('Error downloading file from base64:', error);
-      }
-    } else if (fileData.filePath) {
-      // Fallback: Download from file path URL
-      this.http.get(fileData.filePath, { responseType: 'blob' }).subscribe((blob: Blob | MediaSource) => {
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        link.click();
-        window.URL.revokeObjectURL(url);
+        window.URL.revokeObjectURL(url); 
       }, (error: any) => {
         console.error('Error downloading the file:', error);
       });
-    } else {
-      console.error('No file content or file path available for download');
     }
   }
 
+  /**
+   * View base64 encoded file content
+   */
+  viewBase64File(base64Content: string, fileName: string): void {
+    try {
+      
+      const mimeType = this.getMimeType(fileName);
+      
+      const byteCharacters = atob(base64Content);
+      
+      const byteNumbers = new Array(byteCharacters.length);
+      
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+      
+      const url = window.URL.createObjectURL(blob);
+      
+      
+      const newWindow = window.open(url, '_blank');
+      
+      if (!newWindow) {
+        
+        console.warn('Popup blocked! Trying alternative approach...');
+        this.notifier.notify('warning', 'Popup blocked. Please allow popups or use download instead.');
+        
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.click();
+      }
+      
+      
+      setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+    } catch (error) {
+      console.error('Error viewing file:', error);
+      this.notifier.notify('error', 'Failed to view file');
+    }
+  }
 
-  // Dropdown for the search filter
+  /**
+   * Download base64 encoded file content
+   */
+  downloadBase64File(base64Content: string, fileName: string): void {
+    try {
+      const mimeType = this.getMimeType(fileName);
+      const byteCharacters = atob(base64Content);
+      const byteNumbers = new Array(byteCharacters.length);
+      
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+      const url = window.URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      link.click();
+      
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      this.notifier.notify('error', 'Failed to download file');
+    }
+  }
+
+  /**
+   * Get MIME type based on file extension
+   */
+  getMimeType(fileName: string): string {
+    const ext = this.getFileExtension(fileName);
+    const mimeTypes: { [key: string]: string } = {
+      'pdf': 'application/pdf',
+      'png': 'image/png',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'gif': 'image/gif',
+      'bmp': 'image/bmp',
+      'webp': 'image/webp',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'ppt': 'application/vnd.ms-powerpoint',
+      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'txt': 'text/plain',
+      'csv': 'text/csv',
+      'json': 'application/json',
+      'xml': 'application/xml',
+      'zip': 'application/zip',
+      'html': 'text/html'
+    };
+    return mimeTypes[ext] || 'application/octet-stream';
+  }
+
+
+  
   searchFilter = 'Owned by me';
   private modalService = inject(NgbModal);
 
   folders: any[] = [];
   files: any[] = [];
-  //selectedItem: FolderTreeNode | null = null;
+  
   treeData: FolderTreeNode[] = [];
 
-  // treeData: FileTreeNode[] = [
-  //   {
-  //     label:'COMPSEQR360 FOLDER',
-  //     expanded: true,
-  //     children: [
-  //       {
-  //         label: 'Folder1',
-  //         expanded: true,
-  //         children: [
-  //           { label: '94D Filing' },
-  //           { label: '94D Payment' }
-  //         ]
-  //       },
-  //       // { label: '94F' },
-  //       // { label: '94E' }
-  //     ]
-  //   },
-  //   {
-  //     label: 'Income Tax',
-  //     expanded: false,
-  //     children: [
-  //       {
-  //         label: 'TDS',
-  //         expanded: false,
-  //         children: [
-  //           { label: '94D Filing' },
-  //           { label: '94D Payment' }
-  //         ]
-  //       },
-  //       { label: '94F' },
-  //       { label: '94E' }
-  //     ]
-  //   },
-  //   { label: 'Companies Act' },
-  //   { label: 'LLP' }
-  // ];
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
 
   viewAllFiles() {
@@ -347,7 +1206,7 @@ export class FileuploadComponent implements OnInit {
 
   onSearchInputChange(searchQuery: string) {
     
-    // Implement search logic here
+    
   }
 
   triggerFileInput() {
@@ -387,7 +1246,7 @@ export class FileuploadComponent implements OnInit {
   uploadFile(file: File) {
     this.folderService.uploadFile(this.fileModel,file).subscribe(
       (result: any) => {
-        // Refresh the current folder's files instead of hardcoded selectedFolderId
+        
         if (this.selectedFolderTreeNodeItem) {
           this.getAllFilesbyFolderId(
             this.selectedFolderTreeNodeItem.id,
@@ -405,7 +1264,7 @@ export class FileuploadComponent implements OnInit {
   }
 
   getAllFolders(){
-    // this.getcompdata();
+    
     this.folders = [];
     this.folderService.getAllFolders().subscribe((result: any) => {
       this.getAllFilesbyFolderId(result[0]?.id);
@@ -417,25 +1276,24 @@ export class FileuploadComponent implements OnInit {
 
  
 
-  // getcompdata(){
-  //   this.folders = [];
-  //   this.folderService.getcompleteFolderList().subscribe((result: any) => {
-  //     const comFolderTree = this.buildComFolderTree(result);
-  //         this.treeData = comFolderTree;
+  
+  
+  
+  
+  
           
-  //      this.getGetFolderTree(this.selectedEntityId,this.currentUserId);
-  //   });
+  
+  
    
-  // }
+  
 
 getcompdata() {
   this.folderService.getcompleteFolderList().subscribe((result: any) => {
-    console.log('Organization data received:', result);
     
-    // Reset compliance folders array
+    
     this.complianceFolders = [];
     
-    // Process compliance items directly from the new data structure
+    
     if (Array.isArray(result)) {
       result.forEach((item: any) => {
         if (this.hasFiles(item)) {
@@ -445,9 +1303,7 @@ getcompdata() {
     }
 
     const compseqrTree = this.buildComFolderTree(result);
-    console.log('Built tree structure:', compseqrTree);
     const normalizedCompNodes = this.normalizeNodes(compseqrTree as any, null, 'COMPSEQR360');
-    console.log('Normalized comp nodes:', normalizedCompNodes);
     this.markTreeType(normalizedCompNodes, 'COMPSEQR360');
     this.folderService.getGetFolderTree(this.selectedEntityId, this.currentUserId)
       .subscribe({
@@ -463,7 +1319,7 @@ getcompdata() {
 }
 
   mergeDmsNodes(normalizedCompNodes: FolderTreeNode[], dmsResult: any) {
-    // Filter out COMPSEQR360 from DMS result to prevent duplication/leakage
+    
     const filteredDmsResult = Array.isArray(dmsResult) ? dmsResult.filter((item: any) => 
       (item.label || item.folderName) !== 'COMPSEQR360'
     ) : [];
@@ -477,7 +1333,7 @@ getcompdata() {
       children: normalizedDmsNodes,
       parentId: 0,
       foldertitle: 'ProEDox',
-      treeType: 'DMS'  // ✅ root also tagged
+      treeType: 'DMS'  
     };
 
     this.markTreeType([dmsRoot], 'DMS');
@@ -487,9 +1343,9 @@ getcompdata() {
 
     this.treeData = [...normalizedCompNodes, dmsRoot];
     if (this.treeData.length > 0) {
-      // Select first node if nothing selected, or keep selection logic
-      // this.selectedFolderTreeNodeItem = this.treeData[0];
-      // this.buildBreadcrumbPath(this.treeData[0]);
+      
+      
+      
     }
   }
 
@@ -507,7 +1363,7 @@ attachParentReferences(nodes: FolderTreeNode[], parent: FolderTreeNode | null = 
   if (!nodes) return;
   for (const n of nodes) {
     n.parent = parent || undefined;
-    // If parentId also needed, ensure it's set
+    
     if (parent) n.parentId = parent.id;
     if (n.children && n.children.length > 0) {
       this.attachParentReferences(n.children, n);
@@ -517,17 +1373,16 @@ attachParentReferences(nodes: FolderTreeNode[], parent: FolderTreeNode | null = 
 
 
   
-  getAllFilesbyFolderId(folderId: number,type:any='proedox'){
+  getAllFilesbyFolderId(folderId: number, type: any = 'proedox', filters?: {
+    regulationId?: number;
+    auditType?: string;
+    financialYear?: string;
+  }) {
     this.files = [];
-    this.folderService.getFilesbyFolderId(folderId,type).subscribe((result: any) => {
-      result.forEach((element: any) => {
-
-      });
-      
+    this.folderService.getFilesbyFolderId(folderId, type, filters).subscribe((result: any) => {
       this.files = result;
-    },(error: any) => {
+    }, (error: any) => {
       console.error("Error fetching files:", error);
-      // You can add additional error handling logic here, such as showing a message to the user
     });
   }
   createSubFolder() {
@@ -535,12 +1390,12 @@ attachParentReferences(nodes: FolderTreeNode[], parent: FolderTreeNode | null = 
       this.folderModel.folderName = this.formgroupCreateFolder.controls['folderName'].value;
       this.folderModel.isParent = false;
       this.folderModel.entityId =this.selectedEntityId;
-      //set zero for primary folder
+      
       this.folderModel.parentId =this.selectedFolderTreeNodeItem.id;
       this.folderService.createFolder(this.folderModel).subscribe(
         (result: any) => {
           this.notifier.notify('success', 'Folder Created Successfully');
-          //this.getAllFilesbyFolderId(this.selectedFolderId);
+          
           this.getGetFolderTree(this.selectedEntityId,this.currentUserId);
           this.files = result;
           this.modalService.dismissAll();
@@ -565,7 +1420,7 @@ attachParentReferences(nodes: FolderTreeNode[], parent: FolderTreeNode | null = 
       this.folderService.createFolder(this.folderModel).subscribe(
         (result: any) => {
           this.notifier.notify('success', 'Folder Created Successfully');
-          //this.getAllFilesbyFolderId(this.selectedFolderId);
+          
           this.getGetFolderTree(this.selectedEntityId,this.currentUserId);
           this.files = result;
           this.modalService.dismissAll();
@@ -582,36 +1437,36 @@ attachParentReferences(nodes: FolderTreeNode[], parent: FolderTreeNode | null = 
 
   }
 
-  // onSubmitCreateFolder() {
-  //   if (this.formgroupCreateFolder.valid) {
-  //     this.folderModel.folderName = this.createfolderName;
-  //     this.folderModel.isPrimary = this.isPrimary;
+  
+  
+  
+  
 
-  //     this.folderService.createFolder(this.folderModel).subscribe(
-  //       (result: any) => {
-  //         this.notifier.notify('success', 'Folder Created Successfully');
-  //         this.getAllFilesbyFolderId(this.selectedFolderId);
-  //         this.files = result;
-  //       },
-  //       (error: any) => {
-  //         console.error("Error creating folder:", error);
-  //         this.notifier.notify('error', 'Error creating folder. Please try again.');
-  //       }
-  //     );
-  //   } else {
-  //     this.notifier.notify('warning', 'Please enter a valid folder name.');
-  //   }
-  // }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
 
-  // Example method to change search filter
+  
   changeSearchFilter(filter: string) {
     this.searchFilter = filter;
     
   }
 
   openSm(content: TemplateRef<any>, type: string = 'subfolder') {
-    // Check if DMS is empty when trying to create a subfolder
+    
     if (type === 'subfolder') {
       const dmsRoot = this.findDmsRoot();
       if (!dmsRoot || !dmsRoot.children || dmsRoot.children.length === 0) {
@@ -640,335 +1495,882 @@ attachParentReferences(nodes: FolderTreeNode[], parent: FolderTreeNode | null = 
 
 selectItem(item: FolderTreeNode, event: MouseEvent): void {
   event.stopPropagation();
-  // ✅ Use treeType to ensure we find the correct node in correct tree
+  
   const realNode = this.findNodeById(this.treeData, item.id, item.treeType) || item;
 
-  console.log('selectItem called for:', realNode.label, 'treeType:', realNode.treeType, 'path[0]:', realNode.path?.[0]);
 
   this.selectedFolderTreeNodeItem = realNode;
   this.buildBreadcrumbPath(realNode);
 
-  if (realNode.isFile && realNode.fileData) {
-    console.log('Selected a file:', realNode.label);
+  // For COMPSEQR360 Document nodes, always call handleComplianceTrackerSelection to trigger API
+  if (realNode.treeType === 'COMPSEQR360' && realNode.foldertitle === 'Document') {
+    this.handleComplianceTrackerSelection(realNode);
+  } else if (realNode.isFile && realNode.fileData) {
+    
     this.files = [{
       ...realNode.fileData,
       fullName: realNode.label
     }];
-  } else if (realNode.treeType === 'COMPSEQR360' || (realNode.path && realNode.path[0] === 'COMPSEQR360')) {
-    // ✅ Fetch files from API based on folder type (regulation, organization, announcement)
-    console.log('Fetching files for COMPSEQR360 node via API');
-    this.fetchCompseqrFilesFromApi(realNode);
+  } else if (realNode.treeType === 'COMPSEQR360') {
+    
+    this.handleComplianceTrackerSelection(realNode);
   } else {
-    console.log('Fetching files from API for DMS node');
     this.getAllFilesbyFolderId(realNode.id, this.getModuleType(realNode.path || ''));
   }
 }
 
 /**
- * Fetch files from API based on the COMPSEQR360 folder type
- * Supports regulations, organizations, and announcements
+ * Handle selection of Compliance Tracker nodes
  */
-fetchCompseqrFilesFromApi(node: FolderTreeNode): void {
-  const path = node.path || [];
-  console.log('fetchCompseqrFilesFromApi - path:', path, 'foldertitle:', node.foldertitle, 'label:', node.label);
-
-  // Determine the type by checking current node and traversing up parent chain
-  const parentType = this.getParentFolderType(node);
-  const folderType = (node.foldertitle || '').toLowerCase();
-  const pathType = path.length > 1 ? path[1]?.toLowerCase() : '';
-  const nodeLabel = (node.label || '').toLowerCase();
-
-  console.log('Determined parentType:', parentType);
-
-  // Check if this is a TOC folder - use isToc flag first, then check by label/path
-  const isTocFolder = node.isToc || 
-                      this.checkIsTocFromParentChain(node) ||
-                      nodeLabel.includes('toc') || 
-                      path.some(p => p.toLowerCase().includes('toc')) ||
-                      node.foldertitle?.toLowerCase().includes('toc');
-
-  // Check if this is a compliance folder - use isCompliance flag first, then check by label/path
-  const isComplianceFolder = node.isCompliance ||
-                             this.checkIsComplianceFromParentChain(node) ||
-                             nodeLabel.includes('compliance') || 
-                             path.some(p => p.toLowerCase().includes('compliance')) ||
-                             node.foldertitle?.toLowerCase().includes('compliance');
-
-  // Use parentType if current node's type is not specific enough
-  const effectiveType = (folderType === 'regulation' || folderType === 'organization' || folderType === 'announcement') 
-    ? folderType 
-    : (pathType === 'regulation' || pathType === 'organization' || pathType === 'announcement')
-      ? pathType
-      : parentType;
-
-  console.log('effectiveType:', effectiveType, 'isTocFolder:', isTocFolder, 'isComplianceFolder:', isComplianceFolder);
-
-  if (effectiveType === 'regulation') {
-    // Determine subType and appropriate ID based on the folder being clicked
-    let subType: string | undefined;
-    let apiId: number;
-    
-    if (isTocFolder) {
-      subType = 'tocdues';
-      // For TOC folders, use the TOC item's own sourceId
-      apiId = node.sourceId || node.id;
-    } else if (isComplianceFolder) {
-      subType = 'regulation';
-      // For compliance folders, use the compliance item's own sourceId
-      apiId = node.sourceId || node.id;
-    } else {
-      // For regulation root, use the parent regulation ID
-      apiId = this.getSourceIdFromParentChain(node);
-    }
-
-    // Call regulation API with appropriate subType
-    console.log('Calling regulation API with id:', apiId, 'subType:', subType);
-    this.folderService.getDataByTypeAndId('regulation', apiId, subType).subscribe({
-      next: (result: any) => {
-        console.log('Regulation API response:', result);
-        this.files = this.extractFilesFromApiResponse(result, node.label, 'regulation', subType, apiId);
-      },
-      error: (err: any) => {
-        console.error('Error fetching regulation data:', err);
-        // Fallback to collecting files from node
-        this.files = this.collectAllFiles(node);
-      }
-    });
-  } else if (effectiveType === 'organization') {
-    // Call organization API - use the node's own sourceId
-    const apiId = node.sourceId || this.getSourceIdFromParentChain(node);
-    console.log('Calling organization API with id:', apiId);
-    this.folderService.getDataByTypeAndId('organization', apiId).subscribe({
-      next: (result: any) => {
-        console.log('Organization API response:', result);
-        this.files = this.extractFilesFromApiResponse(result, node.label, 'organization', undefined, apiId);
-      },
-      error: (err: any) => {
-        console.error('Error fetching organization data:', err);
-        // Fallback to collecting files from node
-        this.files = this.collectAllFiles(node);
-      }
-    });
-  } else if (effectiveType === 'announcement') {
-    // Call announcement API - use the node's own sourceId
-    const apiId = node.sourceId || this.getSourceIdFromParentChain(node);
-    console.log('Calling announcement API with id:', apiId);
-    this.folderService.getDataByTypeAndId('announcement', apiId).subscribe({
-      next: (result: any) => {
-        console.log('Announcement API response:', result);
-        this.files = this.extractFilesFromApiResponse(result, node.label, 'announcement', undefined, apiId);
-      },
-      error: (err: any) => {
-        console.error('Error fetching announcement data:', err);
-        // Fallback to collecting files from node
-        this.files = this.collectAllFiles(node);
-      }
-    });
-  } else {
-    // Fallback: collect all files recursively from the node
-    console.log('Fallback: collecting files from node - folderType:', folderType, 'pathType:', pathType, 'parentType:', parentType);
-    this.files = this.collectAllFiles(node);
-  }
-}
-
-/**
- * Get the folder type by traversing up the parent chain
- */
-getParentFolderType(node: FolderTreeNode): string {
-  let current: FolderTreeNode | undefined = node;
-  while (current) {
-    const folderTitle = (current.foldertitle || '').toLowerCase();
-    if (folderTitle === 'regulation' || folderTitle === 'organization' || folderTitle === 'announcement') {
-      return folderTitle;
-    }
-    // Also check the path
-    if (current.path && current.path.length > 1) {
-      const pathType = current.path[1]?.toLowerCase();
-      if (pathType === 'regulation' || pathType === 'organization' || pathType === 'announcement') {
-        return pathType;
-      }
-    }
-    current = current.parent;
-  }
-  return '';
-}
-
-/**
- * Check if this node or any parent is marked as TOC
- */
-checkIsTocFromParentChain(node: FolderTreeNode): boolean {
-  let current: FolderTreeNode | undefined = node;
-  while (current) {
-    if (current.isToc) {
-      return true;
-    }
-    current = current.parent;
-  }
-  return false;
-}
-
-/**
- * Check if this node or any parent is marked as Compliance
- */
-checkIsComplianceFromParentChain(node: FolderTreeNode): boolean {
-  let current: FolderTreeNode | undefined = node;
-  while (current) {
-    if (current.isCompliance) {
-      return true;
-    }
-    current = current.parent;
-  }
-  return false;
-}
-
-/**
- * Get the source ID by traversing up the parent chain to find the regulation/org/announcement node
- */
-getSourceIdFromParentChain(node: FolderTreeNode): number {
-  let current: FolderTreeNode | undefined = node;
-  while (current) {
-    const folderTitle = (current.foldertitle || '').toLowerCase();
-    // If this node has a sourceId and is a main category type, return it
-    if (current.sourceId && (folderTitle === 'regulation' || folderTitle === 'organization' || folderTitle === 'announcement')) {
-      return current.sourceId;
-    }
-    // Check path to determine if this is the main item
-    if (current.path && current.path.length === 3 && current.sourceId) {
-      // Path like ['COMPSEQR360', 'Regulation', 'ItemName'] indicates the main regulation item
-      return current.sourceId;
-    }
-    current = current.parent;
-  }
-  // Fallback to current node's sourceId or id
-  return node.sourceId || node.id;
-}
-
-/**
- * Extract files from API response
- * @param response - API response
- * @param folderName - Name of the folder
- * @param type - Type: 'regulation', 'organization', 'announcement'
- * @param subType - SubType for regulations: 'regulation', 'tocdues'
- * @param entityId - The ID of the entity (regulation ID, TOC ID, organization ID, announcement ID)
- */
-extractFilesFromApiResponse(response: any, folderName: string, type?: string, subType?: string, entityId?: number): any[] {
-  const files: any[] = [];
+handleComplianceTrackerSelection(node: FolderTreeNode): void {
+  const foldertitle = node.foldertitle;
   
-  if (!response) return files;
-
-  // Helper to add type, subType, and entityId to file object
-  const addFileWithType = (file: any, folder: string) => {
-    console.log('Adding file with type:', type, 'subType:', subType, 'entityId:', entityId, 'file:', file.fileName);
-    files.push({
-      ...file,
-      folderName: folder,
-      fullName: file.fileName,
-      type: type || '',
-      subType: subType || '',
-      entityId: entityId
-    });
-  };
-
-  // Handle response with success flag and direct files array
-  if (response.success && Array.isArray(response.files)) {
-    response.files.forEach((file: any) => {
-      addFileWithType(file, folderName);
-    });
-    return files;
+  switch (foldertitle) {
+    case 'Document':
+      
+      if (node.fileData) {
+        const compData = node.fileData as PendingComplianceTracker;
+        
+        
+        const docId = compData.complianceTrackerDocumentId ? parseInt(compData.complianceTrackerDocumentId, 10) : 0;
+        if (docId) {
+          this.loadComplianceDocuments(docId, node);
+        } else {
+          console.warn('No complianceTrackerDocumentId found for Document node:', node.label, compData);
+          // Display the compliance data as a row
+          this.files = [{
+            id: compData.id,
+            fileName: `${compData.cmpId} - ${compData.forTheMonth}`,
+            fullName: node.label,
+            folderName: node.path?.[node.path.length - 2] || 'Location',
+            regulationName: compData.regulationName,
+            frequency: compData.frequency,
+            dueDate: compData.dueDate,
+            dueAmount: compData.dueAmount,
+            amountPaid: compData.amountPaid,
+            status: compData.approvalStatus,
+            documentCount: compData.documentCount,
+            financialYear: compData.financialYear,
+            createdOn: compData.createdOn
+          }];
+        }
+      } else {
+        console.warn('No fileData found for Document node:', node.label);
+        this.files = [];
+      }
+      break;
+    
+    case 'RegulationItem':
+      
+      this.handleRegulationItemSelection(node);
+      break;
+    
+    case 'NoticeRegulation':
+      
+      this.handleNoticeRegulationSelection(node);
+      break;
+    
+    case 'NoticeItem':
+      
+      this.handleNoticeItemSelection(node);
+      break;
+    
+    case 'NoticeTOC':
+      
+      this.handleNoticeTOCSelection(node);
+      break;
+    
+    case 'RegulationsFolder':
+      
+      this.displayAllRegulations();
+      break;
+    
+    case 'Location':
+    case 'FinancialYear':
+    case 'TOC':
+    case 'Regulation':
+    case 'TypeOfCompliance':
+    case 'ComplianceTracker':
+    case 'RegulatoryCompliance':
+    case 'Notices':
+    case 'Entity':
+      // Collect all complianceTrackerDocumentIds from child Document nodes and call API
+      this.loadComplianceDocumentsForParent(node);
+      break;
+    
+    default:
+      this.files = this.collectAllFiles(node);
   }
+}
 
-  // Handle direct files array (without success flag)
-  if (Array.isArray(response.files)) {
-    response.files.forEach((fileFolder: any) => {
-      // Check if it's a direct file object or a folder containing files
-      if (fileFolder.fileName && !fileFolder.files) {
-        // Direct file object
-        addFileWithType(fileFolder, folderName);
-      } else if (Array.isArray(fileFolder.files)) {
-        // Folder containing files
-        fileFolder.files.forEach((file: any) => {
-          addFileWithType(file, fileFolder.folderName || folderName);
-        });
+/**
+ * Handle Regulation node selection - load TOC data from API
+ */
+handleRegulationNodeSelection(node: FolderTreeNode): void {
+  
+  
+  const entityId = this.selectedEntity?.id;
+  if (!entityId) {
+    console.error('No entity selected');
+    this.files = this.collectComplianceTrackerFiles(node);
+    return;
+  }
+  
+  
+  const existingReg = this.regulationsData.find(r => r.regulationName === node.label);
+  
+  if (existingReg && existingReg.toc && existingReg.toc.length > 0) {
+    
+    this.onRegulationSelect(existingReg);
+  } else {
+    
+    this.isLoadingTOC = true;
+    this.clientComplianceService.getRegulationListByEntityId(entityId).subscribe({
+      next: (regulations: RegulationWithTOC[]) => {
+        this.regulationsData = regulations;
+        const matchingReg = regulations.find(r => r.regulationName === node.label);
+        
+        if (matchingReg) {
+          this.onRegulationSelect(matchingReg);
+        } else {
+          
+          this.files = this.collectComplianceTrackerFiles(node);
+        }
+        this.isLoadingTOC = false;
+      },
+      error: (err) => {
+        console.error('Error loading regulations:', err);
+        this.isLoadingTOC = false;
+        this.files = this.collectComplianceTrackerFiles(node);
       }
     });
   }
+}
 
-  // Handle array response directly
-  if (Array.isArray(response)) {
-    response.forEach((item: any) => {
-      if (item.files && Array.isArray(item.files)) {
-        item.files.forEach((fileFolder: any) => {
-          if (Array.isArray(fileFolder.files)) {
-            fileFolder.files.forEach((file: any) => {
-              addFileWithType(file, fileFolder.folderName || folderName);
-            });
+/**
+ * Handle Notice Regulation node selection - show preloaded notices data as sub-folders
+ * Uses preloaded data from noticesListByRegulation (loaded at page init)
+ */
+handleNoticeRegulationSelection(node: FolderTreeNode): void {
+  
+  const regData = node.fileData as RegulationWithTOC;
+  const entityId = this.selectedEntity?.id;
+  
+  if (regData && regData.id && entityId) {
+    
+    if (node.children && node.children.length > 0 && node.children[0].foldertitle === 'NoticeItem') {
+      node.expanded = !node.expanded;
+      this.files = [];
+      return;
+    }
+    
+    
+    const preloadedNotices = this.noticesListByRegulation.get(regData.id);
+    
+    if (preloadedNotices && preloadedNotices.length > 0) {
+      this.addNoticesToTreeNode(node, preloadedNotices);
+    } else {
+      
+      
+      this.clientComplianceService.getListOfNoticesByIds(entityId, regData.id).subscribe({
+        next: (response: any) => {
+          
+          
+          const noticesData = response?.data || response?.notices || response || [];
+          const notices = Array.isArray(noticesData) ? noticesData : [noticesData];
+          
+          if (notices && notices.length > 0 && notices[0]) {
+            
+            this.noticesListByRegulation.set(regData.id, notices);
+            this.addNoticesToTreeNode(node, notices);
+          } else {
+            this.files = [];
+            this.notifier.notify('info', 'No notices found for this regulation');
           }
-        });
-      }
-      if (item.fileName) {
-        addFileWithType(item, folderName);
-      }
-    });
+        },
+        error: (err) => {
+          console.error('Error loading notices:', err);
+          this.notifier.notify('error', 'Failed to load notices');
+          this.files = [];
+        }
+      });
+    }
+  } else {
+    
+    console.warn('Missing entityId or regulationId for notices');
+    this.files = [];
+    this.notifier.notify('info', 'Unable to load notices - missing entity or regulation information');
   }
+}
 
-  // Handle nested data structures (for regulations with compliance/toc)
-  if (response.compliance && Array.isArray(response.compliance)) {
-    response.compliance.forEach((comp: any) => {
-      if (comp.files && Array.isArray(comp.files)) {
-        comp.files.forEach((fileFolder: any) => {
-          if (Array.isArray(fileFolder.files)) {
-            fileFolder.files.forEach((file: any) => {
-              addFileWithType(file, fileFolder.folderName || comp.complianceName || folderName);
-            });
-          }
-        });
-      }
-    });
+/**
+ * Helper method to add notices as sub-folders to a tree node
+ */
+addNoticesToTreeNode(node: FolderTreeNode, notices: any[]): void {
+  
+  node.children = [];
+  
+  
+  if (notices.length > 0) {
   }
-
-  if (response.toc && Array.isArray(response.toc)) {
-    response.toc.forEach((tocItem: any) => {
-      if (tocItem.files && Array.isArray(tocItem.files)) {
-        tocItem.files.forEach((fileFolder: any) => {
-          if (Array.isArray(fileFolder.files)) {
-            fileFolder.files.forEach((file: any) => {
-              addFileWithType(file, fileFolder.folderName || tocItem.tocName || folderName);
-            });
-          }
-        });
-      }
-    });
+  
+  notices.forEach((notice: any, index: number) => {
+    const noticeId = this.folderId++;
+    const noticeName = notice.subject || notice.complianceName || notice.fileName || `Notice ${index + 1}`;
+    
+    const noticeNode: FolderTreeNode = {
+      id: noticeId,
+      label: noticeName,
+      parentId: node.id,
+      expanded: false,
+      foldertitle: 'NoticeItem',
+      children: [],
+      treeType: 'COMPSEQR360',
+      path: [...(node.path || []), noticeName],
+      isFile: false,
+      fileData: notice 
+    };
+    
+    node.children?.push(noticeNode);
+  });
+  
+  
+  node.expanded = true;
+  this.files = []; 
+  
+  
+  if (notices.length === 0) {
+    this.notifier.notify('info', 'No notices found for this regulation');
   }
+  
+}
 
-  // Handle entity list (for organizations)
-  if (response.entityList && Array.isArray(response.entityList)) {
-    response.entityList.forEach((entity: any) => {
-      if (entity.files && Array.isArray(entity.files)) {
-        entity.files.forEach((fileFolder: any) => {
-          if (Array.isArray(fileFolder.files)) {
-            fileFolder.files.forEach((file: any) => {
-              addFileWithType(file, fileFolder.folderName || entity.entityName || folderName);
-            });
-          }
-        });
+/**
+ * Handle Notice Item (sub-folder) selection - display noticeActivity data in table
+ */
+handleNoticeItemSelection(node: FolderTreeNode): void {
+  
+  const noticeData = node.fileData;
+  
+  if (noticeData) {
+    
+    const regulationName = node.path && node.path.length >= 2 
+      ? node.path[node.path.length - 2] 
+      : 'Notice Regulation';
+    
+    // Check for noticeActivity data first
+    const noticeActivityData = noticeData.noticeActivity || noticeData.noticeActivities || 
+                               noticeData.activities || noticeData.NoticeActivity || [];
+    const activities = Array.isArray(noticeActivityData) ? noticeActivityData : 
+                       (noticeActivityData ? [noticeActivityData] : []);
+    
+    if (activities.length > 0) {
+      // Display noticeActivity data in the table
+      this.files = activities.map((activity: any, index: number) => ({
+        id: activity.id || index + 1,
+        fileName: activity.fileName || activity.documentName || activity.activityName || `Activity ${index + 1}`,
+        fullName: activity.fileName || activity.documentName || activity.activityName || `Activity ${index + 1}`,
+        folderName: node.label,
+        complianceId: noticeData.complianceId || noticeData.id,
+        subject: activity.subject || noticeData.subject,
+        description: activity.description,
+        activityDate: activity.activityDate,
+        dueDate: activity.dueDate,
+        status: activity.status,
+        fileContent: activity.fileContent || null,
+        filePath: activity.filePath || null,
+        createdOn: activity.createdDate || activity.createdOn,
+        createdBy: activity.createdBy,
+        createdByName: activity.createdByName || noticeData.createdByName || '',
+        fileType: activity.fileContent ? this.getMimeType(activity.fileName || '') : 'notice-activity',
+        activityData: activity
+      }));
+    } else {
+      // Fallback: check for files/documents/attachments
+      const filesData = noticeData.files || noticeData.documents || noticeData.attachments || [];
+      const files = Array.isArray(filesData) ? filesData : [];
+      
+      if (files.length > 0) {
+        this.files = files.map((file: any, index: number) => ({
+          id: file.id || index + 1,
+          fileName: file.fileName || file.name || `File ${index + 1}`,
+          fullName: file.fileName || file.name || `File ${index + 1}`,
+          folderName: node.label,
+          fileContent: file.fileContent || null,
+          filePath: file.filePath || null,
+          createdOn: file.createdDate || file.createdOn,
+          createdBy: file.createdBy,
+          createdByName: file.createdByName || noticeData.createdByName || '',
+          fileType: file.fileContent ? this.getMimeType(file.fileName || '') : 'notice-file',
+          fileData: file
+        }));
+      } else {
+        // Show the notice itself as a row
+        this.files = [{
+          id: noticeData.id || 1,
+          fileName: noticeData.fileName || noticeData.subject || node.label,
+          fullName: noticeData.fileName || noticeData.subject || node.label,
+          folderName: regulationName,
+          complianceId: noticeData.complianceId || noticeData.id,
+          subject: noticeData.subject,
+          description: noticeData.description,
+          noticeDate: noticeData.noticeDate,
+          dueDate: noticeData.dueDate,
+          status: noticeData.status,
+          fileContent: noticeData.fileContent || null,
+          filePath: noticeData.filePath || null,
+          createdOn: noticeData.createdDate || noticeData.createdOn,
+          createdBy: noticeData.createdBy,
+          createdByName: noticeData.createdByName || '',
+          fileType: noticeData.fileContent ? this.getMimeType(noticeData.fileName || '') : 'notice',
+          noticeData: noticeData
+        }];
       }
-    });
+    }
+    
+  } else {
+    this.files = [];
+    this.notifier.notify('info', 'No data found for this notice');
   }
+}
 
-  console.log('Extracted files:', files.length);
+/**
+ * Handle Notice TOC node selection - load and display documents for the Notice TOC
+ * API: /ComplianceTracker/GetComplianceTrackerDocuments?CompId={typeOfComplianceUID}
+ */
+handleNoticeTOCSelection(node: FolderTreeNode): void {
+  
+  
+  const tocData = node.fileData as TypeOfCompliance;
+  
+  if (tocData) {
+    
+    const regulationName = node.path && node.path.length >= 2 
+      ? node.path[node.path.length - 2] 
+      : 'Notice Regulation';
+    
+    
+    const complianceTrackerDocumentId = tocData.complianceTrackerDocumentId ? parseInt(tocData.complianceTrackerDocumentId, 10) : 0;
+    
+    if (complianceTrackerDocumentId) {
+      
+      this.loadNoticeTOCDocuments(complianceTrackerDocumentId, node, tocData, regulationName);
+    } else {
+      
+      console.warn('No complianceTrackerDocumentId found for Notice TOC:', node.label);
+      this.displayNoticeTOCInfo(tocData, regulationName);
+    }
+  } else {
+    console.warn('No TOC data found for Notice node:', node.label);
+    this.files = [];
+  }
+}
+
+/**
+ * Load documents for a Notice TOC item from API
+ * API: /ComplianceTracker/GetComplianceTrackerDocuments?complianceTrackerDocumentId={complianceTrackerDocumentId}
+ */
+loadNoticeTOCDocuments(complianceTrackerDocumentId: number, node: FolderTreeNode, tocData: TypeOfCompliance, regulationName: string): void {
+  // Get location name from tree structure
+  const locationFolderName = this.getLocationNameForDocument(node, this.locationMasterData);
+  
+  this.clientComplianceService.getComplianceTrackerDocuments(complianceTrackerDocumentId).subscribe({
+    next: (documents: ComplianceTrackerDocument[]) => {
+      
+      if (documents && documents.length > 0) {
+        
+        this.files = documents.map((doc, index) => ({
+          id: index + 1,
+          fileName: doc.fileName,
+          fullName: doc.fileName,
+          folderName: locationFolderName,
+          compId: doc.compId,
+          fileContent: doc.fileContent,
+          createdBy: doc.createdBy,
+          createdByName: doc.createdByName,
+          isDelete: doc.isDelete,
+          createdOn: doc.createdDate,
+          regulationName: regulationName,
+          typeOfComplianceName: tocData.typeOfComplianceName,
+          ruleType: tocData.ruleType,
+          frequency: tocData.frequency,
+          fileType: this.getMimeType(doc.fileName)
+        }));
+      } else {
+        
+        this.displayNoticeTOCInfo(tocData, regulationName);
+      }
+    },
+    error: (err) => {
+      console.error('Error loading Notice TOC documents:', err);
+      this.notifier.notify('error', 'Failed to load notice documents');
+      
+      this.displayNoticeTOCInfo(tocData, regulationName);
+    }
+  });
+}
+
+/**
+ * Display Notice TOC information in grid (when no documents available)
+ */
+displayNoticeTOCInfo(tocData: TypeOfCompliance, regulationName: string): void {
+  this.files = [{
+    id: tocData.id,
+    fileName: tocData.typeOfComplianceName,
+    fullName: tocData.typeOfComplianceName,
+    folderName: regulationName,
+    ruleType: tocData.ruleType,
+    frequency: tocData.frequency,
+    typeOfComplianceUID: tocData.typeOfComplianceUID,
+    dueDate: tocData.dueDate,
+    forTheMonth: tocData.forTheMonth,
+    parentRegulationName: tocData.parentRegulationName,
+    parentComplianceName: tocData.parentComplianceName,
+    createdOn: tocData.lastModified,
+    fileType: 'notice-toc',
+    parameters: tocData.parameters
+  }];
+}
+
+/**
+ * Handle TOC node selection - load and display documents for the TOC
+ * API: /ComplianceTracker/GetComplianceTrackerDocuments?CompId={typeOfComplianceUID}
+ */
+handleTOCNodeSelection(node: FolderTreeNode): void {
+  
+  
+  const tocData = node.fileData as TypeOfCompliance;
+  
+  if (tocData) {
+    
+    this.selectedTOC = tocData;
+    
+    
+    const regulationName = node.path && node.path.length >= 2 
+      ? node.path[node.path.length - 2] 
+      : 'Regulation';
+    
+    
+    const parentReg = this.regulationsData.find(r => r.regulationName === regulationName);
+    if (parentReg) {
+      this.selectedRegulation = parentReg;
+      this.typeOfComplianceList = parentReg.toc || [];
+    }
+    console.log("tocData", tocData);
+    
+    const complianceTrackerDocumentId = tocData.complianceTrackerDocumentId ? parseInt(tocData.complianceTrackerDocumentId, 10) : 0;
+    
+    if (complianceTrackerDocumentId) {
+      
+      this.loadTOCDocuments(complianceTrackerDocumentId, node, tocData, regulationName);
+    } else {
+      
+      console.warn('No complianceTrackerDocumentId found for TOC:', node.label);
+      this.displayTOCInfo(tocData, regulationName);
+    }
+  } else {
+    console.warn('No TOC data found for node:', node.label);
+    this.files = [];
+  }
+}
+
+/**
+ * Load documents for a TOC item from API
+ * API: /ComplianceTracker/GetComplianceTrackerDocuments?complianceTrackerDocumentId={complianceTrackerDocumentId}
+ */
+loadTOCDocuments(complianceTrackerDocumentId: number, node: FolderTreeNode, tocData: TypeOfCompliance, regulationName: string): void {
+  
+  this.clientComplianceService.getComplianceTrackerDocuments(complianceTrackerDocumentId).subscribe({
+    next: (documents: ComplianceTrackerDocument[]) => {
+      
+      if (documents && documents.length > 0) {
+        // Get the location folder name from tree structure
+        const locationFolderName = this.getLocationNameForDocument(node, this.locationMasterData);
+        
+        this.files = documents.map((doc, index) => ({
+          id: index + 1,
+          fileName: doc.fileName,
+          fullName: doc.fileName,
+          folderName: locationFolderName,
+          compId: doc.compId,
+          fileContent: doc.fileContent, 
+          createdBy: doc.createdBy,
+          createdByName: doc.createdByName,
+          isDelete: doc.isDelete,
+          createdOn: doc.createdDate,
+          
+          regulationName: regulationName,
+          typeOfComplianceName: tocData.typeOfComplianceName,
+          ruleType: tocData.ruleType,
+          frequency: tocData.frequency,
+          
+          fileType: this.getMimeType(doc.fileName)
+        }));
+        
+      } else {
+        
+        this.displayTOCInfo(tocData, regulationName);
+      }
+    },
+    error: (err) => {
+      console.error('Error loading TOC documents:', err);
+      this.notifier.notify('error', 'Failed to load documents');
+      
+      this.displayTOCInfo(tocData, regulationName);
+    }
+  });
+}
+
+/**
+ * Display TOC information in grid (when no documents available)
+ */
+displayTOCInfo(tocData: TypeOfCompliance, regulationName: string): void {
+  this.files = [{
+    id: tocData.id,
+    fileName: tocData.typeOfComplianceName,
+    fullName: tocData.typeOfComplianceName,
+    folderName: regulationName,
+    ruleType: tocData.ruleType,
+    frequency: tocData.frequency,
+    typeOfComplianceUID: tocData.typeOfComplianceUID,
+    dueDate: tocData.dueDate,
+    forTheMonth: tocData.forTheMonth,
+    parentRegulationName: tocData.parentRegulationName,
+    parentComplianceName: tocData.parentComplianceName,
+    createdOn: tocData.lastModified,
+    fileType: 'compliance',
+    parameters: tocData.parameters
+  }];
+}
+
+/**
+ * Handle RegulationItem node selection (from Regulations folder)
+ */
+handleRegulationItemSelection(node: FolderTreeNode): void {
+  
+  const regData = node.fileData as RegulationWithTOC;
+  
+  if (regData) {
+    this.onRegulationSelect(regData);
+  } else {
+    
+    const matchingReg = this.regulationsData.find(r => r.regulationName === node.label);
+    if (matchingReg) {
+      this.onRegulationSelect(matchingReg);
+    } else {
+      this.files = [];
+      console.warn('No regulation data found for node:', node.label);
+    }
+  }
+}
+
+/**
+ * Display all regulations in the grid
+ */
+displayAllRegulations(): void {
+  
+  if (this.regulationsData && this.regulationsData.length > 0) {
+    this.files = this.regulationsData.map(reg => ({
+      id: reg.id,
+      fileName: reg.regulationName,
+      fullName: reg.regulationName,
+      folderName: 'Regulations',
+      ruleType: reg.ruleType,
+      tocCount: reg.toc?.length || 0,
+      regulationSetupUID: reg.regulationSetupUID,
+      createdOn: null,
+      fileType: 'regulation'
+    }));
+  } else {
+    this.files = [];
+  }
+}
+
+/**
+ * Load compliance tracker documents from API
+ */
+loadComplianceDocuments(complianceTrackerDocumentId: number, node: FolderTreeNode): void {
+  // Get location name from node's fileData or parent
+  const locationFolderName = this.getLocationNameForDocument(node, this.locationMasterData);
+  
+  this.clientComplianceService.getComplianceTrackerDocuments(complianceTrackerDocumentId).subscribe({
+    next: (documents: ComplianceTrackerDocument[]) => {
+      
+      if (documents && documents.length > 0) {
+        this.files = documents.map((doc, index) => ({
+          id: index + 1,
+          fileName: doc.fileName,
+          fullName: doc.fileName,
+          folderName: locationFolderName,
+          compId: doc.compId,
+          fileContent: doc.fileContent,
+          createdBy: doc.createdBy,
+          createdByName: doc.createdByName,
+          isDelete: doc.isDelete,
+          createdOn: doc.createdDate,
+          
+          fileType: this.getFileExtension(doc.fileName)
+        }));
+      } else {
+        
+        if (node.fileData) {
+          const compData = node.fileData as PendingComplianceTracker;
+          this.files = [{
+            id: compData.id,
+            fileName: `${compData.cmpId} - ${compData.forTheMonth}`,
+            fullName: node.label,
+            folderName: locationFolderName,
+            regulationName: compData.regulationName,
+            frequency: compData.frequency,
+            dueDate: compData.dueDate,
+            dueAmount: compData.dueAmount,
+            amountPaid: compData.amountPaid,
+            status: compData.approvalStatus,
+            documentCount: compData.documentCount,
+            financialYear: compData.financialYear,
+            createdOn: compData.createdOn
+          }];
+        }
+      }
+    },
+    error: (err) => {
+      console.error('Error loading compliance documents:', err);
+      this.notifier.notify('error', 'Failed to load documents');
+      this.files = [];
+    }
+  });
+}
+
+/**
+ * Get file extension from filename
+ */
+getFileExtension(fileName: string): string {
+  if (!fileName) return '';
+  const lastDot = fileName.lastIndexOf('.');
+  return lastDot !== -1 ? fileName.substring(lastDot + 1).toLowerCase() : '';
+}
+
+/**
+ * Collect all compliance tracker files from node and children
+ */
+collectComplianceTrackerFiles(node: FolderTreeNode): any[] {
+  let files: any[] = [];
+  
+  if (node.children && node.children.length > 0) {
+    for (const child of node.children) {
+      if (child.foldertitle === 'Document' && child.fileData) {
+        const compData = child.fileData as PendingComplianceTracker;
+        files.push({
+          id: compData.id,
+          fileName: `${compData.cmpId} - ${compData.forTheMonth}`,
+          fullName: child.label,
+          folderName: child.path?.[child.path.length - 2] || 'Location',
+          regulationName: compData.regulationName,
+          frequency: compData.frequency,
+          dueDate: compData.dueDate,
+          dueAmount: compData.dueAmount,
+          amountPaid: compData.amountPaid,
+          status: compData.approvalStatus,
+          documentCount: compData.documentCount,
+          financialYear: compData.financialYear,
+          createdOn: compData.createdOn
+        });
+      } else {
+        files = [...files, ...this.collectComplianceTrackerFiles(child)];
+      }
+    }
+  }
+  
   return files;
+}
+
+/**
+ * Collect all complianceTrackerDocumentIds from child Document nodes recursively
+ */
+collectComplianceTrackerDocumentIds(node: FolderTreeNode): string[] {
+  let ids: string[] = [];
+  
+  if (node.children && node.children.length > 0) {
+    for (const child of node.children) {
+      if (child.foldertitle === 'Document' && child.fileData) {
+        const compData = child.fileData as PendingComplianceTracker;
+        if (compData.complianceTrackerDocumentId) {
+          ids.push(compData.complianceTrackerDocumentId);
+        }
+      } else {
+        ids = [...ids, ...this.collectComplianceTrackerDocumentIds(child)];
+      }
+    }
+  }
+  
+  return ids;
+}
+
+/**
+ * Collect all unique location IDs from child Document nodes recursively
+ */
+collectLocationIds(node: FolderTreeNode): number[] {
+  let locationIds: number[] = [];
+  
+  if (node.children && node.children.length > 0) {
+    for (const child of node.children) {
+      if (child.foldertitle === 'Document' && child.fileData) {
+        const compData = child.fileData as PendingComplianceTracker;
+        if (compData.locationId) {
+          locationIds.push(compData.locationId);
+        }
+      } else {
+        locationIds = [...locationIds, ...this.collectLocationIds(child)];
+      }
+    }
+  }
+  
+  // Return unique location IDs
+  return [...new Set(locationIds)];
+}
+
+/**
+ * Get location folder name from node's children recursively
+ * Returns the first Location node's label (format: locationId-LocationName)
+ */
+getLocationFolderName(node: FolderTreeNode): string | null {
+  if (!node.children || node.children.length === 0) {
+    return null;
+  }
+  
+  for (const child of node.children) {
+    // If child is a Location node, return its label
+    if (child.foldertitle === 'Location') {
+      return child.label;
+    }
+    // Recurse into children
+    const found = this.getLocationFolderName(child);
+    if (found) {
+      return found;
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Get location name for a document by looking up its locationId from tree fileData
+ */
+getLocationNameForDocument(node: FolderTreeNode, locationMasterData: any[]): string {
+  // Try to get locationId from the node's fileData
+  if (node.fileData) {
+    const compData = node.fileData as PendingComplianceTracker;
+    if (compData.locationId) {
+      const location = locationMasterData.find(l => l.Id === compData.locationId);
+      if (location) {
+        return `${compData.locationId}-${location.LocationName}`;
+      }
+    }
+  }
+  
+  // Fallback: get from Location node children
+  const locationFolderName = this.getLocationFolderName(node);
+  if (locationFolderName) {
+    return locationFolderName;
+  }
+  
+  return node.label;
+}
+
+/**
+ * Display location info (ID-Name) for parent folders like FinancialYear
+ * Shows location folders with format: locationId-LocationName (e.g., "48-SK1_Location name")
+ */
+displayLocationInfo(node: FolderTreeNode): void {
+  const locationIds = this.collectLocationIds(node);
+  
+  if (locationIds.length === 0) {
+    this.files = [];
+    this.notifier.notify('info', 'No locations found in this folder');
+    return;
+  }
+  
+  this.files = locationIds.map((locId, index) => {
+    const location = this.locationMasterData.find(l => l.Id === locId);
+    // Format: locationId-LocationName (e.g., "48-SK1_Location name")
+    const folderDisplayName = location ? `${locId}-${location.LocationName}` : `${locId}-Location`;
+    return {
+      id: locId,
+      fileName: folderDisplayName,
+      fullName: folderDisplayName,
+      folderName: folderDisplayName,
+      locationId: locId,
+      locationName: location?.LocationName || '',
+      buName: location?.BUName || '',
+      country: location?.Country || '',
+      state: location?.State || '',
+      address: location?.Address || '',
+      responsiblePerson: location?.ResponsiblePerson || '',
+      fileType: 'folder'
+    };
+  });
+}
+
+/**
+ * Load compliance documents for parent folder by collecting all child Document IDs
+ * API: /ComplianceTracker/GetComplianceTrackerDocuments?complianceTrackerDocumentId=17,18,19
+ */
+loadComplianceDocumentsForParent(node: FolderTreeNode): void {
+  const documentIds = this.collectComplianceTrackerDocumentIds(node);
+  
+  if (documentIds.length === 0) {
+    // No document IDs found, fallback to local collection
+    this.files = this.collectComplianceTrackerFiles(node);
+    return;
+  }
+  
+  // Determine location folder name - if clicking Location node, use its label
+  // Otherwise get it from children
+  const locationFolderName = node.foldertitle === 'Location' 
+    ? node.label 
+    : this.getLocationFolderName(node) || node.label;
+  
+  // Join IDs with comma for API call (dedupe to avoid repeated IDs)
+  const idsParam = Array.from(new Set(documentIds)).join(',');
+  console.log('Loading documents for parent with IDs:', idsParam);
+  
+  this.clientComplianceService.getComplianceTrackerDocuments(idsParam).subscribe({
+    next: (documents: ComplianceTrackerDocument[]) => {
+      if (documents && documents.length > 0) {
+        this.files = documents.map((doc, index) => ({
+          id: index + 1,
+          fileName: doc.fileName,
+          fullName: doc.fileName,
+          folderName: locationFolderName,
+          compId: doc.compId,
+          fileContent: doc.fileContent,
+          createdBy: doc.createdBy,
+          createdByName: doc.createdByName,
+          isDelete: doc.isDelete,
+          createdOn: doc.createdDate,
+          fileType: this.getMimeType(doc.fileName)
+        }));
+      } else {
+        // No documents returned, fallback to local collection
+        this.files = this.collectComplianceTrackerFiles(node);
+      }
+    },
+    error: (err) => {
+      console.error('Error loading documents for parent:', err);
+      // Fallback to local collection on error
+      this.files = this.collectComplianceTrackerFiles(node);
+    }
+  });
 }
 
 collectAllFiles(node: FolderTreeNode): any[] {
   let files: any[] = [];
-  console.log('collectAllFiles for node:', node.label, 'Children:', node.children?.length);
   if (node.children && node.children.length > 0) {
     for (const child of node.children) {
-      console.log('  Child:', child.label, 'isFile:', child.isFile, 'hasFileData:', !!child.fileData);
       if (child.isFile && child.fileData) {
         files.push({
           ...child.fileData,
-          folderName: node.label, // Parent folder name
+          folderName: node.label, 
           fullName: child.label
         });
       } else {
@@ -976,7 +2378,6 @@ collectAllFiles(node: FolderTreeNode): any[] {
       }
     }
   }
-  console.log('collectAllFiles returning', files.length, 'files');
   return files;
 }
 
@@ -991,17 +2392,17 @@ collectAllFiles(node: FolderTreeNode): any[] {
   return label[0]?.toLowerCase();
 }
 
-  // if (label.includes(lower)) {
-  //   return lower;
-  // } else {
-  //   return 'Dms';
-  // }
+  
+  
+  
+  
+  
 }
 
 findNodeById(nodes: FolderTreeNode[], id: number, treeType?: 'DMS' | 'COMPSEQR360'): FolderTreeNode | null {
   if (!nodes) return null;
   for (const n of nodes) {
-    // ✅ Match both ID and treeType if provided
+    
     if (n.id === id && (!treeType || n.treeType === treeType)) {
       return n;
     }
@@ -1025,7 +2426,7 @@ buildBreadcrumbPath(selectedNode: FolderTreeNode): void {
   const node: any = selectedNode;
   this.breadcrumbPath = [];
 
-  // For COMPSEQR360 nodes with pre-built paths
+  
   if (node.path && Array.isArray(node.path)) {
     this.breadcrumbPath = node.path.map((label: string, i: number) => ({
       label,
@@ -1034,24 +2435,24 @@ buildBreadcrumbPath(selectedNode: FolderTreeNode): void {
     return;
   }
 
-  // For DMS and other nodes
+  
   const path: FolderTreeNode[] = [];
   let current: FolderTreeNode | undefined = selectedNode;
 
-  // Build path from current node to root
+  
   while (current) {
     path.unshift(current);
     current = current.parent;
   }
 
-  // Determine if this is a ProEDox path
+  
   const isDmsPath = !path.some(n => 
     (n.foldertitle || '').toLowerCase() === 'compseqr360' ||
     n.label.toLowerCase() === 'compseqr360'
   );
 
   if (isDmsPath) {
-    // For ProEDox paths, add ProEDox as root if not already present
+    
     const hasDmsRoot = path.some(n => n.label.toLowerCase() === 'proedox');
     if (!hasDmsRoot) {
       const dmsRoot = this.findDmsRoot();
@@ -1065,7 +2466,7 @@ buildBreadcrumbPath(selectedNode: FolderTreeNode): void {
       }
     }
 
-    // Add all folders in path except duplicate ProEDox entries
+    
     path.forEach(n => {
       if (n.label.toLowerCase() !== 'proedox' || path.indexOf(n) === 0) {
         this.breadcrumbPath.push({
@@ -1075,7 +2476,7 @@ buildBreadcrumbPath(selectedNode: FolderTreeNode): void {
       }
     });
   } else {
-    // For COMPSEQR360 related paths, add all nodes as is
+    
     path.forEach(n => this.breadcrumbPath.push({
       label: n.label,
       node: n
@@ -1092,7 +2493,6 @@ normalizeNodes(
   parent: FolderTreeNode | null = null,
   foldertitle?: string
 ): FolderTreeNode[] {
-  console.log('normalizeNodes called with', items?.length, 'items, foldertitle:', foldertitle);
   const out: FolderTreeNode[] = [];
 
   for (const item of items || []) {
@@ -1100,9 +2500,6 @@ normalizeNodes(
       typeof item.id === 'number' && item.id > 0
         ? item.id
         : Math.floor(Math.random() * 1e9);
-
-    // Preserve the original sourceId for API calls
-    const sourceId = item.sourceId || item.regulationId || item.organizationId || item.announcementId || item.id;
 
     const label =
       item.label ||
@@ -1112,7 +2509,6 @@ normalizeNodes(
       item.entityName ||
       `Item_${id}`;
 
-    console.log('  Normalizing:', label, 'hasChildren:', !!item.children?.length, 'sourceId:', sourceId, 'isToc:', item.isToc, 'isCompliance:', item.isCompliance);
 
     const node: FolderTreeNode = {
       id,
@@ -1124,26 +2520,23 @@ normalizeNodes(
       foldertitle: foldertitle || item.foldertitle,
       path: [],
       isFile: item.isFile,
-      fileData: item.fileData,
-      sourceId: sourceId, // Preserve original ID for API calls
-      isToc: item.isToc || false, // Preserve TOC flag
-      isCompliance: item.isCompliance || false // Preserve Compliance flag
+      fileData: item.fileData
     };
 
-    // 🟢 Build proper breadcrumb path for both DMS & COMPSEQR360
+    
     const parentPath = parent?.path || [];
     if ((foldertitle || '').toLowerCase() === 'dms') {
-      // Ensure path starts with ProEDox
+      
       node.path = parentPath.length > 0 ? [...parentPath, label] : ['ProEDox', label];
     } else if (item.path && Array.isArray(item.path)) {
-      // COMPSEQR360 path from API
+      
       node.path = [...item.path];
     } else {
-      // Fallback (like DMS children)
+      
       node.path = parentPath.length > 0 ? [...parentPath, label] : [label];
     }
 
-    // Recurse into children
+    
     const children =
       item.children || item.compliance || item.toc || item.entityList || [];
     if (children && children.length > 0) {
@@ -1161,7 +2554,7 @@ normalizeNodes(
 
 /** ✅ Navigate to breadcrumb click */
 navigateToBreadcrumb(breadcrumb: { label: string; node?: FolderTreeNode }): void {
-  // If no node (like root ProEDox), reset to initial ProEDox view
+  
   if (!breadcrumb.node) {
     const dmsRoot = this.findDmsRoot();
     if (dmsRoot) {
@@ -1172,7 +2565,7 @@ navigateToBreadcrumb(breadcrumb: { label: string; node?: FolderTreeNode }): void
     return;
   }
 
-  // Find the actual node in our tree structure
+  
   const actualNode = this.findNodeById(this.treeData, breadcrumb.node.id) || breadcrumb.node;
   
   this.selectedFolderTreeNodeItem = actualNode;
@@ -1183,7 +2576,7 @@ navigateToBreadcrumb(breadcrumb: { label: string; node?: FolderTreeNode }): void
   );
 }
 
-// Helper method to find DMS root node
+
 findDmsRoot(): FolderTreeNode | null {
   return this.treeData.find(node => 
     node.label.toLowerCase() === 'dms' || 
@@ -1192,17 +2585,17 @@ findDmsRoot(): FolderTreeNode | null {
 }
 
 
-//start filters
+
 
  comfolders: ComFolder[] = [];
  folderId = 1;
  
-  buildNestedComFolders(items: any[], parentId: number, foldertitle: any, parentPath: string[] = [], isToc: boolean = false, isCompliance: boolean = false): ComFolder[] {
+  buildNestedComFolders(items: any[], parentId: number, foldertitle: any, parentPath: string[] = []): ComFolder[] {
   const result: ComFolder[] = [];
 
   items.forEach(item => {
     const currentId = this.folderId++;
-    const label = item.complianceName || item.tocName || item.regulationName || item.nameOfToc || `Item_${item.id}`;
+    const label = item.complianceName || item.tocName || item.regulationName || item.typeOfComplianceName || `Item_${item.id}`;
     const currentPath = [...parentPath, label];
     
     const folder: ComFolder = {
@@ -1212,22 +2605,19 @@ findDmsRoot(): FolderTreeNode | null {
       expanded: false,
       children: [],
       foldertitle: foldertitle,
-      path: currentPath,
-      sourceId: item.id || item.complianceId || item.tocId || item.regulationId, // Preserve original ID for API calls
-      isToc: isToc || !!item.tocName || !!item.tocId || !!item.nameOfToc, // Mark as TOC if coming from toc array or has toc properties
-      isCompliance: isCompliance || !!item.complianceName || !!item.complianceId // Mark as Compliance if coming from compliance array
+      path: currentPath
     };
 
-    // Recursively process deeper levels (compliance/toc for old structure, files for new structure)
+    
     if (Array.isArray(item.compliance) && item.compliance.length > 0) {
-      folder.children.push(...this.buildNestedComFolders(item.compliance, currentId, foldertitle, currentPath, false, true));
+      folder.children.push(...this.buildNestedComFolders(item.compliance, currentId, foldertitle, currentPath));
     }
 
     if (Array.isArray(item.toc) && item.toc.length > 0) {
-      folder.children.push(...this.buildNestedComFolders(item.toc, currentId, foldertitle, currentPath, true, false));
+      folder.children.push(...this.buildNestedComFolders(item.toc, currentId, foldertitle, currentPath));
     }
 
-    // Handle new structure with files array (folders containing files)
+    
     const filesArray = item.files || item.Files;
     if (Array.isArray(filesArray) && filesArray.length > 0) {
       filesArray.forEach((subFolder: any) => {
@@ -1239,12 +2629,10 @@ findDmsRoot(): FolderTreeNode | null {
           expanded: false,
           children: [],
           foldertitle: foldertitle,
-          path: [...currentPath, subFolder.folderName || 'Files'],
-          isToc: folder.isToc, // Inherit from parent
-          isCompliance: folder.isCompliance // Inherit from parent
+          path: [...currentPath, subFolder.folderName || 'Files']
         };
 
-        // Process actual files inside the subfolder
+        
         const subFiles = subFolder.files || subFolder.Files;
         if (Array.isArray(subFiles) && subFiles.length > 0) {
           subFiles.forEach((file: any) => {
@@ -1258,9 +2646,7 @@ findDmsRoot(): FolderTreeNode | null {
               foldertitle: foldertitle,
               path: [...currentPath, subFolder.folderName || 'Files', file.fileName],
               isFile: true,
-              fileData: file,
-              isToc: folder.isToc, // Inherit from parent
-              isCompliance: folder.isCompliance // Inherit from parent
+              fileData: file
             };
             subFolderNode.children.push(fileNode);
           });
@@ -1280,10 +2666,6 @@ findDmsRoot(): FolderTreeNode | null {
  * Builds the full nested structure as a tree.
  */
   buildComFolderTree(data: any) {
-  console.log('buildComFolderTree called with data:', data);
-  console.log('Is array?', Array.isArray(data));
-  console.log('Length > 0?', Array.isArray(data) && data.length > 0);
-  console.log('Has organizationName?', Array.isArray(data) && data.length > 0 && data[0].organizationName);
   
   const rootId = this.folderId++;
 
@@ -1297,50 +2679,44 @@ findDmsRoot(): FolderTreeNode | null {
     path: ["COMPSEQR360"]
   };
 
-  // Handle new data structure - array of organizations with files and entities
+  
   const isOrgStructure = Array.isArray(data) && data.length > 0 && data[0].hasOwnProperty('organizationName');
-  console.log('isOrgStructure:', isOrgStructure, 'data[0]:', data[0]);
   
   if (isOrgStructure) {
-    // Organization Root
+    
     const orgId = this.folderId++;
     const orgFolder: ComFolder = {
       label: "Organization",
       id: orgId,
       parentId: rootId,
-      expanded: true,  // Set to true to show organizations by default
+      expanded: true,  
       children: [],
       foldertitle: "Organization",
       path: ["COMPSEQR360", "Organization"]
     };
 
-    // Add organizations
+    
     data.forEach((org: any) => {
-      // Only add organizations marked as isOrganization: true
+      
       if (!org.isOrganization) {
-        console.log('Skipping non-organization:', org.organizationName);
         return;
       }
 
-      console.log('Processing organization:', org.organizationName, 'Files:', org.files?.length || 0, 'Entities:', org.entityList?.length || 0);
 
       const orgFolderId = this.folderId++;
       const orgItem: ComFolder = {
         label: org.organizationName,
         id: orgFolderId,
         parentId: orgId,
-        expanded: true,  // Expanded to show files and entities
+        expanded: true,  
         children: [],
         foldertitle: "Organization",
-        path: ["COMPSEQR360", "Organization", org.organizationName],
-        sourceId: org.id || org.organizationId // Preserve original ID for API calls
+        path: ["COMPSEQR360", "Organization", org.organizationName]
       };
 
-      // Process organization files
+      
       if (Array.isArray(org.files) && org.files.length > 0) {
-        console.log('Organization has files:', org.organizationName, org.files.length);
         org.files.forEach((fileFolder: any) => {
-          console.log('  Processing file folder:', fileFolder.folderName, 'with', fileFolder.files?.length || 0, 'files');
           const fileFolderId = this.folderId++;
           const fileFolderNode: ComFolder = {
             label: fileFolder.folderName || 'Organization Files',
@@ -1352,7 +2728,7 @@ findDmsRoot(): FolderTreeNode | null {
             path: ["COMPSEQR360", "Organization", org.organizationName, fileFolder.folderName]
           };
 
-          // Add files inside the folder
+          
           if (Array.isArray(fileFolder.files) && fileFolder.files.length > 0) {
             fileFolder.files.forEach((file: any) => {
               const fileId = this.folderId++;
@@ -1375,7 +2751,7 @@ findDmsRoot(): FolderTreeNode | null {
         });
       }
 
-      // Process entities
+      
       if (Array.isArray(org.entityList) && org.entityList.length > 0) {
         org.entityList.forEach((entity: any) => {
           const entityId = this.folderId++;
@@ -1389,7 +2765,7 @@ findDmsRoot(): FolderTreeNode | null {
             path: ["COMPSEQR360", "Organization", org.organizationName, entity.entityName]
           };
 
-          // Process entity files
+          
           if (Array.isArray(entity.files) && entity.files.length > 0) {
             entity.files.forEach((entityFileFolder: any) => {
               const entityFileFolderId = this.folderId++;
@@ -1403,7 +2779,7 @@ findDmsRoot(): FolderTreeNode | null {
                 path: ["COMPSEQR360", "Organization", org.organizationName, entity.entityName, entityFileFolder.folderName]
               };
 
-              // Add files inside entity folder
+              
               if (Array.isArray(entityFileFolder.files) && entityFileFolder.files.length > 0) {
                 entityFileFolder.files.forEach((file: any) => {
                   const fileId = this.folderId++;
@@ -1435,7 +2811,7 @@ findDmsRoot(): FolderTreeNode | null {
 
     rootFolder.children.push(orgFolder);
   } else if (Array.isArray(data)) {
-    // Handle old compliance data structure (array of compliance items)
+    
     const complianceId = this.folderId++;
     const complianceFolder: ComFolder = {
       label: "Compliance",
@@ -1447,20 +2823,20 @@ findDmsRoot(): FolderTreeNode | null {
       path: ["COMPSEQR360", "Compliance"]
     };
 
-    // Add compliance items
+    
     data.forEach((item: any) => {
       const itemId = this.folderId++;
       const itemFolder: ComFolder = {
-        label: item.nameOfToc || `Compliance_${item.id}`,
+        label: item.typeOfComplianceName || `Compliance_${item.id}`,
         id: itemId,
         parentId: complianceId,
         expanded: false,
         children: [],
         foldertitle: "Compliance",
-        path: ["COMPSEQR360", "Compliance", item.nameOfToc]
+        path: ["COMPSEQR360", "Compliance", item.typeOfComplianceName]
       };
 
-      // Process files for this item
+      
       const filesArray = item.files || item.Files;
       if (Array.isArray(filesArray) && filesArray.length > 0) {
         filesArray.forEach((subFolder: any) => {
@@ -1472,10 +2848,10 @@ findDmsRoot(): FolderTreeNode | null {
             expanded: false,
             children: [],
             foldertitle: "Compliance",
-            path: ["COMPSEQR360", "Compliance", item.nameOfToc, subFolder.folderName || 'Files']
+            path: ["COMPSEQR360", "Compliance", item.typeOfComplianceName, subFolder.folderName || 'Files']
           };
 
-          // Process actual files inside the subfolder
+          
           const subFiles = subFolder.files || subFolder.Files;
           if (Array.isArray(subFiles) && subFiles.length > 0) {
             subFiles.forEach((file: any) => {
@@ -1487,7 +2863,7 @@ findDmsRoot(): FolderTreeNode | null {
                 expanded: false,
                 children: [],
                 foldertitle: "Compliance",
-                path: ["COMPSEQR360", "Compliance", item.nameOfToc, subFolder.folderName || 'Files', file.fileName],
+                path: ["COMPSEQR360", "Compliance", item.typeOfComplianceName, subFolder.folderName || 'Files', file.fileName],
                 isFile: true,
                 fileData: file
               };
@@ -1498,7 +2874,7 @@ findDmsRoot(): FolderTreeNode | null {
         });
       }
 
-      // Only add to tree if it has files (for display purposes)
+      
       if (this.hasFiles(item)) {
         complianceFolder.children.push(itemFolder);
       }
@@ -1506,8 +2882,8 @@ findDmsRoot(): FolderTreeNode | null {
 
     rootFolder.children.push(complianceFolder);
   } else {
-    // Handle old data structure for backward compatibility (object with regulation, organization, announcement)
-    // Regulation Root
+    
+    
     const regulationId = this.folderId++;
     const regulationFolder: ComFolder = {
       label: "Regulation",
@@ -1519,7 +2895,7 @@ findDmsRoot(): FolderTreeNode | null {
       path: ["COMPSEQR360", "Regulation"]
     };
 
-    // Add regulations
+    
     (data.regulation || []).forEach((reg: any) => {
       const regId = this.folderId++;
       const regFolder: ComFolder = {
@@ -1528,8 +2904,7 @@ findDmsRoot(): FolderTreeNode | null {
         foldertitle:"Regulation",
         parentId: regulationId,
         expanded: false,
-        children: [],
-        sourceId: reg.id || reg.regulationId // Preserve original ID for API calls
+        children: []
       };
 
       if (Array.isArray(reg.compliance) && reg.compliance.length > 0) {
@@ -1543,7 +2918,7 @@ findDmsRoot(): FolderTreeNode | null {
       regulationFolder.children.push(regFolder);
     });
 
-    // Organization Root
+    
     const orgId = this.folderId++;
     const orgFolder: ComFolder = {
       label: "Organization",
@@ -1555,7 +2930,7 @@ findDmsRoot(): FolderTreeNode | null {
       path: ["COMPSEQR360", "Organization"]
     };
 
-    // Add organizations and entities
+    
     (data.organization || []).forEach((org: any) => {
       if (org && org.isOrganization === false) {
         return;
@@ -1570,11 +2945,10 @@ findDmsRoot(): FolderTreeNode | null {
         expanded: (org.files && org.files.length) || (org.entityList && org.entityList.length) ? true : false,
         children: [],
         foldertitle: "Organization",
-        path: orgPath,
-        sourceId: org.id || org.organizationId // Preserve original ID for API calls
+        path: orgPath
       };
 
-      // Organization level files
+      
       if (Array.isArray(org.files) && org.files.length > 0) {
         org.files.forEach((fileFolder: any) => {
           const fileFolderId = this.folderId++;
@@ -1614,7 +2988,7 @@ findDmsRoot(): FolderTreeNode | null {
         });
       }
 
-      // Entity level files
+      
       if (Array.isArray(org.entityList) && org.entityList.length > 0) {
         org.entityList.forEach((ent: any) => {
           const entId = this.folderId++;
@@ -1675,7 +3049,7 @@ findDmsRoot(): FolderTreeNode | null {
       orgFolder.children.push(orgItem);
     });
 
-    // Announcement Root
+    
     const announcementId = this.folderId++;
     const announcementFolder: ComFolder = {
       label: "Announcement",
@@ -1683,88 +3057,38 @@ findDmsRoot(): FolderTreeNode | null {
       parentId: rootId,
       expanded: false,
       children: [],
-      foldertitle: "Announcement",
-      path: ["COMPSEQR360", "Announcement"]
+      foldertitle: "Announcement"
     };
 
-    // Group announcements by regulation name from data.announcement array
-    // Structure: Announcement -> Regulation Name -> Announcement Subjects
-    const announcementsByRegulation: { [key: string]: any[] } = {};
     
-    console.log('Processing announcements, total count:', (data.announcement || []).length);
-    
-    // First, group announcements by regulationName
-    (data.announcement || []).forEach((ann: any, index: number) => {
-      const regName = ann.regulationName || 'Unknown';
-      if (!announcementsByRegulation[regName]) {
-        announcementsByRegulation[regName] = [];
+    (data.announcement || []).forEach((ann: any) => {
+      const annId = this.folderId++;
+      const annFolder: ComFolder = {
+        label: ann.regulationName,
+        id: annId,
+        parentId: announcementId,
+        expanded: false,
+        children: [],
+        foldertitle: "Announcement"
+      };
+
+      if (Array.isArray(ann.compliance) && ann.compliance.length > 0) {
+        annFolder.children.push(...this.buildNestedComFolders(ann.compliance, annId,"Announcement"));
       }
-      
-      // Check if this item has nested announcements array
-      if (Array.isArray(ann.announcements) && ann.announcements.length > 0) {
-        // Nested structure: push all nested announcements
-        announcementsByRegulation[regName].push(...ann.announcements);
-        console.log(`Announcement ${index}: ${regName} has ${ann.announcements.length} nested announcements`);
-      } else if (ann.subject || ann.id) {
-        // Flat structure: this item IS the announcement itself
-        announcementsByRegulation[regName].push(ann);
-        console.log(`Announcement ${index}: ${regName} - ${ann.subject || ann.id}`);
+
+      if (Array.isArray(ann.toc) && ann.toc.length > 0) {
+        annFolder.children.push(...this.buildNestedComFolders(ann.toc, annId,"Announcement"));
       }
+      announcementFolder.children.push(annFolder);
     });
 
-    console.log('Announcements grouped by regulation:', announcementsByRegulation);
     
-    // Count total announcements
-    let totalAnnouncements = 0;
-    Object.keys(announcementsByRegulation).forEach(key => {
-      totalAnnouncements += announcementsByRegulation[key].length;
-    });
-    console.log('Total announcements to display:', totalAnnouncements);
-
-    // Create folder structure for each regulation that has announcements
-    Object.keys(announcementsByRegulation).forEach((regName: string) => {
-      const announcements = announcementsByRegulation[regName];
-      if (announcements.length > 0) {
-        const regFolderId = this.folderId++;
-        const regFolder: ComFolder = {
-          label: regName,
-          id: regFolderId,
-          parentId: announcementId,
-          expanded: false,
-          children: [],
-          foldertitle: "Announcement",
-          path: ["COMPSEQR360", "Announcement", regName]
-        };
-
-        // Add announcement subjects under the regulation folder
-        announcements.forEach((ann: any) => {
-          const annId = this.folderId++;
-          const annFolder: ComFolder = {
-            label: ann.subject || `Announcement_${ann.id}`,
-            id: annId,
-            parentId: regFolderId,
-            expanded: false,
-            children: [],
-            foldertitle: "Announcement",
-            sourceId: ann.id,
-            path: ["COMPSEQR360", "Announcement", regName, ann.subject]
-          };
-          regFolder.children.push(annFolder);
-        });
-
-        announcementFolder.children.push(regFolder);
-      }
-    });
-
-    console.log('Announcement folder children:', announcementFolder.children.length);
-
-    // Attach main sections to root
     rootFolder.children.push(regulationFolder);
     rootFolder.children.push(orgFolder);
     rootFolder.children.push(announcementFolder);
   }
   
-  // Return full tree
+  
   return [rootFolder];
 }
 
@@ -1783,17 +3107,17 @@ findDmsRoot(): FolderTreeNode | null {
   processComplianceItem(item: any, category: string): void {
     const complianceFolder = {
       id: item.id,
-      name: item.nameOfToc || item.complianceName || item.tocName,
+      name: item.typeOfComplianceName || item.complianceName || item.tocName,
       category: category,
       folders: item.files.map((folder: any) => ({
         ...folder,
-        expanded: false  // Add expansion state
+        expanded: false  
       })),
       totalFiles: this.getTotalFilesCount(item.files),
-      expanded: false  // Add expansion state for main folder
+      expanded: false  
     };
 
-    // Check if already exists
+    
     const existingIndex = this.complianceFolders.findIndex(cf => cf.id === item.id && cf.category === category);
     if (existingIndex >= 0) {
       this.complianceFolders[existingIndex] = complianceFolder;
@@ -1823,7 +3147,7 @@ findDmsRoot(): FolderTreeNode | null {
     this.selectedComplianceFolder = complianceFolder;
     this.complianceFiles = [];
 
-    // Extract all files from the compliance folder's subfolders
+    
     if (Array.isArray(complianceFolder.folders)) {
       complianceFolder.folders.forEach((folder: any) => {
         if (Array.isArray(folder.files)) {
@@ -1838,10 +3162,10 @@ findDmsRoot(): FolderTreeNode | null {
       });
     }
 
-    // Update ag-grid with compliance files
+    
     this.files = this.complianceFiles;
     
-    // Clear normal folder selection to avoid breadcrumb conflicts
+    
     this.selectedFolderTreeNodeItem = null;
   }
 
@@ -1851,7 +3175,7 @@ findDmsRoot(): FolderTreeNode | null {
   clearComplianceSelection(): void {
     this.selectedComplianceFolder = null;
     this.complianceFiles = [];
-    // Reload normal files if a folder is selected
+    
     if (this.selectedFolderTreeNodeItem) {
       this.getAllFilesbyFolderId(this.selectedFolderTreeNodeItem.id);
     }
@@ -1870,12 +3194,12 @@ findDmsRoot(): FolderTreeNode | null {
   toggleComplianceFolder(complianceFolder: any): void {
     complianceFolder.expanded = !complianceFolder.expanded;
     
-    // If expanding, collapse other compliance folders
+    
     if (complianceFolder.expanded) {
       this.complianceFolders.forEach(folder => {
         if (folder.id !== complianceFolder.id) {
           folder.expanded = false;
-          // Also collapse subfolders
+          
           folder.folders.forEach((subfolder: any) => {
             subfolder.expanded = false;
           });
@@ -1895,19 +3219,26 @@ findDmsRoot(): FolderTreeNode | null {
    * Select a file and show it in the main grid
    */
   selectFile(file: any, subfolder: any, complianceFolder: any): void {
-    // Create a single-file array for the grid
+    
     this.files = [{
       ...file,
       folderName: subfolder.folderName,
       fullName: `${complianceFolder.name}/${subfolder.folderName}/${file.fileName}`
     }];
     
-    // Update selected state
+    
     this.selectedComplianceFolder = complianceFolder;
     
-    // Clear normal folder selection to avoid breadcrumb conflicts
+    
     this.selectedFolderTreeNodeItem = null;
   }
 
- //end
+  /**
+   * Compare entities for dropdown selection
+   */
+  compareEntities(entity1: UserAssignedEntity, entity2: UserAssignedEntity): boolean {
+    return entity1 && entity2 ? entity1.id === entity2.id : entity1 === entity2;
+  }
+
+ 
 }

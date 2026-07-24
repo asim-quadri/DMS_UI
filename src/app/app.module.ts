@@ -43,7 +43,7 @@ import { GlobalErrorHandler } from './@core/utils/global-error-handler';
 import { RegulationGroupService } from './Services/regulation.service';
 import { NgxLoadingModule } from 'ngx-loading';
 import { CommonService } from './Services/common.service';
-import { DatePipe,LocationStrategy,HashLocationStrategy } from '@angular/common';
+import { DatePipe, LocationStrategy, HashLocationStrategy } from '@angular/common';
 import { OrganizationSetupComponent } from './Product_Owner/organization-setup/organization-setup.component';
 import { BillingDetailsComponent } from './Product_Owner/organization-setup/billing-details/billing-details.component';
 import { EntityDetailsComponent } from './Product_Owner/organization-setup/entity-details/entity-details.component';
@@ -64,6 +64,7 @@ import { MapColorPipe } from './@core/pipes/map-color.pipe';
 import { FilterPipe } from './@core/pipes/filter.pipe';
 import { ReportListItemComponent } from './Product_Owner/Reports/report-list-item/report-list-item.component';
 import { FileuploadComponent } from './fileupload/fileupload.component';
+import { FileuploadnewComponent } from './fileuploadnew/fileuploadnew.component';
 import { FileViewerComponent } from './file-viewer/file-viewer.component';
 import { NgxDocViewerModule } from 'ngx-doc-viewer';
 
@@ -100,6 +101,7 @@ import { NgxDocViewerModule } from 'ngx-doc-viewer';
     FilterPipe,
     ReportListItemComponent,
     FileuploadComponent,
+    FileuploadnewComponent,
     FileViewerComponent
   ],
   imports: [
@@ -150,6 +152,10 @@ import { NgxDocViewerModule } from 'ngx-doc-viewer';
     {
       provide: ErrorHandler,
       useClass: GlobalErrorHandler,
+    },
+    {
+      provide: LocationStrategy,
+      useClass: HashLocationStrategy,
     },
   ],
   bootstrap: [AppComponent],

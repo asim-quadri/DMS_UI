@@ -22,4 +22,16 @@ export class InputPasswordComponent {
   {
     this.showPassword = !this.showPassword;
   }
+
+  onAutofillAnimation(event: AnimationEvent, input: HTMLInputElement) {
+    if (event.animationName !== 'onAutoFillStart') {
+      return;
+    }
+    const control = this.formGroup?.controls?.[this.name];
+    if (control && control.value !== input.value) {
+      control.setValue(input.value);
+      control.markAsDirty();
+      control.markAsTouched();
+    }
+  }
 }

@@ -1,81 +1,195 @@
-.header {
-	padding: 10px 25px;
-	height: 82px;
-	img {
-		width: 60px;
-		cursor: pointer;
-		margin-top: 10px;
-	}
-}
-.header-list {
-	list-style: none;
-	li {
-		float: left;
-		margin: 15px 5px;
-	}
-}
-li {
-	&.header-notification {
-		background-color: #fff;
-		width: 38px;
-		border-radius: 5px;
-	}
-}
-.header-list-divider {
-	height: 36px!important;
-	color: #fff;
-	width: 1px;
-	background-color: #fff;
-	opacity: 0.3;
-	margin: 16px 10px !important;
-}
-.btn-profile-dropdown {
-	background-color: transparent;
-	width: 100%!important;
-	font-size: 13px;
-	height: 40px;
-	border: 1px solid #fff;
-	color: #fff;
-	border-radius: 5px;
-}
-.btn-logout {
-	background-color: transparent;
-	width: 40px!important;
-	height: 40px;
-	border: 1px solid #fff;
-	color: #fff;
-	border-radius: 5px;
-	font-size: 16px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	transition: all 0.3s ease;
-}
-.btn-logout:hover {
-	background-color: rgba(255, 255, 255, 0.1);
-	color: #fff;
-	border-color: #fff;
-}
-.logout-option {
-	display: flex;
-	align-items: center;
-}
-.wid-170 {
-	width: 170px!important;
-}
-.user-profile {
-	border: 1px solid #fff;
-	text-align: center;
-	padding: 8px 20px;
-	color: #fff;
-	border-radius: 5px;
-	font-size: 14px;
-}
-.notification-container {
-	background-color: #fff;
-}
-.hidden {
-	display: none!important;
+$green: #2a4a7f;
+
+// Host is just a block that fills the row
+:host {
+  display: block;
+  width: 100%;
+  height: 64px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 200;
 }
 
+// ── The actual bar ────────────────────────────────────────
+.hd-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 24px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  gap: 20px;
+  box-sizing: border-box;
+  width: 100%;
+}
 
+// ── Logo ──────────────────────────────────────────────────
+.hd-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  min-width: 140px;
+  cursor: pointer;
+}
+
+.logo-img {
+  height: 36px;
+  max-height: 36px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+
+// ── Centre search ─────────────────────────────────────────
+.hd-search {
+  flex: 1;
+  max-width: 480px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f4f6f4;
+  border: 1px solid #e0e0e0;
+  border-radius: 24px;
+  padding: 0 16px;
+  height: 40px;
+  transition: border-color .2s, box-shadow .2s;
+
+  &:focus-within {
+    border-color: $green;
+    box-shadow: 0 0 0 3px rgba(42, 74, 127,.12);
+    background: #fff;
+  }
+}
+
+.hd-search-icon {
+  color: #9ca3af;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.hd-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  box-shadow: none;
+  font-size: 14px;
+  color: #374151;
+  height: 100%;
+  padding: 0;
+
+  &::placeholder { color: #9ca3af; }
+}
+
+.hd-search-kbd {
+  font-size: 11px;
+  color: #9ca3af;
+  background: #e5e7eb;
+  border-radius: 4px;
+  padding: 2px 6px;
+  flex-shrink: 0;
+  font-family: monospace;
+  white-space: nowrap;
+}
+
+// ── Right actions ─────────────────────────────────────────
+.hd-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.hd-icon-btn {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1.5px solid #e5e7eb;
+  background: #fff;
+  color: #4b5563;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+  padding: 0;
+
+  &:hover {
+    background: #f0faf4;
+    border-color: $green;
+    color: $green;
+  }
+}
+
+.hd-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: $green;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  line-height: 1;
+}
+
+// ── User chip ─────────────────────────────────────────────
+.hd-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 4px;
+  border-radius: 24px;
+  border: 1.5px solid #e5e7eb;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+
+  &:hover { border-color: $green; background: #f0faf4; }
+}
+
+.hd-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: $green;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hd-username {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+  white-space: nowrap;
+}
+
+.hd-caret {
+  font-size: 11px;
+  color: #9ca3af;
+}

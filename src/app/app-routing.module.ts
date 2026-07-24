@@ -19,11 +19,13 @@ import { ReportListItemComponent } from './Product_Owner/Reports/report-list-ite
 import { AnnouncementModule } from './Product_Owner/announcement/announcement.module';
 import { FileuploadComponent } from './fileupload/fileupload.component';
 import { FileViewerComponent } from './file-viewer/file-viewer.component';
+import { FileuploadnewComponent } from './fileuploadnew/fileuploadnew.component';
 
 const routes: Routes = [
   { path: '', component: LoginComponent },
   { path: 'forget', component: ForgotPasswordComponent },
-  { path: 'home', component: FileuploadComponent, canActivate: [AuthGuardService] },
+  { path: 'home', component: FileuploadnewComponent, canActivate: [AuthGuardService], data: { context: 'dms' } },
+  { path: 'compseqr', component: FileuploadnewComponent, canActivate: [AuthGuardService], data: { context: 'compseqr' } },
   { path: 'roles', component: RolesComponent, canActivate: [AuthGuardService] },
   { path: 'users', component: UsersComponent, canActivate: [AuthGuardService] },
   { path: 'announcement', component: AnnouncementComponent, canActivate: [AuthGuardService] },

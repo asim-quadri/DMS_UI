@@ -10,6 +10,43 @@
   overflow-y: auto;
 }
 
+/* Entity Selector */
+.home-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.entity-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.entity-label {
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 0;
+}
+
+.entity-dropdown {
+  min-width: 200px;
+  padding: 8px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.entity-dropdown:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
 /* Top Toolbar */
 .toolbar {
   display: flex;
@@ -365,7 +402,7 @@
   flex-direction: column;
   background-color: #ffffff;
   min-width: 0;
-  overflow: hidden; /* Prevent content area overflow */
+  overflow: auto; /* Allow scrolling to see pagination */
 }
 
 .content-header {
@@ -398,16 +435,14 @@
 .file-grid {
   flex: 1;
   padding: 20px;
-  min-height: 0;
-  overflow: hidden; /* Ensure grid doesn't overflow */
+  min-height: 400px;
+  overflow: auto; /* Allow scrolling */
 }
 
 .file-grid-table {
   width: 100%;
-  height: 100%;
-  min-height: 400px; /* Ensure minimum height for grid */
+  height: 400px; /* AG Grid needs explicit height to render rows */
   border-radius: 8px;
-  overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -438,6 +473,40 @@
   font-size: 14px;
   padding-left: 16px;
   padding-right: 16px;
+}
+
+/* AG Grid Pagination Panel */
+.file-grid-table .ag-paging-panel {
+  background-color: #f8f9fa;
+  border-top: 1px solid #e0e0e0;
+  padding: 10px 16px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  font-size: 12px;
+  height: 32px;
+  min-height: 32px;
+}
+
+.file-grid-table .ag-paging-row-summary-panel,
+.file-grid-table .ag-paging-page-summary-panel {
+  font-size: 11px;
+}
+
+.file-grid-table .ag-paging-button {
+  cursor: pointer;
+  padding: 2px 6px;
+  margin: 0 1px;
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+.file-grid-table .ag-paging-button .ag-icon {
+  font-size: 12px;
+}
+
+.file-grid-table .ag-paging-button:hover {
+  background-color: #e9ecef;
 }
 
 /* Empty State */
@@ -740,8 +809,8 @@
 }
 
 .badge-regulation {
-  background-color: #e8f5e8;
-  color: #2e7d32;
+  background-color: #e8edf5;
+  color: #2e4c7d;
 }
 
 .badge-announcement {
@@ -850,7 +919,7 @@
 }
 
 .file-item:hover {
-  background-color: #e8f5e8;
+  background-color: #e8edf5;
 }
 
 .file-icon {

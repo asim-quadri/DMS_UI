@@ -86,12 +86,27 @@ export class FolderService {
       this.getAuthHeadersJSON()
   );
   }
-  getFilesbyFolderId(id: any,type:any='Dms') {
-    return this.http.get<Array<FolderModel>>(
-        `${this.BASEURL}/FileUpload/getFiles?folderId=${id}&mtype=${type}`,
-        this.getAuthHeadersJSON()
-    );
-}
+  getFilesbyFolderId(id: any, type: any = 'Dms', filters?: {
+    regulationId?: number;
+    auditType?: string;
+    financialYear?: string;
+  }) {
+    let url = `${this.BASEURL}/FileUpload/getFiles?folderId=${id}&mtype=${type}`;
+    if (filters?.regulationId != null) url += `&regulationId=${filters.regulationId}`;
+    if (filters?.auditType)            url += `&auditType=${encodeURIComponent(filters.auditType)}`;
+    if (filters?.financialYear)        url += `&financialYear=${encodeURIComponent(filters.financialYear)}`;
+    return this.http.get<Array<FolderModel>>(url, this.getAuthHeadersJSON());
+  }
+  getOpinionAuditDocument(apiType: 'Opinions' | 'Audits', recordId: number, documentId: number) {
+    const url = `${this.BASEURL}/${apiType}/${recordId}/documents/${documentId}/view`;
+    const auth = this.getAuthHeaders();
+    return this.http.get(url, { headers: auth.headers as any, responseType: 'blob' });
+  }
+
+  deleteFile(fileId: number) {
+    return this.http.delete<any>(`${this.BASEURL}/FileUpload/deleteFile?fileId=${fileId}`, this.getAuthHeadersJSON());
+  }
+
 createFolder(folderModel: FolderModel) {
   return this.http.post<boolean>(this.BASEURL + '/FolderManagement/create-folder', folderModel,this.getAuthHeadersJSON());
 

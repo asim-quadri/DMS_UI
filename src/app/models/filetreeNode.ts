@@ -7,10 +7,13 @@ export interface FolderTreeNode {
   children?: FolderTreeNode[];
   parent?: FolderTreeNode;
   path?: string[];
-  treeType?: 'DMS' | 'COMPSEQR360'; // ✅ add this
+  treeType?: 'DMS' | 'COMPSEQR360'; // Tree type identifier
   isFile?: boolean;
   fileData?: any;
   sourceId?: number; // Original ID from API for regulations/organizations/announcements
   isToc?: boolean; // Indicates this is a TOC folder
   isCompliance?: boolean; // Indicates this is a Compliance folder
+  nodeType?: string; // For compliance tracker: Entity, ComplianceTracker, FinancialYear, Regulation, TypeOfCompliance, Location, Document
+  complianceData?: any;
+  locationData?: any;
 }

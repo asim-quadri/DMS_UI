@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { CompliancetrackerService } from 'src/app/Services/compliancetracker.service';
 import { PersistenceService } from 'src/app/Services/persistence.service';
+import { UserEntityService } from 'src/app/Services/userentity.service';
 import { ComplianceTrackerListComponent } from '../../client/compliance-tracker/compliance-tracker-list/compliance-tracker-list.component';
 import { RegulationSetupService } from 'src/app/Services/regulationsetup.service';
 import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
@@ -42,6 +43,13 @@ import { OrganizationApprovalComponent } from '../../organization-setup/organiza
 export class HeaderComponent implements OnInit {
   name: string = '';
   entityList: any[] = [];
+  selectedHeaderEntity: any = null;
+
+  navItems = [
+    { title: 'CompSeqr', route: '/compseqr', icon: 'bi-shield-check' },
+    { title: 'ProEDox', route: '/home', icon: 'bi-folder2-open' },
+    { title: 'User Management', route: '/users', icon: 'bi-people' },
+  ];
   @ViewChild(OrganizationVerticalnavComponent)
   orgVerticalNav!: OrganizationVerticalnavComponent;
   @ViewChild(ComplianceTrackerListComponent)
@@ -70,7 +78,8 @@ export class HeaderComponent implements OnInit {
     public notificationService: NotificationService,
     private modalService: NgbModal,
     private router: Router,
-    private eRef: ElementRef
+    private eRef: ElementRef,
+    private userEntityService: UserEntityService
   ) {
     this.name = this.persistance.getUserName();
     localStorage.removeItem('EntityName');
@@ -80,6 +89,33 @@ export class HeaderComponent implements OnInit {
   ngOnInit() {
     // this.getEntities();
     // this.fetchNotificationData();
+    this.loadHeaderEntities();
+  }
+
+  isNavActive(item: { title: string; route: string }): boolean {
+    const currentUrl = this.router.url;
+    if (item.title === 'User Management') {
+      return currentUrl.includes('/users') || currentUrl.includes('/roles');
+    }
+    return currentUrl === item.route || currentUrl.startsWith(item.route + '/');
+  }
+
+  loadHeaderEntities(): void {
+    const organizationId = this.persistance.getOrganizationId();
+    if (!organizationId) {
+      return;
+    }
+    this.userEntityService.loadEntitiesForOrganization(organizationId).subscribe();
+    this.userEntityService.entities$.subscribe(list => (this.entityList = list));
+    this.userEntityService.selectedEntity$.subscribe(entity => (this.selectedHeaderEntity = entity));
+  }
+
+  onHeaderEntityChange(entity: any): void {
+    this.userEntityService.setSelectedEntity(entity);
+  }
+
+  compareHeaderEntities(a: any, b: any): boolean {
+    return a && b ? a.id === b.id : a === b;
   }
 
   logout(event: Event) {

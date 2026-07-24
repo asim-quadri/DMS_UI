@@ -1,20 +1,145 @@
-.role-table thead tr th {
-    background-color: #325A9C !important;
-    border: 1px solid #325A9C !important;
-    font-size: 14px !important;
-    color: #fff !important;
-    font-weight: normal !important;
-    text-align: center !important;
-    padding: 15px 0px 15px !important;
-}
+.roles-screen {
+    font-family: "Montserrat", "Lato", "Roboto", sans-serif;
 
-.role-table tbody tr td {
-    background-color: #ECF8FF !important;
-    border: none !important;
-    font-size: 14px !important;
-    color: #325A9C;
-    font-weight: 500 !important;
-    text-align: center !important;
-    padding: 15px 0px !important;
-    margin-bottom: 2px !important;
+    .modern-header {
+        background: #ffffff !important;
+        border: 1px solid #e5ebf2;
+        border-radius: 14px 14px 0 0;
+        padding: 12px 16px !important;
+    }
+
+    .tab-btn {
+        min-width: 86px;
+        height: 42px;
+        border-radius: 9px;
+        border: 1px solid #d7dee7 !important;
+        background: #ffffff;
+        color: #516175;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+
+        &:hover {
+            border-color: #2a4a7f !important;
+            color: #2a4a7f;
+            background: #f4fbf7;
+        }
+    }
+
+    .tab-btn-active {
+        background: #f5b531 !important;
+        color: #ffffff !important;
+        border-color: #f5b531 !important;
+    }
+
+    .role-approval-btn {
+        width: auto !important;
+        padding: 10px 20px !important;
+        border: none !important;
+        border-radius: 9px;
+        background: linear-gradient(135deg, #3968b6, #2a569f) !important;
+        color: #ffffff !important;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .approve-count {
+        background: #f4b232 !important;
+        border-radius: 999px;
+        font-size: 12px;
+        padding: 2px 10px 3px;
+        margin-left: 6px;
+    }
+
+    .search-group {
+        .form-control {
+            height: 42px !important;
+            border: 1px solid #d5dde7 !important;
+            border-radius: 9px 0 0 9px !important;
+            font-size: 14px !important;
+            font-weight: 500;
+            color: #344255 !important;
+            background: #fff;
+            border-right: none !important;
+        }
+
+        .btn-search {
+            height: 42px;
+            border: 1px solid #d5dde7 !important;
+            border-left: none !important;
+            border-radius: 0 9px 9px 0 !important;
+            background: #fff !important;
+            color: #6f7f90;
+            padding: 0 14px;
+        }
+    }
+
+    .modern-content {
+        background: #ffffff !important;
+        border: 1px solid #e5ebf2;
+        border-top: none;
+        border-radius: 0 0 14px 14px;
+        padding: 12px 16px 16px !important;
+        height: auto !important;
+        min-height: calc(100vh - 214px);
+    }
+
+    .grid-shell,
+    .edit-shell {
+        background: #ffffff;
+        border: 1px solid #e4ebf2;
+        border-radius: 12px;
+        padding: 0;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    }
+
+    .edit-shell {
+        min-height: 70vh;
+        padding: 12px;
+    }
+
+    :host ::ng-deep .ag-theme-alpine {
+        --ag-header-height: 52px;
+        --ag-row-height: 46px;
+        --ag-font-family: "Montserrat", "Lato", "Roboto", sans-serif;
+        --ag-font-size: 14px;
+        border: none;
+    }
+
+    :host ::ng-deep .ag-theme-alpine .ag-header {
+        background: linear-gradient(135deg, #325a9c, #24457c);
+    }
+
+    :host ::ng-deep .ag-theme-alpine .ag-header-cell,
+    :host ::ng-deep .ag-theme-alpine .ag-header-group-cell {
+        color: #f3f7fb;
+        font-size: 14px;
+        font-weight: 600;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    :host ::ng-deep .ag-theme-alpine .ag-row {
+        border-bottom: 1px solid #edf1f5;
+    }
+
+    :host ::ng-deep .ag-theme-alpine .ag-row:hover {
+        background: #f5fbf7;
+    }
+
+    :host ::ng-deep .ag-theme-alpine .ag-paging-panel {
+        border-top: 1px solid #edf1f5;
+        min-height: 52px;
+    }
+
+    @media (max-width: 992px) {
+        .modern-content {
+            min-height: auto;
+        }
+
+        .edit-shell {
+            min-height: auto;
+            margin-top: 10px;
+        }
+    }
 }

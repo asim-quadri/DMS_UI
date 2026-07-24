@@ -1,12 +1,14 @@
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { PersistenceService } from '../../../Services/persistence.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-sidenav',
   templateUrl: './sidemenu.component.html',
   styleUrls: ['./sidemenu.component.scss'],
-  standalone: true
+  standalone: true,
+  imports: [CommonModule, RouterLink, RouterLinkActive]
 })
 export class SidemenuComponent {
   constructor(private router: Router, private persistenceService: PersistenceService){

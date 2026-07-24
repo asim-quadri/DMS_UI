@@ -1,37 +1,11 @@
-<div class="sidemenu" [class.collapsed]="isCollapsed">
-  <ul>
-    <li *ngFor="let item of menuItems" 
-        [class.active]="isMenuActive(item)">
-      <a
-        [routerLink]="item.route"
-        [attr.title]="isCollapsed ? item.title : null"
-      >
-        <ng-container>
-          <img
-            [src]="item.imgUrl"
-            [alt]="item.imgAlt"
-            [ngClass]="{
-              'icon-collapsed': isCollapsed,
-              'icon-expanded': !isCollapsed
-            }"
-          />
-        </ng-container>
-        <span *ngIf="!isCollapsed">{{ item.title }}</span>
-      </a>
-    </li>
-  </ul>
-
-  <div class="bottom-buttons">
-    <button class="collapse-btn" (click)="toggleSidebar()">
-      <img
-        src="assets/images/icons/Icon-collapse.svg"
-        alt="Expand"
-        [ngClass]="{
-          'icon-collapsed': isCollapsed,
-          'icon-expanded': !isCollapsed
-        }"
-      />
-      <span *ngIf="!isCollapsed">Collapse</span>
-    </button>
-  </div>
-</div>
+<nav class="tn-shell">
+  <a
+    class="tn-item"
+    *ngFor="let item of menuItems"
+    [routerLink]="item.route"
+    [class.tn-active]="isMenuActive(item)"
+  >
+    <i class="bi tn-icon" [ngClass]="getIconClass(item)"></i>
+    <span class="tn-label">{{ item.title }}</span>
+  </a>
+</nav>

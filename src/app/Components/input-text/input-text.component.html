@@ -1,6 +1,7 @@
 <form novalidate autocomplete="off" [formGroup]="this.formGroup">
   <label *ngIf="label" for="{{ name }}" class="{{ labelClass }}">{{ label }}</label>
   <input
+    #inputRef
     type="text"
     id="name"
     name="{{ name }}"
@@ -8,6 +9,7 @@
     formControlName="{{ name }}"
     placeholder="{{ placeholder }}"
     readonly="{{ readonly }}"
+    (animationstart)="onAutofillAnimation($event, inputRef)"
   />
 
   <small
