@@ -210,7 +210,9 @@ export class FileuploadnewComponent implements OnInit {
       this.routeContextInitialized = true;
 
       if (contextChanged) {
-        // Old selection/files/search belong to the previous tab's tree — clear them.
+        // Old tree/selection/files/search belong to the previous tab — clear them
+        // so the new tab doesn't show stale data while (or if) the new load fails.
+        this.treeData = [];
         this.selectedFolderTreeNodeItem = null;
         this.breadcrumbPath = [];
         this.files = [];
@@ -219,13 +221,21 @@ export class FileuploadnewComponent implements OnInit {
         this.filesCurrentPage = 1;
         this.clearSelection();
 
-        if (this.selectedEntity) {
-          this.loadUnifiedTreeForEntity(this.selectedEntity.id);
+        if (this.context === 'compseqr') {
+          this.loadComseqTree();
+        } else {
+          this.loadDmsTreeForCurrentEntity();
         }
       }
     });
 
-    this.loadClientEntities();
+    // GetComseq isn't scoped by org/entity at all, so CompSeqr doesn't need the
+    // org-session-dependent entity flow below — load it straight away.
+    if (this.context === 'compseqr') {
+      this.loadComseqTree();
+    } else {
+      this.loadClientEntities();
+    }
   }
 
   /**
@@ -234,10 +244,28 @@ export class FileuploadnewComponent implements OnInit {
    * the load if the header hasn't already, and (b) reacts whenever the header's
    * selection changes.
    */
+  /**
+   * Loads the DMS tree for whatever entity we can currently determine — the
+   * header-selected one if there is one, otherwise a userId-based fallback.
+   * Used both on first load and every time the user switches back to this tab.
+   */
+  private loadDmsTreeForCurrentEntity(): void {
+    if (this.selectedEntity) {
+      this.loadUnifiedTreeForEntity(this.selectedEntity.id);
+      return;
+    }
+    // No organizationId in session (a backend/login-response gap, not something
+    // fixable here) means no entity picker list either — fall back to the
+    // user's own id rather than leaving the page dead.
+    const fallbackEntityId = this.persistenceService.getUserId() || 1;
+    console.warn('No selected entity — falling back to entity', fallbackEntityId, 'for DMS tree.');
+    this.loadUnifiedTreeForEntity(fallbackEntityId);
+  }
+
   loadClientEntities() {
     const organizationId = this.persistenceService.getOrganizationId();
     if (!organizationId) {
-      this.notifier.notify('error', 'Organization not found in session');
+      this.loadDmsTreeForCurrentEntity();
       return;
     }
 
@@ -330,36 +358,457 @@ export class FileuploadnewComponent implements OnInit {
   }
 
   /**
-   * Load the tree for a specific entity, from whichever endpoint matches this
-   * page's context: entity-tree (CompSeqr: Regulatory Compliance / Notices /
-   * Opinions / Audits) or dms-tree (ProEDox: plain DMS folders).
+   * Load the tree for a specific entity. CompSeqr uses GetComseq (see
+   * loadComseqTree()). ProEDox/DMS uses FolderManagement/tree — the
+   * UnifiedTree/dms-tree endpoint doesn't exist on this backend (404),
+   * FolderManagement/tree is the one that's actually live here.
    */
   loadUnifiedTreeForEntity(entityId: number) {
-    const userId = this.persistenceService.getUserId() || 16;
+    if (this.context === 'compseqr') {
+      this.loadComseqTree();
+      return;
+    }
 
+    const userId = this.persistenceService.getUserId() || 16;
     this.isLoading = true;
 
-    const baseUrl = this.context === 'compseqr' ? this.entityTreeApiUrl : this.dmsTreeApiUrl;
-    const apiUrl = `${baseUrl}?userId=${userId}&entityId=${entityId}`;
-    this.http.get<UnifiedTreeResponse>(apiUrl).subscribe({
-      next: (response) => {
-        console.log('Unified Tree API Response for entity:', entityId, response);
-
-        // Store metadata (only present on the entity-tree/CompSeqr response)
-        this.metadata = response.metadata;
-
-        // Convert and update tree data
-        this.treeData = this.convertUnifiedTreeToFolderTree(response.treeData);
+    this.folderService.getGetFolderTree(entityId, userId).subscribe({
+      next: (result: any) => {
+        const items = Array.isArray(result) ? result : [];
+        const dmsRoot: FolderTreeNode = {
+          id: this.nextComseqId(),
+          label: 'ProEDox',
+          parentId: 0,
+          expanded: true,
+          foldertitle: 'ProEDox',
+          children: this.normalizeDmsNodes(items, ['ProEDox']),
+          treeType: 'DMS',
+          path: ['ProEDox'],
+          isFile: false
+        };
+        this.treeData = [dmsRoot];
         this.attachParentReferences(this.treeData);
-
         this.isLoading = false;
       },
       error: (err) => {
-        console.error('Error loading unified tree for entity:', err);
+        console.error('Error loading DMS folder tree:', err);
         this.notifier.notify('error', 'Failed to load tree data');
+        this.treeData = [];
         this.isLoading = false;
       }
     });
+  }
+
+  private normalizeDmsNodes(items: any[], parentPath: string[]): FolderTreeNode[] {
+    return (items || []).map((item: any) => {
+      const label = item.label || item.folderName || `Folder_${item.id}`;
+      const path = [...parentPath, label];
+      const children = item.children || [];
+      return {
+        id: item.id,
+        label,
+        parentId: 0,
+        expanded: false,
+        foldertitle: 'DMS',
+        children: this.normalizeDmsNodes(children, path),
+        treeType: 'DMS',
+        path,
+        isFile: !!item.isFile,
+        fileData: item.isFile ? item : undefined
+      } as FolderTreeNode;
+    });
+  }
+
+  // ====== CompSeqr tree (FileUpload/GetComseq — not scoped by org/entity id) ======
+
+  private comseqIdSeq = 1;
+  private nextComseqId(): number {
+    return this.comseqIdSeq++;
+  }
+
+  loadComseqTree(): void {
+    this.isLoading = true;
+    this.folderService.getcompleteFolderList().subscribe({
+      next: (data: any) => {
+        this.treeData = this.buildComseqTree(data);
+        this.attachParentReferences(this.treeData);
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading CompSeqr data:', err);
+        this.notifier.notify('error', 'Failed to load regulatory compliance data');
+        this.treeData = [];
+        this.isLoading = false;
+      }
+    });
+  }
+
+  private buildComseqTree(data: any): FolderTreeNode[] {
+    const roots: FolderTreeNode[] = [];
+    const regulations = data?.regulation || [];
+    const organizations = data?.organization || [];
+
+    if (regulations.length > 0) {
+      const regRoot: FolderTreeNode = {
+        id: this.nextComseqId(),
+        label: 'Regulatory Compliance',
+        parentId: 0,
+        expanded: true,
+        foldertitle: 'RegulatoryCompliance',
+        children: [],
+        treeType: 'COMPSEQR360',
+        path: ['Regulatory Compliance'],
+        isFile: false
+      };
+      regRoot.children = regulations.map((reg: any) => this.buildRegulationNode(reg, regRoot.path!));
+      roots.push(regRoot);
+    }
+
+    // Announcements: same regulation-shaped array as `regulation`, but what
+    // matters here is the `announcements[]` attached at each level — those
+    // already carry their own `files[]` (with real fileContent), so no
+    // separate Dms/GetDataByTypeAndId call is needed for this branch.
+    const announcementRegs = data?.announcement || [];
+    const announcementsTree = this.buildAnnouncementsTree(announcementRegs);
+    roots.push(...announcementsTree);
+
+    if (organizations.length > 0) {
+      const orgRoot: FolderTreeNode = {
+        id: this.nextComseqId(),
+        label: 'Organizations',
+        parentId: 0,
+        expanded: false,
+        foldertitle: 'OrganizationRoot',
+        children: [],
+        treeType: 'COMPSEQR360',
+        path: ['Organizations'],
+        isFile: false
+      };
+      orgRoot.children = organizations
+        .filter((org: any) => org.isOrganization !== false)
+        .map((org: any) => this.buildOrgNode(org, orgRoot.path!));
+      roots.push(orgRoot);
+    }
+
+    return roots;
+  }
+
+  private buildAnnouncementsTree(announcementRegs: any[]): FolderTreeNode[] {
+    const root: FolderTreeNode = {
+      id: this.nextComseqId(),
+      label: 'Announcements',
+      parentId: 0,
+      expanded: false,
+      foldertitle: 'AnnouncementRoot',
+      children: [],
+      treeType: 'COMPSEQR360',
+      path: ['Announcements'],
+      isFile: false
+    };
+
+    const regNodes: FolderTreeNode[] = [];
+    (announcementRegs || []).forEach((reg: any) => {
+      const node = this.buildAnnouncementRegulationNode(reg, root.path!);
+      if (node) regNodes.push(node);
+    });
+    root.children = regNodes;
+
+    return regNodes.length ? [root] : [];
+  }
+
+  private buildAnnouncementRegulationNode(reg: any, parentPath: string[]): FolderTreeNode | null {
+    const path = [...parentPath, reg.regulationName];
+    const children: FolderTreeNode[] = [];
+
+    children.push(...this.announcementsToFileNodes(reg.announcements, path));
+
+    (reg.compliance || []).forEach((comp: any) => {
+      const compNode = this.buildAnnouncementComplianceNode(comp, path);
+      if (compNode) children.push(compNode);
+    });
+
+    (reg.toc || []).forEach((toc: any) => {
+      const tocNode = this.buildAnnouncementTocNode(toc, path);
+      if (tocNode) children.push(tocNode);
+    });
+
+    if (children.length === 0) return null;
+
+    return {
+      id: this.nextComseqId(),
+      label: reg.regulationName,
+      parentId: 0,
+      expanded: false,
+      foldertitle: 'AnnouncementRegulation',
+      children,
+      treeType: 'COMPSEQR360',
+      path,
+      isFile: false,
+      sourceId: reg.id
+    };
+  }
+
+  private buildAnnouncementComplianceNode(comp: any, parentPath: string[]): FolderTreeNode | null {
+    const path = [...parentPath, comp.complianceName];
+    const children: FolderTreeNode[] = [];
+
+    children.push(...this.announcementsToFileNodes(comp.announcements, path));
+
+    (comp.toc || []).forEach((toc: any) => {
+      const tocNode = this.buildAnnouncementTocNode(toc, path);
+      if (tocNode) children.push(tocNode);
+    });
+
+    if (children.length === 0) return null;
+
+    return {
+      id: this.nextComseqId(),
+      label: comp.complianceName,
+      parentId: 0,
+      expanded: false,
+      foldertitle: 'AnnouncementCompliance',
+      children,
+      treeType: 'COMPSEQR360',
+      path,
+      isFile: false,
+      sourceId: comp.id
+    };
+  }
+
+  private buildAnnouncementTocNode(toc: any, parentPath: string[]): FolderTreeNode | null {
+    const label = toc.nameOfToc || toc.typeOfComplianceName;
+    const fileNodes = this.announcementsToFileNodes(toc.announcements, [...parentPath, label]);
+    if (fileNodes.length === 0) return null;
+
+    return {
+      id: this.nextComseqId(),
+      label,
+      parentId: 0,
+      expanded: false,
+      foldertitle: 'AnnouncementToc',
+      children: fileNodes,
+      treeType: 'COMPSEQR360',
+      path: [...parentPath, label],
+      isFile: false,
+      sourceId: toc.id
+    };
+  }
+
+  /** Announcement items become file leaves directly (data — incl. fileContent — is already embedded). */
+  private announcementsToFileNodes(announcements: any[], parentPath: string[]): FolderTreeNode[] {
+    const nodes: FolderTreeNode[] = [];
+
+    (announcements || []).forEach((ann: any) => {
+      if (Array.isArray(ann.files) && ann.files.length > 0) {
+        ann.files.forEach((file: any) => {
+          const label = file.fileName || ann.subject || 'Announcement';
+          nodes.push({
+            id: this.nextComseqId(),
+            label,
+            parentId: 0,
+            expanded: false,
+            foldertitle: 'AnnouncementFile',
+            children: [],
+            treeType: 'COMPSEQR360',
+            path: [...parentPath, label],
+            isFile: true,
+            fileData: {
+              fileName: file.fileName,
+              fullName: file.fileName,
+              fileContent: file.fileContent || null,
+              createdOn: file.createdOn,
+              createdByName: ann.createdByName,
+              fileType: this.getFileExtension(file.fileName || '')
+            }
+          });
+        });
+      } else {
+        // No attached file — still surface the announcement itself so it's discoverable.
+        const label = ann.subject || 'Announcement';
+        nodes.push({
+          id: this.nextComseqId(),
+          label,
+          parentId: 0,
+          expanded: false,
+          foldertitle: 'AnnouncementFile',
+          children: [],
+          treeType: 'COMPSEQR360',
+          path: [...parentPath, label],
+          isFile: true,
+          fileData: {
+            fileName: label,
+            fullName: label,
+            fileContent: null,
+            createdOn: ann.createdDate,
+            createdByName: ann.createdByName
+          }
+        });
+      }
+    });
+
+    return nodes;
+  }
+
+  private buildRegulationNode(reg: any, parentPath: string[]): FolderTreeNode {
+    const path = [...parentPath, reg.regulationName];
+    const children: FolderTreeNode[] = [];
+
+    (reg.compliance || []).forEach((comp: any) => {
+      children.push(this.buildComplianceNode(comp, path));
+    });
+    (reg.toc || []).forEach((toc: any) => {
+      children.push(this.buildTocNode(toc, path));
+    });
+
+    return {
+      id: this.nextComseqId(),
+      label: reg.regulationName,
+      parentId: 0,
+      expanded: false,
+      foldertitle: 'Regulation',
+      children,
+      treeType: 'COMPSEQR360',
+      path,
+      isFile: false,
+      sourceId: reg.id
+    };
+  }
+
+  private buildComplianceNode(comp: any, parentPath: string[]): FolderTreeNode {
+    const path = [...parentPath, comp.complianceName];
+    const children: FolderTreeNode[] = (comp.toc || []).map((toc: any) => this.buildTocNode(toc, path));
+
+    return {
+      id: this.nextComseqId(),
+      label: comp.complianceName,
+      parentId: 0,
+      expanded: false,
+      foldertitle: 'Compliance',
+      children,
+      treeType: 'COMPSEQR360',
+      path,
+      isFile: false,
+      sourceId: comp.id,
+      isCompliance: true
+    };
+  }
+
+  private buildTocNode(toc: any, parentPath: string[]): FolderTreeNode {
+    const label = toc.nameOfToc || toc.typeOfComplianceName;
+    return {
+      id: this.nextComseqId(),
+      label,
+      parentId: 0,
+      expanded: false,
+      foldertitle: 'TOC',
+      children: [],
+      treeType: 'COMPSEQR360',
+      path: [...parentPath, label],
+      isFile: false,
+      sourceId: toc.id,
+      isToc: true
+    };
+  }
+
+  private buildOrgNode(org: any, parentPath: string[]): FolderTreeNode {
+    const path = [...parentPath, org.organizationName];
+    const children: FolderTreeNode[] = (org.entityList || []).map((entity: any) => ({
+      id: this.nextComseqId(),
+      label: entity.entityName,
+      parentId: 0,
+      expanded: false,
+      foldertitle: 'OrgEntity',
+      children: [],
+      treeType: 'COMPSEQR360',
+      path: [...path, entity.entityName],
+      isFile: false,
+      sourceId: entity.entityId
+    } as FolderTreeNode));
+
+    return {
+      id: this.nextComseqId(),
+      label: org.organizationName,
+      parentId: 0,
+      expanded: false,
+      foldertitle: 'Organization',
+      children,
+      treeType: 'COMPSEQR360',
+      path,
+      isFile: false,
+      sourceId: org.id
+    };
+  }
+
+  /** Fetches actual files for a clicked CompSeqr node via Dms/GetDataByTypeAndId. */
+  fetchComseqFilesFromApi(node: FolderTreeNode): void {
+    // A single file leaf (e.g. an Announcement file) — just show it directly.
+    if (node.isFile && node.fileData) {
+      this.files = [node.fileData];
+      return;
+    }
+
+    // Announcement folders carry their files already embedded in the tree
+    // (from GetComseq) — no API round-trip needed, just collect them.
+    if ((node.foldertitle || '').startsWith('Announcement')) {
+      this.files = this.collectAllFiles(node);
+      return;
+    }
+
+    let type: string;
+    let subType: string | undefined;
+
+    switch (node.foldertitle) {
+      case 'TOC':
+        type = 'regulation';
+        subType = 'tocdues';
+        break;
+      case 'Compliance':
+        type = 'regulation';
+        subType = 'regulation';
+        break;
+      case 'Regulation':
+        type = 'regulation';
+        break;
+      case 'Organization':
+      case 'OrgEntity':
+        type = 'organization';
+        break;
+      default:
+        this.files = [];
+        return;
+    }
+
+    const apiId = node.sourceId ?? node.id;
+    this.folderService.getDataByTypeAndId(type, apiId, subType).subscribe({
+      next: (response: any) => {
+        this.files = this.extractComseqFiles(response, node.label, type, subType, apiId);
+      },
+      error: (err: any) => {
+        console.error('Error fetching CompSeqr files:', err);
+        this.files = [];
+      }
+    });
+  }
+
+  private extractComseqFiles(response: any, folderName: string, type: string, subType: string | undefined, apiId: number): any[] {
+    if (!response) return [];
+    const files: any[] = [];
+
+    if (response.success && Array.isArray(response.files)) {
+      response.files.forEach((file: any) => {
+        files.push({
+          ...file,
+          folderName,
+          fullName: file.fileName,
+          // Carried through so View can reopen this same query via /fileview.
+          comseqType: type,
+          comseqSubType: subType,
+          comseqId: apiId
+        });
+      });
+    }
+
+    return files;
   }
 
   // ====== Grid Renderers ======
@@ -436,17 +885,35 @@ export class FileuploadnewComponent implements OnInit {
 
   // ====== File Operations ======
 
-  /** Template-friendly view — handles opinions/audits API, base64, and filePath */
+  /** Template-friendly view — routes through /fileview so PDFs/images/Excel/Word render properly */
   viewFileContent(file: any, event?: Event): void {
     event?.stopPropagation();
     if (file?.mtype === 'opinions' || file?.mtype === 'audits') {
       this.streamOpinionAuditFile(file, false);
       return;
     }
+
+    // CompSeqr (Regulation/Compliance/TOC/Organization): reopen the same
+    // Dms/GetDataByTypeAndId query the fileview page itself will re-run.
+    if (this.context === 'compseqr' && file?.comseqType && file?.comseqId != null) {
+      let url = `/#/fileview?fileId=${file.comseqId}&type=${file.comseqType}`;
+      if (file.comseqSubType) {
+        url += `&subType=${file.comseqSubType}`;
+      }
+      window.open(url, '_blank');
+      return;
+    }
+
+    // ProEDox (DMS): stream directly from the DB id — renders inline (PDF/image)
+    // when the browser can, otherwise downloads.
+    if (file?.id != null) {
+      window.open(this.getFileStreamUrl(file.id), '_blank');
+      return;
+    }
+
+    // Fallback (e.g. Announcement files with embedded content but no DB id).
     if (file?.fileContent) {
       this.viewBase64File(file.fileContent, file.fileName || 'document');
-    } else if (file?.filePath) {
-      window.open(file.filePath, '_blank');
     } else {
       this.notifier.notify('warning', 'No viewable content available');
     }
@@ -461,14 +928,17 @@ export class FileuploadnewComponent implements OnInit {
     }
     if (file?.fileContent) {
       this.downloadBase64File(file.fileContent, file.fileName || 'document');
-    } else if (file?.filePath) {
-      const link = document.createElement('a');
-      link.href = file.filePath;
-      link.download = file.fileName || 'document';
-      link.click();
+    } else if (file?.id != null) {
+      window.open(this.getFileStreamUrl(file.id, true), '_blank');
     } else {
       this.notifier.notify('warning', 'No downloadable content available');
     }
+  }
+
+  /** GET /api/FileUpload/GetFile/{fileId} — streams by DB id (no ?download = inline, with it = attachment) */
+  private getFileStreamUrl(fileId: number, download = false): string {
+    const url = `${this.config.ServiceUrl}/FileUpload/GetFile/${fileId}`;
+    return download ? `${url}?download=true` : url;
   }
 
   /** Fetch opinion/audit document via API and open or download the blob */
@@ -929,7 +1399,15 @@ export class FileuploadnewComponent implements OnInit {
   }) {
     this.files = [];
     this.folderService.getFilesbyFolderId(folderId, type, filters).subscribe((result: any) => {
-      this.files = result || [];
+      // This DMS endpoint reuses `fullName` for the uploader's display name,
+      // not the file name (every other source in this app sets fullName ===
+      // fileName) — normalize it here so the table/view/download logic that
+      // reads `fullName` as "the file's name" stays correct everywhere.
+      this.files = (result || []).map((file: any) => ({
+        ...file,
+        createdByName: file.createdByName || file.fullName,
+        fullName: file.fileName || file.fullName
+      }));
     }, (error: any) => {
       console.error("Error fetching files:", error);
       this.files = [];
@@ -1021,6 +1499,14 @@ export class FileuploadnewComponent implements OnInit {
     this.filesCurrentPage = 1;
 
     console.log('selectItem clicked node:', realNode);
+
+    // CompSeqr (this backend): tree comes from FileUpload/GetComseq, files are
+    // fetched per-node via Dms/GetDataByTypeAndId — a completely different
+    // shape/flow from the old entity-tree API, so branch out early.
+    if (this.context === 'compseqr') {
+      this.fetchComseqFilesFromApi(realNode);
+      return;
+    }
 
     // Notice regulation: a node whose parent path segment is "Notices"
     if (this.isNoticeRegulationNode(realNode)) {
