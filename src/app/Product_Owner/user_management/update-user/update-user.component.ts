@@ -25,6 +25,8 @@ import { da } from 'date-fns/locale';
 import { Observable, of } from 'rxjs';
 import { filter } from 'underscore';
 import { duplicateMobileValidator } from 'src/app/Validators/duplicateMobile';
+import { DmsUserManagementService } from 'src/app/Services/dms-user-management.service';
+import { PostDmsUser } from 'src/app/Models/dms.models';
 
 export interface IUniqueValidatorService {
   getCurrentValue(fieldName: string, formData: any): any;
@@ -138,7 +140,8 @@ export class UpdateUserComponent implements OnChanges {
     private fb: FormBuilder,
     public apiService: ApiService,
     private notifier: NotifierService,
-    private persistance: PersistenceService
+    private persistance: PersistenceService,
+    private dmsUserService: DmsUserManagementService
   ) {
     this.getAllRoles();
   }
@@ -149,32 +152,54 @@ export class UpdateUserComponent implements OnChanges {
   }
 
   onSubmit() {
-    if (this.formgroup.valid) {
-      var user: UsersModel = { ...this.formgroup.value };
-      if (user.id == 0 || user.id == null) {
-        user.id = 0;
-        user.uid = null;
-      }
-      user.endDate = user.endDate == '' ? null : user.endDate;
-      user.createdBy = this.persistance.getUserId()!;
-      user.approvalManagerId = this.persistance.getManagerId();
-      this.apiService.postUser(user).subscribe(
-        (result: UsersModel) => {
-          if (result.responseCode == 1) {
-            this.notifier.notify('success', result.responseMessage);
-            this.reloaddata.emit('reload');
-            this.isEditAction = false;
-            this.formgroup.reset();
-          } else {
-            this.notifier.notify('error', result.responseMessage);
-          }
-        },
-        (error) => {
-          this.notifier.notify('error', 'Some thing went wrong');
-        }
-      );
+    if (!this.formgroup.valid) {
+      return;
     }
-    return;
+    var user: UsersModel = { ...this.formgroup.value };
+    if (user.id == 0 || user.id == null) {
+      user.id = 0;
+      user.uid = null;
+    }
+    user.endDate = user.endDate == '' ? null : user.endDate;
+    user.createdBy = this.persistance.getUserId()!;
+    user.approvalManagerId = this.persistance.getManagerId();
+
+    this.submitDmsUser(user);
+  }
+
+  private submitDmsUser(user: UsersModel): void {
+    const payload: PostDmsUser = {
+      Id: user.id || undefined,
+      EmpId: user.empId,
+      FullName: user.fullName,
+      Email: user.email,
+      Mobile: user.mobile,
+      RoleId: user.roleId,
+      StartDate: user.startDate,
+      EndDate: user.endDate || undefined,
+      ManagerId: user.managerId,
+      ApprovalManagerId: user.approvalManagerId,
+      CreatedBy: user.createdBy,
+      ModifiedBy: this.isEditAction ? this.persistance.getUserId()! : undefined,
+      DateOfBirth: user.dateOfBirth || undefined,
+      Gender: user.gender as any,
+      OrganizationId: this.persistance.getOrganizationId(),
+      Status: 1
+    };
+
+    const request$ = this.isEditAction
+      ? this.dmsUserService.updateDmsUser(payload)
+      : this.dmsUserService.addDmsUser(payload);
+
+    request$.subscribe({
+      next: () => {
+        this.notifier.notify('success', this.isEditAction ? 'User updated successfully' : 'User created successfully');
+        this.reloaddata.emit('reload');
+        this.isEditAction = false;
+        this.formgroup.reset();
+      },
+      error: () => this.notifier.notify('error', 'Something went wrong')
+    });
   }
   reset() {
     this.formgroup.reset();
@@ -182,9 +207,16 @@ export class UpdateUserComponent implements OnChanges {
   }
 
   getAllRoles() {
-    this.apiService.getAllRoles().subscribe((result: RolesModels[]) => {
-      this.rolesData = result;
-      //this.rolesData = result.filter(f => f.roleName != UserRole.SuperAdmin && f.roleName != UserRole.ITSupportAdmin);
+    this.dmsUserService.getAllDmsRoles().subscribe((result: any) => {
+      this.rolesData = (result || []).map((r: any) => ({
+        id: r.id ?? r.Id,
+        roleId: r.id ?? r.Id,
+        roleName: r.roleName ?? r.RoleName,
+        roleDisplayName: r.roleDisplayName ?? r.RoleDisplayName,
+        description: r.description ?? r.Description,
+        status: r.status ?? r.Status,
+        uid: r.uid ?? r.UID
+      }));
     });
   }
 

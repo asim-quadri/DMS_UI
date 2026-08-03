@@ -75,6 +75,23 @@ export class PersistenceService {
     return this.user.roleId;
   }
 
+  /**
+   * 'COMPSEQR360' (core Users table) or 'DMS' (DmsUser table) — which identity source
+   * authenticated this login. Checked defensively against both casings since the API
+   * spec documents this field as `LoginSource` (PascalCase) while the rest of the
+   * login response this app already relies on is camelCase — until confirmed live,
+   * this covers either.
+   */
+  getLoginSource(): string | undefined {
+    const u: any = this.user;
+    return u?.loginSource ?? u?.LoginSource;
+  }
+
+  isDmsUser() {
+    const source = (this.getLoginSource() || '').toString().toUpperCase();
+    return source === 'DMS';
+  }
+
   getRole() {
     return this.user.roleName;
   }

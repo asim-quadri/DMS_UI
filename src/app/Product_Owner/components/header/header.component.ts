@@ -45,11 +45,18 @@ export class HeaderComponent implements OnInit {
   entityList: any[] = [];
   selectedHeaderEntity: any = null;
 
-  navItems = [
+  private readonly allNavItems = [
     { title: 'CompSeqr', route: '/compseqr', icon: 'bi-shield-check' },
     { title: 'ProEDox', route: '/home', icon: 'bi-folder2-open' },
     { title: 'User Management', route: '/users', icon: 'bi-people' },
   ];
+
+  /** DMS-only logins (persistance.isDmsUser()) never see CompSeqr — that data belongs to COMPSEQR360 users. */
+  get navItems() {
+    return this.persistance.isDmsUser()
+      ? this.allNavItems.filter(item => item.title !== 'CompSeqr')
+      : this.allNavItems;
+  }
   @ViewChild(OrganizationVerticalnavComponent)
   orgVerticalNav!: OrganizationVerticalnavComponent;
   @ViewChild(ComplianceTrackerListComponent)

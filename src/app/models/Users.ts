@@ -28,6 +28,8 @@ export interface UsersModel extends ResponseModel {
   organizationId?: number;
   dateOfBirth?: string | null;
   gender?: Genders;
+  /** Which identity source authenticated this login: core (COMPSEQR360) or DMS-only user. */
+  loginSource?: 'COMPSEQR360' | 'DMS';
 }
 
 export interface loginModel {

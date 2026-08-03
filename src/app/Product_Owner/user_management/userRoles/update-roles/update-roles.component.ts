@@ -6,6 +6,8 @@ import { MenuOptionModel, UsersModel } from 'src/app/Models/Users';
 import { RolesModels, UpdateRoleModels } from 'src/app/Models/roles';
 import { ApiService } from 'src/app/Services/api.service';
 import { PersistenceService } from '../../../../Services/persistence.service';
+import { DmsUserManagementService } from 'src/app/Services/dms-user-management.service';
+import { PostDmsRole } from 'src/app/Models/dms.models';
 
 @Component({
   selector: 'app-update-roles',
@@ -46,7 +48,7 @@ export class UpdateRolesComponent {
     managerId: ['']
   });
 
-  constructor(private fb: FormBuilder, public apiService: ApiService, private notifier:NotifierService, private persistance: PersistenceService){
+  constructor(private fb: FormBuilder, public apiService: ApiService, private notifier:NotifierService, private persistance: PersistenceService, private dmsUserService: DmsUserManagementService){
     this.getAllRoles() 
     this.getAllUser()
     this.getActiveUsers()
@@ -77,38 +79,68 @@ export class UpdateRolesComponent {
   // }
 
   onSubmit(){
-    if(this.formgroup.valid){
-      var roles: UpdateRoleModels = {... this.formgroup.value};
-      let user = this.persistance.getSessionStorage('currentUser');
-      roles.managerId =user.managerId;
-      roles.createdBy = user.id;
-      this.formgroup.value.Id = user.id;
-      this.formgroup.value.managerId = user.managerId;
-      this.apiService.updateRoles(roles).subscribe((result: RolesModels) => {
-        if(result.responseCode == 1){
-          this.notifier.notify("success", "Updated Successfully");
-          this.reloaddata.emit('reload');
-          this.formgroup.reset();
-        }
-        else{
-          this.notifier.notify("error", result.responseMessage);
-        }
-      }, error => {
-        this.notifier.notify("error", "Some thing went wrong");
-      });
+    if(!this.formgroup.valid){
+      return;
     }
+    var roles: UpdateRoleModels = {... this.formgroup.value};
+    let user = this.persistance.getSessionStorage('currentUser');
+    roles.managerId =user.managerId;
+    roles.createdBy = user.id;
+    this.formgroup.value.Id = user.id;
+    this.formgroup.value.managerId = user.managerId;
+
+    this.submitDmsRole(user);
   }
- 
+
+  private submitDmsRole(currentUser: any): void {
+    const formValue = this.formgroup.value;
+    const isEdit = !!formValue.id;
+    const payload: PostDmsRole = {
+      Id: formValue.id || undefined,
+      RoleDisplayName: formValue.roleDisplayName,
+      ManagerId: currentUser?.managerId,
+      ApprovalManagerId: currentUser?.managerId,
+      CreatedBy: currentUser?.id,
+      ModifiedBy: isEdit ? currentUser?.id : undefined,
+      UID: formValue.uid || undefined,
+      Status: 1
+    };
+
+    const request$ = isEdit
+      ? this.dmsUserService.updateDmsRole(payload)
+      : this.dmsUserService.addDmsRole(payload);
+
+    request$.subscribe({
+      next: () => {
+        this.notifier.notify('success', isEdit ? 'Role updated successfully' : 'Role created successfully');
+        this.reloaddata.emit('reload');
+        this.formgroup.reset();
+      },
+      error: () => this.notifier.notify('error', 'Something went wrong')
+    });
+  }
+
   getAllRoles(){
-    this.apiService.getAllRoles().subscribe((result: any) => {
-      this.rolesData = result;
+    this.dmsUserService.getAllDmsRoles().subscribe((result: any) => {
+      this.rolesData = (result || []).map((r: any) => ({
+        id: r.id ?? r.Id,
+        roleName: r.roleName ?? r.RoleName,
+        roleDisplayName: r.roleDisplayName ?? r.RoleDisplayName,
+        status: r.status ?? r.Status,
+        uid: r.uid ?? r.UID
+      }));
     });
   }
 
   getAllUser(){
-    this.apiService.getAllUsers().subscribe((result: any) => {
-      this.users = result;
-    })
+    const organizationId = this.persistance.getOrganizationId();
+    this.dmsUserService.getAllDmsUsers(organizationId!).subscribe((result: any) => {
+      this.users = (result || []).map((u: any) => ({
+        id: u.id ?? u.Id,
+        fullName: u.fullName ?? u.FullName,
+        status: u.status ?? u.Status
+      }));
+    });
   }
 
   getActiveUsers(){

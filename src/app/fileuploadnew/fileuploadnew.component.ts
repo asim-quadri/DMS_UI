@@ -707,7 +707,7 @@ export class FileuploadnewComponent implements OnInit {
         this.selectedFileKeys.delete(this.fileKey(file));
         if (this.selectedFolderTreeNodeItem) {
           this.getAllFilesbyFolderId(
-            this.selectedFolderTreeNodeItem.id,
+            this.getFolderRecordId(this.selectedFolderTreeNodeItem),
             this.getModuleType(this.selectedFolderTreeNodeItem.foldertitle || '')
           );
         }
@@ -743,7 +743,7 @@ export class FileuploadnewComponent implements OnInit {
         this.clearSelection();
         if (this.selectedFolderTreeNodeItem) {
           this.getAllFilesbyFolderId(
-            this.selectedFolderTreeNodeItem.id,
+            this.getFolderRecordId(this.selectedFolderTreeNodeItem),
             this.getModuleType(this.selectedFolderTreeNodeItem.foldertitle || '')
           );
         }
@@ -892,7 +892,7 @@ export class FileuploadnewComponent implements OnInit {
       this.fileModel.fileName = file.name;
       this.fileModel.fileType = file.type;
       this.fileModel.filePath = file.webkitRelativePath;
-      this.fileModel.folderId = this.selectedFolderTreeNodeItem.id;
+      this.fileModel.folderId = this.getFolderRecordId(this.selectedFolderTreeNodeItem);
       this.fileModel.lastModifiedOn = file.lastModified;
 
       this.uploadFile(file);
@@ -908,7 +908,7 @@ export class FileuploadnewComponent implements OnInit {
       (result: any) => {
         if (this.selectedFolderTreeNodeItem) {
           this.getAllFilesbyFolderId(
-            this.selectedFolderTreeNodeItem.id,
+            this.getFolderRecordId(this.selectedFolderTreeNodeItem),
             this.getModuleType(this.selectedFolderTreeNodeItem.foldertitle || '')
           );
         } else {
@@ -920,6 +920,11 @@ export class FileuploadnewComponent implements OnInit {
         console.error('Error uploading file:', error);
       }
     );
+  }
+
+  /** FileUpload/getFiles expects the folder's DB record id, not the tree-navigation id. */
+  getFolderRecordId(node: FolderTreeNode): number {
+    return node.fileData?.recordId ?? node.id;
   }
 
   getAllFilesbyFolderId(folderId: number, type: any = 'proedox', filters?: {
@@ -1047,7 +1052,7 @@ export class FileuploadnewComponent implements OnInit {
     if (realNode.treeType === 'COMPSEQR360') {
       this.handleComplianceTrackerSelection(realNode);
     } else {
-      this.getAllFilesbyFolderId(realNode.id, this.getModuleType(realNode.path || ''));
+      this.getAllFilesbyFolderId(this.getFolderRecordId(realNode), this.getModuleType(realNode.path || ''));
     }
   }
 
