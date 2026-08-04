@@ -108,7 +108,7 @@ export interface LocationMasterResponse {
 // Model for Compliance Tracker Documents API response
 export interface ComplianceTrackerDocument {
     compId: string;
-    fileName: string;
+    fileName: string; // Also doubles as the key for FileUpload/GetFileByPath
     fileContent: string; // Base64 encoded file content
     createdBy: number;
     createdByName: string;
