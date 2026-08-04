@@ -547,6 +547,33 @@ $radius-btn:   8px;
   color: $green;
 }
 
+.fnode-actions {
+  flex-shrink: 0;
+  display: none;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+}
+
+.frow:hover .fnode-actions {
+  display: flex;
+}
+
+.faction-icon {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  font-size: 12px;
+  color: $text-muted;
+  transition: all .12s;
+
+  &:hover { background: rgba(0,0,0,.08); color: $text; }
+  &.bi-trash:hover { color: #d24a3a; background: #fdecea; }
+}
+
 // ── Files panel ───────────────────────────────────────────
 .files-panel {
   flex: 1;
@@ -784,6 +811,16 @@ th.col-check input[type="checkbox"] {
     &:hover:not(:disabled) { background: #fdecea; }
   }
 
+  &.share-act {
+    color: #7b61ff;
+    &:hover:not(:disabled) { background: #f0edff; }
+  }
+
+  &.rename-act {
+    color: #8a8f98;
+    &:hover:not(:disabled) { background: #f0f1f3; }
+  }
+
   &:disabled {
     color: #ccc;
     cursor: not-allowed;
@@ -994,13 +1031,360 @@ th.col-check input[type="checkbox"] {
   font-size: 16px;
 }
 
-.modal-header .btn-close { filter: brightness(0) invert(1); opacity: .8; }
+.modal-header .btn-close {
+  background-color: transparent;
+  filter: brightness(0) invert(1);
+  opacity: .85;
+  font-size: 13px;
+  padding: 8px;
+
+  &:hover { opacity: 1; }
+}
 
 .form-label { font-weight: 600; color: #495057; margin-bottom: 6px; }
 
 .form-control:focus {
   border-color: $green;
   box-shadow: 0 0 0 3px rgba($green, .15);
+}
+
+// ── Manage Access modal ────────────────────────────────────
+.modal-content:has(.access-modal-header) {
+  border-radius: 18px;
+  overflow: hidden;
+  border: none;
+  box-shadow: 0 24px 60px -12px rgba(20, 30, 60, .35);
+}
+
+.access-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, $green, $green-dark) !important;
+  padding: 20px 22px !important;
+}
+
+.access-modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.access-modal-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .18);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  i { font-size: 18px; color: #fff; }
+}
+
+.access-modal-title-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.access-modal-subtitle {
+  color: rgba(255, 255, 255, .78);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.access-modal-body {
+  padding: 20px 22px 22px;
+}
+
+.access-form-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.access-form-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  color: $green;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin: 0;
+
+  i { font-size: 13px; }
+}
+
+.access-cancel-edit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: $text-muted;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  cursor: pointer;
+  padding: 2px 6px;
+
+  i { font-size: 10px; }
+  &:hover { color: #c0392b; }
+}
+
+.access-grant-form {
+  padding: 16px 18px 18px;
+  margin-bottom: 22px;
+  background: linear-gradient(180deg, $green-light, #fff);
+  border: 1px solid $green-ring;
+  border-radius: $radius-card;
+  transition: all .15s;
+}
+
+.access-grant-form-editing {
+  background: linear-gradient(180deg, #fff3cd, #fff);
+  border-color: #f5d78e;
+
+  .access-form-label { color: #8a6300; }
+}
+
+.access-user-select:disabled {
+  background-color: #eef0f3;
+  color: $text-muted;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.access-grant-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.access-user-select {
+  flex: 1 1 220px;
+  min-width: 180px;
+}
+
+.access-perm-toggles {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.perm-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1.5px solid $border;
+  background: #fff;
+  color: $text-muted;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: all .15s;
+  margin: 0;
+
+  input { position: absolute; opacity: 0; width: 0; height: 0; }
+  i { font-size: 11px; opacity: .75; }
+
+  &:hover { border-color: $green-ring; background: $green-light; }
+}
+
+.perm-toggle-view.perm-toggle-active  { background: $green; border-color: $green; color: #fff; &:hover { background: $green-dark; border-color: $green-dark; } }
+.perm-toggle-edit.perm-toggle-active  { background: #f5a623; border-color: #f5a623; color: #fff; &:hover { background: #dd9310; border-color: #dd9310; } }
+.perm-toggle-delete.perm-toggle-active{ background: #e74c3c; border-color: #e74c3c; color: #fff; &:hover { background: #d13b2b; border-color: #d13b2b; } }
+
+.perm-toggle-active i { opacity: 1; }
+
+.btn-access-grant {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 22px;
+  border-radius: $radius-btn;
+  border: none;
+  background: linear-gradient(135deg, $green, $green-dark);
+  color: #fff;
+  font-weight: 600;
+  font-size: 13.5px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all .15s;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px -2px rgba($green, .4);
+
+  &:hover:not(:disabled) { box-shadow: 0 6px 16px -2px rgba($green, .5); transform: translateY(-1px); }
+  &:disabled { background: #c7cedb; cursor: not-allowed; box-shadow: none; }
+}
+
+.access-list-hd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: $text;
+  font-size: 13.5px;
+  margin-bottom: 12px;
+
+  i { font-size: 13px; color: $green; }
+}
+
+.access-count-badge {
+  background: $green-light;
+  color: $green;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 20px;
+}
+
+.access-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.access-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: $radius-btn;
+  border: 1px solid $border;
+  background: #fff;
+  cursor: pointer;
+  transition: all .15s;
+
+  &:hover {
+    border-color: $green-ring;
+    box-shadow: 0 4px 14px -4px rgba(20, 30, 60, .15);
+    transform: translateY(-1px);
+
+    .access-revoke-btn { opacity: 1; }
+  }
+}
+
+.access-row-editing {
+  border-color: #f5a623;
+  background: #fffdf6;
+  box-shadow: 0 0 0 1px #f5a623;
+
+  &:hover { border-color: #f5a623; }
+}
+
+.access-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $green-light, $green-ring);
+  color: $green;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .6);
+}
+
+.access-person {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.access-person-name {
+  font-weight: 600;
+  font-size: 13.5px;
+  color: $text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.access-person-email {
+  font-size: 12px;
+  color: $text-muted;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.access-perm-badges {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.perm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+
+  i { font-size: 9px; }
+}
+
+.perm-badge-view  { background: $green-light; color: $green; }
+.perm-badge-edit  { background: #fff3cd; color: #8a6300; }
+.perm-badge-delete{ background: #fdecea; color: #c0392b; }
+
+.access-revoke-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: $text-muted;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all .15s;
+  flex-shrink: 0;
+
+  &:hover { background: #fdecea; color: #c0392b; transform: scale(1.05); }
+}
+
+.access-empty, .access-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 36px 0;
+  color: $text-muted;
+  font-size: 13.5px;
+
+  i { font-size: 26px; opacity: .5; }
+  p { margin: 0; }
+}
+
+.access-loading {
+  flex-direction: row;
+  padding: 20px 0;
 }
 
 // ── Responsive ────────────────────────────────────────────

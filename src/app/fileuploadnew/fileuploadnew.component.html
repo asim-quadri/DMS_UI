@@ -83,7 +83,7 @@
         >
           <i class="bi bi-download"></i> Download<span *ngIf="selectedCount > 0">&nbsp;({{ selectedCount }})</span>
         </button>
-        <button class="btn-action btn-ghost-action" disabled title="Coming soon">
+        <button *ngIf="context === 'dms'" class="btn-action btn-ghost-action" disabled title="Coming soon">
           <i class="bi bi-share"></i> Share
         </button>
         <div class="dms-search">
@@ -144,6 +144,11 @@
                   <i class="bi ficon" [class.bi-folder-fill]="!n0.isFile" [class.bi-file-earmark-text]="n0.isFile"></i>
                   <span class="fname">{{ n0.label }}</span>
                   <span class="fcount" *ngIf="!n0.isFile && getNodeChildCount(n0) > 0">{{ getNodeChildCount(n0) }}</span>
+                  <span class="fnode-actions" *ngIf="context === 'dms' && !n0.isFile">
+                    <i *ngIf="isFolderOwner(n0)" class="bi bi-share faction-icon" title="Share" (click)="openGrantAccessModal(accessModal, 'Folder', getFolderRecordId(n0), n0.label); $event.stopPropagation()"></i>
+                    <i *ngIf="n0.canEdit" class="bi bi-pencil faction-icon" title="Rename" (click)="renameFolderNode(n0, $event)"></i>
+                    <i *ngIf="n0.canDelete" class="bi bi-trash faction-icon" title="Delete" (click)="deleteFolderNode(n0, $event)"></i>
+                  </span>
                 </div>
               </li>
 
@@ -158,6 +163,11 @@
                       <i class="bi ficon" [class.bi-folder-fill]="!n1.isFile" [class.bi-file-earmark-text]="n1.isFile"></i>
                       <span class="fname">{{ n1.label }}</span>
                       <span class="fcount" *ngIf="!n1.isFile && getNodeChildCount(n1) > 0">{{ getNodeChildCount(n1) }}</span>
+                      <span class="fnode-actions" *ngIf="context === 'dms' && !n1.isFile">
+                        <i *ngIf="isFolderOwner(n1)" class="bi bi-share faction-icon" title="Share" (click)="openGrantAccessModal(accessModal, 'Folder', getFolderRecordId(n1), n1.label); $event.stopPropagation()"></i>
+                        <i *ngIf="n1.canEdit" class="bi bi-pencil faction-icon" title="Rename" (click)="renameFolderNode(n1, $event)"></i>
+                        <i *ngIf="n1.canDelete" class="bi bi-trash faction-icon" title="Delete" (click)="deleteFolderNode(n1, $event)"></i>
+                      </span>
                     </div>
                   </li>
 
@@ -172,6 +182,11 @@
                           <i class="bi ficon" [class.bi-folder-fill]="!n2.isFile" [class.bi-file-earmark-text]="n2.isFile"></i>
                           <span class="fname">{{ n2.label }}</span>
                           <span class="fcount" *ngIf="!n2.isFile && getNodeChildCount(n2) > 0">{{ getNodeChildCount(n2) }}</span>
+                          <span class="fnode-actions" *ngIf="context === 'dms' && !n2.isFile">
+                            <i *ngIf="isFolderOwner(n2)" class="bi bi-share faction-icon" title="Share" (click)="openGrantAccessModal(accessModal, 'Folder', getFolderRecordId(n2), n2.label); $event.stopPropagation()"></i>
+                            <i *ngIf="n2.canEdit" class="bi bi-pencil faction-icon" title="Rename" (click)="renameFolderNode(n2, $event)"></i>
+                            <i *ngIf="n2.canDelete" class="bi bi-trash faction-icon" title="Delete" (click)="deleteFolderNode(n2, $event)"></i>
+                          </span>
                         </div>
                       </li>
 
@@ -186,6 +201,11 @@
                               <i class="bi ficon" [class.bi-folder-fill]="!n3.isFile" [class.bi-file-earmark-text]="n3.isFile"></i>
                               <span class="fname">{{ n3.label }}</span>
                               <span class="fcount" *ngIf="!n3.isFile && getNodeChildCount(n3) > 0">{{ getNodeChildCount(n3) }}</span>
+                              <span class="fnode-actions" *ngIf="context === 'dms' && !n3.isFile">
+                                <i *ngIf="isFolderOwner(n3)" class="bi bi-share faction-icon" title="Share" (click)="openGrantAccessModal(accessModal, 'Folder', getFolderRecordId(n3), n3.label); $event.stopPropagation()"></i>
+                                <i *ngIf="n3.canEdit" class="bi bi-pencil faction-icon" title="Rename" (click)="renameFolderNode(n3, $event)"></i>
+                                <i *ngIf="n3.canDelete" class="bi bi-trash faction-icon" title="Delete" (click)="deleteFolderNode(n3, $event)"></i>
+                              </span>
                             </div>
                           </li>
 
@@ -200,6 +220,11 @@
                                   <i class="bi ficon" [class.bi-folder-fill]="!n4.isFile" [class.bi-file-earmark-text]="n4.isFile"></i>
                                   <span class="fname">{{ n4.label }}</span>
                                   <span class="fcount" *ngIf="!n4.isFile && getNodeChildCount(n4) > 0">{{ getNodeChildCount(n4) }}</span>
+                                  <span class="fnode-actions" *ngIf="context === 'dms' && !n4.isFile">
+                                    <i *ngIf="isFolderOwner(n4)" class="bi bi-share faction-icon" title="Share" (click)="openGrantAccessModal(accessModal, 'Folder', getFolderRecordId(n4), n4.label); $event.stopPropagation()"></i>
+                                    <i *ngIf="n4.canEdit" class="bi bi-pencil faction-icon" title="Rename" (click)="renameFolderNode(n4, $event)"></i>
+                                    <i *ngIf="n4.canDelete" class="bi bi-trash faction-icon" title="Delete" (click)="deleteFolderNode(n4, $event)"></i>
+                                  </span>
                                 </div>
                               </li>
 
@@ -214,6 +239,11 @@
                                       <i class="bi ficon" [class.bi-folder-fill]="!n5.isFile" [class.bi-file-earmark-text]="n5.isFile"></i>
                                       <span class="fname">{{ n5.label }}</span>
                                       <span class="fcount" *ngIf="!n5.isFile && getNodeChildCount(n5) > 0">{{ getNodeChildCount(n5) }}</span>
+                                      <span class="fnode-actions" *ngIf="context === 'dms' && !n5.isFile">
+                                        <i *ngIf="isFolderOwner(n5)" class="bi bi-share faction-icon" title="Share" (click)="openGrantAccessModal(accessModal, 'Folder', getFolderRecordId(n5), n5.label); $event.stopPropagation()"></i>
+                                        <i *ngIf="n5.canEdit" class="bi bi-pencil faction-icon" title="Rename" (click)="renameFolderNode(n5, $event)"></i>
+                                        <i *ngIf="n5.canDelete" class="bi bi-trash faction-icon" title="Delete" (click)="deleteFolderNode(n5, $event)"></i>
+                                      </span>
                                     </div>
                                   </li>
                                 </ng-container>
@@ -323,7 +353,17 @@
                               (click)="downloadFileContent(file, $event)">
                         <i class="bi bi-download"></i>
                       </button>
-                      <button *ngIf="context === 'dms'" class="act-btn del-act"
+                      <button *ngIf="context === 'dms' && isFileOwner(file)" class="act-btn share-act"
+                              title="Manage Access"
+                              (click)="openGrantAccessModal(accessModal, 'File', file.id, file.fullName || file.fileName); $event.stopPropagation()">
+                        <i class="bi bi-share"></i>
+                      </button>
+                      <button *ngIf="context === 'dms' && file.canEdit" class="act-btn rename-act"
+                              title="Rename"
+                              (click)="renameFileInline(file, $event)">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button *ngIf="context === 'dms' && file.canDelete" class="act-btn del-act"
                               title="Delete"
                               (click)="deleteSingleFile(file, $event)">
                         <i class="bi bi-trash"></i>
@@ -440,5 +480,94 @@
         </button>
       </div>
     </form>
+  </div>
+</ng-template>
+
+<ng-template #accessModal let-modal>
+  <div class="modal-header access-modal-header">
+    <div class="access-modal-title-wrap">
+      <span class="access-modal-icon">
+        <i class="bi" [class.bi-folder-fill]="accessModalItem?.itemType === 'Folder'" [class.bi-file-earmark-text-fill]="accessModalItem?.itemType === 'File'"></i>
+      </span>
+      <div class="access-modal-title-text">
+        <h5 class="modal-title mb-0">Manage Access</h5>
+        <span class="access-modal-subtitle">{{ accessModalItem?.label }}</span>
+      </div>
+    </div>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body access-modal-body">
+
+    <form [formGroup]="grantAccessForm" (ngSubmit)="submitGrantAccess()" class="access-grant-form" [class.access-grant-form-editing]="editingAccessRow">
+      <div class="access-form-label-row">
+        <label class="access-form-label">
+          <i class="bi" [class.bi-person-plus-fill]="!editingAccessRow" [class.bi-pencil-fill]="editingAccessRow"></i>
+          {{ editingAccessRow ? ('Editing access for ' + (editingAccessRow.dmsUserName || 'user')) : 'Add a person' }}
+        </label>
+        <button type="button" class="access-cancel-edit" *ngIf="editingAccessRow" (click)="cancelEditAccess()">
+          <i class="bi bi-x-lg"></i> Cancel
+        </button>
+      </div>
+      <div class="access-grant-row">
+        <select class="form-select access-user-select" formControlName="dmsUserId">
+          <option value="" disabled>Select a user…</option>
+          <option *ngFor="let u of dmsUsersForAccess" [value]="u.id ?? u.Id">{{ u.fullName ?? u.FullName }}</option>
+        </select>
+
+        <div class="access-perm-toggles">
+          <label class="perm-toggle perm-toggle-view" [class.perm-toggle-active]="grantAccessForm.value.canView">
+            <input type="checkbox" formControlName="canView"><i class="bi bi-eye-fill"></i><span>View</span>
+          </label>
+          <label class="perm-toggle perm-toggle-edit" [class.perm-toggle-active]="grantAccessForm.value.canEdit">
+            <input type="checkbox" formControlName="canEdit"><i class="bi bi-pencil-fill"></i><span>Edit</span>
+          </label>
+          <label class="perm-toggle perm-toggle-delete" [class.perm-toggle-active]="grantAccessForm.value.canDelete">
+            <input type="checkbox" formControlName="canDelete"><i class="bi bi-trash-fill"></i><span>Delete</span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn-access-grant" [disabled]="!grantAccessForm.valid">
+          <i class="bi" [class.bi-plus-lg]="!editingAccessRow" [class.bi-check-lg]="editingAccessRow"></i>
+          {{ editingAccessRow ? 'Update' : 'Grant' }}
+        </button>
+      </div>
+    </form>
+
+    <div class="access-list-section">
+      <div class="access-list-hd">
+        <i class="bi bi-people-fill"></i>
+        <span>People with access</span>
+        <span class="access-count-badge" *ngIf="accessList.length">{{ accessList.length }}</span>
+      </div>
+
+      <div class="access-list">
+        <div class="access-row" *ngFor="let row of accessList" [class.access-row-editing]="editingAccessRow?.dmsUserId === row.dmsUserId" (click)="selectAccessRow(row)" title="Click to edit this person's access">
+          <div class="access-avatar">{{ (row.dmsUserName || '?').charAt(0).toUpperCase() }}</div>
+          <div class="access-person">
+            <span class="access-person-name">{{ row.dmsUserName }}</span>
+            <span class="access-person-email">{{ row.dmsUserEmail }}</span>
+          </div>
+          <div class="access-perm-badges">
+            <span class="perm-badge perm-badge-view" *ngIf="row.canView"><i class="bi bi-eye-fill"></i>View</span>
+            <span class="perm-badge perm-badge-edit" *ngIf="row.canEdit"><i class="bi bi-pencil-fill"></i>Edit</span>
+            <span class="perm-badge perm-badge-delete" *ngIf="row.canDelete"><i class="bi bi-trash-fill"></i>Delete</span>
+          </div>
+          <button type="button" class="access-revoke-btn" title="Revoke access" (click)="revokeAccessFor(row); $event.stopPropagation()">
+            <i class="bi bi-trash3"></i>
+          </button>
+        </div>
+
+        <div class="access-empty" *ngIf="!isLoadingAccessList && accessList.length === 0">
+          <i class="bi bi-people"></i>
+          <p>No one has been granted access yet.</p>
+        </div>
+
+        <div class="access-loading" *ngIf="isLoadingAccessList">
+          <div class="spinner-border spinner-border-sm" role="status"></div>
+          <span>Loading…</span>
+        </div>
+      </div>
+    </div>
+
   </div>
 </ng-template>

@@ -107,3 +107,37 @@ export interface ApprovalModel {
   ApprovalUIId?: string;
   Action?: string; // "Created" | "Updated"
 }
+
+// Models for api/DmsAccess (per-file/per-folder access grants to DMS users)
+
+export type DmsItemType = 'Folder' | 'File';
+
+export interface GrantAccessRequest {
+  itemType: DmsItemType;
+  itemId: number;
+  dmsUserId: number;
+  canView: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+  grantedBy: number;
+}
+
+export interface RevokeAccessRequest {
+  itemType: DmsItemType;
+  itemId: number;
+  dmsUserId: number;
+}
+
+export interface DmsAccessListItem {
+  id: number;
+  itemType: DmsItemType;
+  itemId: number;
+  dmsUserId: number;
+  dmsUserName: string;
+  dmsUserEmail: string;
+  canView: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+  grantedBy: number;
+  createdOn: string;
+}

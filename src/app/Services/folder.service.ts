@@ -90,11 +90,12 @@ export class FolderService {
     regulationId?: number;
     auditType?: string;
     financialYear?: string;
-  }) {
+  }, userId?: number, userType: 'User' | 'DmsUser' = 'User') {
     let url = `${this.BASEURL}/FileUpload/getFiles?folderId=${id}&mtype=${type}`;
     if (filters?.regulationId != null) url += `&regulationId=${filters.regulationId}`;
     if (filters?.auditType)            url += `&auditType=${encodeURIComponent(filters.auditType)}`;
     if (filters?.financialYear)        url += `&financialYear=${encodeURIComponent(filters.financialYear)}`;
+    if (userId != null)                url += `&userId=${userId}&userType=${userType}`;
     return this.http.get<Array<FolderModel>>(url, this.getAuthHeadersJSON());
   }
   getOpinionAuditDocument(apiType: 'Opinions' | 'Audits', recordId: number, documentId: number) {
@@ -103,8 +104,31 @@ export class FolderService {
     return this.http.get(url, { headers: auth.headers as any, responseType: 'blob' });
   }
 
-  deleteFile(fileId: number) {
-    return this.http.delete<any>(`${this.BASEURL}/FileUpload/deleteFile?fileId=${fileId}`, this.getAuthHeadersJSON());
+  getFileByPathUrl(filePath: string, downloadFileName?: string): string {
+    const params = new URLSearchParams({ filePath });
+    if (downloadFileName) params.set('downloadFileName', downloadFileName);
+    return `${this.BASEURL}/FileUpload/GetFileByPath?${params}`;
+  }
+
+  getFileByPath(filePath: string, downloadFileName?: string) {
+    const auth = this.getAuthHeaders();
+    return this.http.get(this.getFileByPathUrl(filePath, downloadFileName), { headers: auth.headers as any, responseType: 'blob' });
+  }
+
+  deleteFile(fileId: number, userId: number, userType: 'User' | 'DmsUser' = 'User') {
+    return this.http.delete<any>(`${this.BASEURL}/FileUpload/deleteFile?fileId=${fileId}&userId=${userId}&userType=${userType}`, this.getAuthHeadersJSON());
+  }
+
+  renameFile(fileId: number, newFileName: string, userId: number, userType: 'User' | 'DmsUser' = 'User') {
+    return this.http.put<any>(`${this.BASEURL}/FileUpload/RenameFile?fileId=${fileId}&newFileName=${encodeURIComponent(newFileName)}&userId=${userId}&userType=${userType}`, null, this.getAuthHeadersJSON());
+  }
+
+  renameFolder(folderId: number, newName: string, userId: number, userType: 'User' | 'DmsUser' = 'User') {
+    return this.http.put<any>(`${this.BASEURL}/FolderManagement/RenameFolder?folderId=${folderId}&newName=${encodeURIComponent(newName)}&userId=${userId}&userType=${userType}`, null, this.getAuthHeadersJSON());
+  }
+
+  deleteFolder(folderId: number, userId: number, force = false, userType: 'User' | 'DmsUser' = 'User') {
+    return this.http.delete<any>(`${this.BASEURL}/FolderManagement/DeleteFolder?folderId=${folderId}&userId=${userId}&userType=${userType}&force=${force}`, this.getAuthHeadersJSON());
   }
 
 createFolder(folderModel: FolderModel) {

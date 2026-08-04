@@ -92,6 +92,16 @@ export class PersistenceService {
     return source === 'DMS';
   }
 
+  /**
+   * DMS access-control endpoints (tree/files/rename/delete) accept an optional
+   * userType so they know whether the userId they were given is a core Users.Id
+   * or a DmsUser.Id. For a DMS-sourced login, getUserId() actually holds the
+   * DmsUser.Id, so those calls must pass userType=DmsUser.
+   */
+  getUserType(): 'User' | 'DmsUser' {
+    return this.isDmsUser() ? 'DmsUser' : 'User';
+  }
+
   getRole() {
     return this.user.roleName;
   }

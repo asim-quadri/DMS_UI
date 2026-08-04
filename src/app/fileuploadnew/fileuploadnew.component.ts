@@ -15,6 +15,9 @@ import { map } from 'rxjs/operators';
 import { AppConfig } from '../app.config';
 import { UserEntityService } from '../Services/userentity.service';
 import { EntitiesCityCoordinate } from '../Models/userEntityModel';
+import { DmsAccessService } from '../Services/dms-access.service';
+import { DmsUserManagementService } from '../Services/dms-user-management.service';
+import { DmsAccessListItem, DmsItemType, GrantAccessRequest } from '../Models/dms.models';
 
 // Interface for the Unified Tree API response
 interface UnifiedTreeResponse {
@@ -46,6 +49,10 @@ interface UnifiedTreeNode {
   complianceTrackerDocumentId: string | null;
   regulationId?: number | null;
   fileData?: any;
+  canView?: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  isOwner?: boolean;
 }
 
 @Component({
@@ -178,7 +185,9 @@ export class FileuploadnewComponent implements OnInit {
     private activatedRoute: ActivatedRoute,
     private clientComplianceService: ClientComplianceTrackerService,
     private config: AppConfig,
-    private userEntityService: UserEntityService
+    private userEntityService: UserEntityService,
+    private dmsAccessService: DmsAccessService,
+    private dmsUserService: DmsUserManagementService
   ) {
     this.dmsTreeApiUrl = `${this.config.ServiceUrl}/UnifiedTree/dms-tree`;
     this.entityTreeApiUrl = `${this.config.ServiceUrl}/UnifiedTree/entity-tree`;
@@ -282,6 +291,7 @@ export class FileuploadnewComponent implements OnInit {
         id, label, parentId, expanded, folderTitle, children,
         treeType, path, isFile, nodeType,
         complianceTrackerDocumentId, regulationId,
+        canView, canEdit, canDelete, isOwner,
         fileData: rawFileData,
         ...extraNodeFields
       } = node as any;
@@ -306,7 +316,11 @@ export class FileuploadnewComponent implements OnInit {
         isFile,
         nodeType: nodeType || undefined,
         fileData: Object.keys(fileData).length ? fileData : undefined,
-        parent: parent || undefined
+        parent: parent || undefined,
+        canView,
+        canEdit,
+        canDelete,
+        isOwner
       };
 
       // Recursively convert children
@@ -340,7 +354,7 @@ export class FileuploadnewComponent implements OnInit {
     this.isLoading = true;
 
     const baseUrl = this.context === 'compseqr' ? this.entityTreeApiUrl : this.dmsTreeApiUrl;
-    const apiUrl = `${baseUrl}?userId=${userId}&entityId=${entityId}`;
+    const apiUrl = `${baseUrl}?userId=${userId}&entityId=${entityId}&userType=${this.persistenceService.getUserType()}`;
     this.http.get<UnifiedTreeResponse>(apiUrl).subscribe({
       next: (response) => {
         console.log('Unified Tree API Response for entity:', entityId, response);
@@ -445,6 +459,8 @@ export class FileuploadnewComponent implements OnInit {
     }
     if (file?.fileContent) {
       this.viewBase64File(file.fileContent, file.fileName || 'document');
+    } else if (file?.filePath && this.context === 'compseqr') {
+      this.streamFileByPath(file, false);
     } else if (file?.filePath) {
       window.open(file.filePath, '_blank');
     } else {
@@ -461,6 +477,8 @@ export class FileuploadnewComponent implements OnInit {
     }
     if (file?.fileContent) {
       this.downloadBase64File(file.fileContent, file.fileName || 'document');
+    } else if (file?.filePath && this.context === 'compseqr') {
+      this.streamFileByPath(file, true);
     } else if (file?.filePath) {
       const link = document.createElement('a');
       link.href = file.filePath;
@@ -469,6 +487,29 @@ export class FileuploadnewComponent implements OnInit {
     } else {
       this.notifier.notify('warning', 'No downloadable content available');
     }
+  }
+
+  /** CompSeqr files store a server filePath — fetch it (with auth) via FileUpload/GetFileByPath
+   *  rather than navigating the browser straight to it, since that route requires the auth header. */
+  private streamFileByPath(file: any, download: boolean): void {
+    const fileName = file.fileName || file.fullName || 'document';
+    this.folderService.getFileByPath(file.filePath, fileName).subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        if (download) {
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = fileName;
+          link.click();
+          setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+        } else {
+          const win = window.open(url, '_blank');
+          if (!win) this.notifier.notify('warning', 'Popup blocked — please allow popups');
+          setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+        }
+      },
+      error: () => this.notifier.notify('error', 'Failed to load document')
+    });
   }
 
   /** Fetch opinion/audit document via API and open or download the blob */
@@ -701,9 +742,13 @@ export class FileuploadnewComponent implements OnInit {
       return;
     }
 
-    this.folderService.deleteFile(file.id).subscribe({
-      next: () => {
-        this.notifier.notify('success', 'File deleted');
+    this.folderService.deleteFile(file.id, this.persistenceService.getUserId()!, this.persistenceService.getUserType()).subscribe({
+      next: (result: any) => {
+        if (result && result.success === false) {
+          this.notifier.notify('error', result.message || 'Failed to delete file');
+          return;
+        }
+        this.notifier.notify('success', result?.message || 'File deleted');
         this.selectedFileKeys.delete(this.fileKey(file));
         if (this.selectedFolderTreeNodeItem) {
           this.getAllFilesbyFolderId(
@@ -736,7 +781,7 @@ export class FileuploadnewComponent implements OnInit {
       return;
     }
 
-    const deletions = selected.map(f => this.folderService.deleteFile(f.id));
+    const deletions = selected.map(f => this.folderService.deleteFile(f.id, this.persistenceService.getUserId()!, this.persistenceService.getUserType()));
     forkJoin(deletions).subscribe({
       next: () => {
         this.notifier.notify('success', `Deleted ${selected.length} file(s)`);
@@ -842,17 +887,10 @@ export class FileuploadnewComponent implements OnInit {
     return chain;
   }
 
+  /** Subfolder count for whichever folder is currently selected (root-level folders when none is). */
   get totalFolderCount(): number {
-    return this.countFolderNodes(this.treeData);
-  }
-
-  private countFolderNodes(nodes: FolderTreeNode[]): number {
-    let count = 0;
-    for (const node of nodes || []) {
-      if (!node.isFile) count++;
-      if (node.children?.length) count += this.countFolderNodes(node.children);
-    }
-    return count;
+    const children = this.selectedFolderTreeNodeItem ? this.selectedFolderTreeNodeItem.children : this.treeData;
+    return (children || []).filter(c => !c.isFile).length;
   }
 
   getNodeChildCount(node: FolderTreeNode): number {
@@ -927,13 +965,32 @@ export class FileuploadnewComponent implements OnInit {
     return node.fileData?.recordId ?? node.id;
   }
 
+  /** Only the file's owner can manage its access grants. Prefer the backend's own
+   *  isOwner flag when present; fall back to comparing userId for older responses. */
+  isFileOwner(file: any): boolean {
+    const flag = file?.isOwner ?? file?.IsOwner;
+    if (flag != null) {
+      return !!flag;
+    }
+    return file?.userId === this.persistenceService.getUserId();
+  }
+
+  /** Same idea as isFileOwner() but for folder tree nodes. */
+  isFolderOwner(node: FolderTreeNode): boolean {
+    const flag = (node as any)?.isOwner ?? (node as any)?.IsOwner;
+    if (flag != null) {
+      return !!flag;
+    }
+    return (node.fileData?.userId ?? node.fileData?.UserId) === this.persistenceService.getUserId();
+  }
+
   getAllFilesbyFolderId(folderId: number, type: any = 'proedox', filters?: {
     regulationId?: number;
     auditType?: string;
     financialYear?: string;
   }) {
     this.files = [];
-    this.folderService.getFilesbyFolderId(folderId, type, filters).subscribe((result: any) => {
+    this.folderService.getFilesbyFolderId(folderId, type, filters, this.persistenceService.getUserId()!, this.persistenceService.getUserType()).subscribe((result: any) => {
       this.files = result || [];
     }, (error: any) => {
       console.error("Error fetching files:", error);
@@ -1008,6 +1065,191 @@ export class FileuploadnewComponent implements OnInit {
 
   open(content: TemplateRef<any>) {
     this.modalService.open(content, { centered: true });
+  }
+
+  // ====== Grant Access (DmsAccess) ======
+
+  accessModalItem: { itemType: DmsItemType; itemId: number; label: string } | null = null;
+  accessList: DmsAccessListItem[] = [];
+  isLoadingAccessList = false;
+  dmsUsersForAccess: any[] = [];
+  grantAccessForm: FormGroup = this.formBuilder.group({
+    dmsUserId: ['', Validators.required],
+    canView: [true],
+    canEdit: [false],
+    canDelete: [false]
+  });
+
+  editingAccessRow: DmsAccessListItem | null = null;
+
+  openGrantAccessModal(content: TemplateRef<any>, itemType: DmsItemType, itemId: number, label: string): void {
+    this.accessModalItem = { itemType, itemId, label };
+    this.cancelEditAccess();
+    this.loadAccessList();
+    if (this.dmsUsersForAccess.length === 0) {
+      const organizationId = this.persistenceService.getOrganizationId();
+      this.dmsUserService.getAllDmsUsers(organizationId!).subscribe({
+        next: (result: any) => { this.dmsUsersForAccess = result || []; },
+        error: () => { this.dmsUsersForAccess = []; }
+      });
+    }
+    this.modalService.open(content, { centered: true, size: 'lg' });
+  }
+
+  loadAccessList(): void {
+    if (!this.accessModalItem) return;
+    this.isLoadingAccessList = true;
+    this.dmsAccessService.getAccessList(this.accessModalItem.itemType, this.accessModalItem.itemId).subscribe({
+      next: (result) => {
+        this.accessList = result || [];
+        this.isLoadingAccessList = false;
+      },
+      error: () => {
+        this.accessList = [];
+        this.isLoadingAccessList = false;
+      }
+    });
+  }
+
+  /** Clicking an existing grant loads it into the form above for editing, with the user locked. */
+  selectAccessRow(row: DmsAccessListItem): void {
+    this.editingAccessRow = row;
+    this.grantAccessForm.patchValue({
+      dmsUserId: row.dmsUserId,
+      canView: row.canView,
+      canEdit: row.canEdit,
+      canDelete: row.canDelete
+    });
+    this.grantAccessForm.get('dmsUserId')?.disable();
+  }
+
+  cancelEditAccess(): void {
+    this.editingAccessRow = null;
+    this.grantAccessForm.get('dmsUserId')?.enable();
+    this.grantAccessForm.reset({ dmsUserId: '', canView: true, canEdit: false, canDelete: false });
+  }
+
+  submitGrantAccess(): void {
+    if (!this.accessModalItem || !this.grantAccessForm.valid) {
+      return;
+    }
+    const formValue = this.grantAccessForm.getRawValue();
+    const isEditing = !!this.editingAccessRow;
+    const payload: GrantAccessRequest = {
+      itemType: this.accessModalItem.itemType,
+      itemId: this.accessModalItem.itemId,
+      dmsUserId: formValue.dmsUserId,
+      canView: formValue.canView,
+      canEdit: formValue.canEdit,
+      canDelete: formValue.canDelete,
+      grantedBy: this.persistenceService.getUserId()!
+    };
+    this.dmsAccessService.grantAccess(payload).subscribe({
+      next: () => {
+        this.notifier.notify('success', isEditing ? 'Access updated successfully' : 'Access granted successfully');
+        this.cancelEditAccess();
+        this.loadAccessList();
+      },
+      error: () => this.notifier.notify('error', isEditing ? 'Failed to update access' : 'Failed to grant access')
+    });
+  }
+
+  revokeAccessFor(row: DmsAccessListItem): void {
+    if (!this.accessModalItem) return;
+    if (!window.confirm(`Revoke access for ${row.dmsUserName || 'this user'}?`)) {
+      return;
+    }
+    this.dmsAccessService.revokeAccess({
+      itemType: this.accessModalItem.itemType,
+      itemId: this.accessModalItem.itemId,
+      dmsUserId: row.dmsUserId
+    }).subscribe({
+      next: () => {
+        this.notifier.notify('success', 'Access revoked successfully');
+        if (this.editingAccessRow?.dmsUserId === row.dmsUserId) {
+          this.cancelEditAccess();
+        }
+        this.loadAccessList();
+      },
+      error: () => this.notifier.notify('error', 'Failed to revoke access')
+    });
+  }
+
+  // ====== Rename / Delete (files & folders) ======
+
+  renameFileInline(file: any, event?: Event): void {
+    event?.stopPropagation();
+    const currentName = file.fullName || file.fileName || '';
+    const newName = window.prompt('Enter new file name', currentName);
+    if (!newName || !newName.trim() || newName.trim() === currentName) {
+      return;
+    }
+    this.folderService.renameFile(file.id, newName.trim(), this.persistenceService.getUserId()!, this.persistenceService.getUserType()).subscribe({
+      next: (result: any) => {
+        if (result && result.success === false) {
+          this.notifier.notify('error', result.message || 'Failed to rename file');
+          return;
+        }
+        this.notifier.notify('success', result?.message || 'File renamed successfully');
+        if (this.selectedFolderTreeNodeItem) {
+          this.getAllFilesbyFolderId(
+            this.getFolderRecordId(this.selectedFolderTreeNodeItem),
+            this.getModuleType(this.selectedFolderTreeNodeItem.foldertitle || '')
+          );
+        }
+      },
+      error: () => this.notifier.notify('error', 'Failed to rename file')
+    });
+  }
+
+  renameFolderNode(node: FolderTreeNode, event: Event): void {
+    event.stopPropagation();
+    const newName = window.prompt('Enter new folder name', node.label);
+    if (!newName || !newName.trim() || newName.trim() === node.label) {
+      return;
+    }
+    this.folderService.renameFolder(this.getFolderRecordId(node), newName.trim(), this.persistenceService.getUserId()!, this.persistenceService.getUserType()).subscribe({
+      next: (result: any) => {
+        if (result && result.success === false) {
+          this.notifier.notify('error', result.message || 'Failed to rename folder');
+          return;
+        }
+        this.notifier.notify('success', result?.message || 'Folder renamed successfully');
+        this.loadUnifiedTreeForEntity(this.selectedEntityId);
+      },
+      error: () => this.notifier.notify('error', 'Failed to rename folder')
+    });
+  }
+
+  deleteFolderNode(node: FolderTreeNode, event: Event, force = false): void {
+    event.stopPropagation();
+    if (!force && !window.confirm(`Delete folder "${node.label}"? This cannot be undone.`)) {
+      return;
+    }
+    const userId = this.persistenceService.getUserId()!;
+    const userType = this.persistenceService.getUserType();
+    this.folderService.deleteFolder(this.getFolderRecordId(node), userId, force, userType).subscribe({
+      next: (result: any) => {
+        if (result && result.success === false) {
+          if (!force && window.confirm(`${result.message || 'Folder is not empty.'} Delete anyway?`)) {
+            this.deleteFolderNode(node, event, true);
+            return;
+          }
+          this.notifier.notify('error', result.message || 'Failed to delete folder');
+          return;
+        }
+        this.notifier.notify('success', result?.message || 'Folder deleted successfully');
+        if (this.selectedFolderTreeNodeItem?.id === node.id) {
+          this.selectedFolderTreeNodeItem = null;
+          this.files = [];
+        }
+        this.loadUnifiedTreeForEntity(this.selectedEntityId);
+      },
+      error: (err: any) => {
+        const msg = err?.error?.message || 'Failed to delete folder.';
+        this.notifier.notify('error', msg);
+      }
+    });
   }
 
   toggle(item: FolderTreeNode, event: Event): void {

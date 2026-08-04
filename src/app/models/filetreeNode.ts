@@ -13,4 +13,8 @@ export interface FolderTreeNode {
   nodeType?: string; // For compliance tracker: Entity, ComplianceTracker, FinancialYear, Regulation, TypeOfCompliance, Location, Document
   complianceData?: any;
   locationData?: any;
+  canView?: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  isOwner?: boolean;
 }
