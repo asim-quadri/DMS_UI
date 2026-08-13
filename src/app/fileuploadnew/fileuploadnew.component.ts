@@ -1349,14 +1349,12 @@ export class FileuploadnewComponent implements OnInit {
       // Collect all complianceTrackerDocumentIds from children
       this.loadComplianceDocumentsForParent(node);
     } else {
-      // No documents to load, display node info
-      this.files = [{
-        id: node.id,
-        fileName: node.label,
-        fullName: node.label,
-        folderName: node.path?.[node.path.length - 2] || 'Folder',
-        fileType: 'folder'
-      }];
+      // No complianceTrackerDocumentId and no preloaded children — the tree
+      // didn't come with this folder's contents attached, but it may still
+      // be a real folder on the backend (e.g. a plain sub-folder someone
+      // filed a document into). Fetch its contents the same way DMS nodes
+      // do instead of just echoing the node back as a fake row.
+      this.getAllFilesbyFolderId(this.getFolderRecordId(node), this.getModuleType(node.path || ''));
     }
   }
 
