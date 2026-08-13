@@ -1312,17 +1312,10 @@ export class FileuploadnewComponent implements OnInit {
     return chain;
   }
 
+  /** Subfolder count for whichever folder is currently selected (root-level folders when none is). */
   get totalFolderCount(): number {
-    return this.countFolderNodes(this.treeData);
-  }
-
-  private countFolderNodes(nodes: FolderTreeNode[]): number {
-    let count = 0;
-    for (const node of nodes || []) {
-      if (!node.isFile) count++;
-      if (node.children?.length) count += this.countFolderNodes(node.children);
-    }
-    return count;
+    const children = this.selectedFolderTreeNodeItem ? this.selectedFolderTreeNodeItem.children : this.treeData;
+    return (children || []).filter(c => !c.isFile).length;
   }
 
   getNodeChildCount(node: FolderTreeNode): number {
