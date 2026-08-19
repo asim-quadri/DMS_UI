@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http'
 import { AppConfig } from '../app.config'
-import { FolderModel,FileModel } from '../Models/folderModel';
+import { FolderModel,FileModel, FileDetail } from '../Models/folderModel';
 import { forkJoin, Observable } from 'rxjs';
 
 @Injectable({
@@ -98,6 +98,18 @@ export class FolderService {
     if (userId != null)                url += `&userId=${userId}&userType=${userType}`;
     return this.http.get<Array<FolderModel>>(url, this.getAuthHeadersJSON());
   }
+
+  /**
+   * GET /api/FileUpload/getFile?fileId={id}&userId={id}&userType={optional} —
+   * a single DMS/ProEDox file by id (scoped to module_type = 'proedox'
+   * folders only; a Compliance Tracker/Opinion/Audit document id 404s here).
+   * 404s for both "doesn't exist" and "exists but no access", so callers
+   * should treat any error the same way rather than distinguishing them.
+   */
+  getFileById(fileId: number, userId: number, userType: 'User' | 'DmsUser' = 'User') {
+    return this.http.get<FileDetail>(`${this.BASEURL}/FileUpload/getFile?fileId=${fileId}&userId=${userId}&userType=${userType}`, this.getAuthHeadersJSON());
+  }
+
   getOpinionAuditDocument(apiType: 'Opinions' | 'Audits', recordId: number, documentId: number) {
     const url = `${this.BASEURL}/${apiType}/${recordId}/documents/${documentId}/view`;
     const auth = this.getAuthHeaders();

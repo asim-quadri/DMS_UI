@@ -19,3 +19,20 @@ export interface FolderModel{
 
 }
 
+/** Response shape of GET /api/FileUpload/getFile?fileId={id} — a single DMS/ProEDox file by id. */
+export interface FileDetail {
+  id: number;
+  fileName: string | null;
+  fileType: string | null;
+  filePath: string | null;
+  folderId: number;
+  userId: number;
+  fullName: string | null;
+  folderName: string | null;
+  createdOn: string | null;
+  canView: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+  isOwner: boolean;
+}
+

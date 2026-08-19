@@ -1100,6 +1100,29 @@ th.col-check input[type="checkbox"] {
   padding: 20px 22px 22px;
 }
 
+.bulk-share-file-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+  max-height: 110px;
+  overflow-y: auto;
+}
+
+.bulk-share-file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: $green-light;
+  color: $green;
+  font-size: 12px;
+  font-weight: 600;
+
+  i { font-size: 12px; }
+}
+
 .access-form-label-row {
   display: flex;
   align-items: center;
@@ -1287,6 +1310,18 @@ th.col-check input[type="checkbox"] {
   &:hover { border-color: #f5a623; }
 }
 
+.access-row-owner {
+  cursor: default;
+  background: $green-light;
+  border-color: $green-light;
+
+  &:hover {
+    border-color: $green-light;
+    box-shadow: none;
+    transform: none;
+  }
+}
+
 .access-avatar {
   width: 38px;
   height: 38px;
@@ -1349,6 +1384,7 @@ th.col-check input[type="checkbox"] {
 .perm-badge-view  { background: $green-light; color: $green; }
 .perm-badge-edit  { background: #fff3cd; color: #8a6300; }
 .perm-badge-delete{ background: #fdecea; color: #c0392b; }
+.perm-badge-owner { background: #fff; color: $green; border: 1px solid $green; }
 
 .access-revoke-btn {
   width: 32px;

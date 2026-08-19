@@ -13,7 +13,7 @@ import { UserAssignedEntity, PendingComplianceTracker, LocationMaster, Complianc
 import { forkJoin, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { AppConfig } from '../app.config';
-import { UserEntityService } from '../Services/userentity.service';
+import { UserEntityService, DmsDeepLinkTarget } from '../Services/userentity.service';
 import { EntitiesCityCoordinate } from '../Models/userEntityModel';
 import { DmsAccessService } from '../Services/dms-access.service';
 import { DmsUserManagementService } from '../Services/dms-user-management.service';
@@ -235,6 +235,15 @@ export class FileuploadnewComponent implements OnInit {
     });
 
     this.loadClientEntities();
+
+    // Covers the "already on /home or /compseqr" notification click: the
+    // header's router.navigate() there is a no-op (same URL), so nothing else
+    // would retrigger resolution — this fires the moment the handoff lands.
+    this.userEntityService.pendingDeepLink$.subscribe((target) => {
+      if (target) {
+        this.tryResolvePendingDeepLink();
+      }
+    });
   }
 
   /**
@@ -367,6 +376,8 @@ export class FileuploadnewComponent implements OnInit {
         this.attachParentReferences(this.treeData);
 
         this.isLoading = false;
+
+        this.tryResolvePendingDeepLink();
       },
       error: (err) => {
         console.error('Error loading unified tree for entity:', err);
@@ -753,7 +764,12 @@ export class FileuploadnewComponent implements OnInit {
         if (this.selectedFolderTreeNodeItem) {
           this.getAllFilesbyFolderId(
             this.getFolderRecordId(this.selectedFolderTreeNodeItem),
-            this.getModuleType(this.selectedFolderTreeNodeItem.foldertitle || '')
+            // getModuleType() expects the node's breadcrumb path array (as
+            // selectItem() below passes it) — foldertitle is just this node's
+            // own label (e.g. "Aug2026"), so passing it here made getModuleType
+            // index into a string and return a single stray character instead
+            // of "proedox"/"dms".
+            this.getModuleType(this.selectedFolderTreeNodeItem.path || '')
           );
         }
       },
@@ -789,7 +805,12 @@ export class FileuploadnewComponent implements OnInit {
         if (this.selectedFolderTreeNodeItem) {
           this.getAllFilesbyFolderId(
             this.getFolderRecordId(this.selectedFolderTreeNodeItem),
-            this.getModuleType(this.selectedFolderTreeNodeItem.foldertitle || '')
+            // getModuleType() expects the node's breadcrumb path array (as
+            // selectItem() below passes it) — foldertitle is just this node's
+            // own label (e.g. "Aug2026"), so passing it here made getModuleType
+            // index into a string and return a single stray character instead
+            // of "proedox"/"dms".
+            this.getModuleType(this.selectedFolderTreeNodeItem.path || '')
           );
         }
       },
@@ -932,6 +953,10 @@ export class FileuploadnewComponent implements OnInit {
       this.fileModel.filePath = file.webkitRelativePath;
       this.fileModel.folderId = this.getFolderRecordId(this.selectedFolderTreeNodeItem);
       this.fileModel.lastModifiedOn = file.lastModified;
+      // fileModel.userId defaults to a placeholder (1) at field declaration —
+      // it was never being overwritten with the actual logged-in user, so
+      // every upload was attributed to user 1 regardless of who was signed in.
+      this.fileModel.userId = this.persistenceService.getUserId()!;
 
       this.uploadFile(file);
     }
@@ -947,7 +972,12 @@ export class FileuploadnewComponent implements OnInit {
         if (this.selectedFolderTreeNodeItem) {
           this.getAllFilesbyFolderId(
             this.getFolderRecordId(this.selectedFolderTreeNodeItem),
-            this.getModuleType(this.selectedFolderTreeNodeItem.foldertitle || '')
+            // getModuleType() expects the node's breadcrumb path array (as
+            // selectItem() below passes it) — foldertitle is just this node's
+            // own label (e.g. "Aug2026"), so passing it here made getModuleType
+            // index into a string and return a single stray character instead
+            // of "proedox"/"dms".
+            this.getModuleType(this.selectedFolderTreeNodeItem.path || '')
           );
         } else {
           this.getAllFilesbyFolderId(this.selectedFolderId);
@@ -1003,8 +1033,10 @@ export class FileuploadnewComponent implements OnInit {
       this.folderModel.folderName = this.formgroupCreateFolder.controls['folderName'].value;
       this.folderModel.isParent = false;
       this.folderModel.entityId = this.selectedEntityId;
-      this.folderModel.parentId = this.selectedFolderTreeNodeItem.id;
-      
+      // Use the backend's real folder id, not the tree-navigation id
+      // (they can differ — see getFolderRecordId()).
+      this.folderModel.parentId = this.getFolderRecordId(this.selectedFolderTreeNodeItem);
+
       this.folderService.createFolder(this.folderModel).subscribe(
         (result: any) => {
           this.notifier.notify('success', 'Folder Created Successfully');
@@ -1069,7 +1101,34 @@ export class FileuploadnewComponent implements OnInit {
 
   // ====== Grant Access (DmsAccess) ======
 
-  accessModalItem: { itemType: DmsItemType; itemId: number; label: string } | null = null;
+  accessModalItem: { itemType: DmsItemType; itemId: number; label: string; ownerName?: string } | null = null;
+
+  /**
+   * Fallback for the modal's "Owner" row when the row/tree data didn't carry
+   * a createdByName (e.g. folder nodes). Only ever shown when the current
+   * user opened this modal, and the Share icon itself is already gated on
+   * isFileOwner()/isFolderOwner() — so "whoever is logged in" is a safe
+   * stand-in for "the owner" in that situation.
+   */
+  get accessModalOwnerName(): string {
+    return this.accessModalItem?.ownerName || this.persistenceService.getUserName() || 'You';
+  }
+
+  /**
+   * accessList as returned by GetAccessList can include a grant row for an
+   * account that happens to share the owner's display name (e.g. the owner
+   * also has a separate DmsUser identity they were explicitly shared with) —
+   * that reads as a confusing duplicate next to the Owner row above, so hide
+   * any grant row whose name matches the owner's.
+   */
+  get visibleAccessList(): DmsAccessListItem[] {
+    const ownerName = this.accessModalOwnerName.trim().toLowerCase();
+    if (!ownerName) {
+      return this.accessList;
+    }
+    return this.accessList.filter(row => (row.dmsUserName || '').trim().toLowerCase() !== ownerName);
+  }
+
   accessList: DmsAccessListItem[] = [];
   isLoadingAccessList = false;
   dmsUsersForAccess: any[] = [];
@@ -1082,18 +1141,80 @@ export class FileuploadnewComponent implements OnInit {
 
   editingAccessRow: DmsAccessListItem | null = null;
 
-  openGrantAccessModal(content: TemplateRef<any>, itemType: DmsItemType, itemId: number, label: string): void {
-    this.accessModalItem = { itemType, itemId, label };
+  openGrantAccessModal(content: TemplateRef<any>, itemType: DmsItemType, itemId: number, label: string, ownerName?: string): void {
+    this.accessModalItem = { itemType, itemId, label, ownerName };
     this.cancelEditAccess();
     this.loadAccessList();
-    if (this.dmsUsersForAccess.length === 0) {
-      const organizationId = this.persistenceService.getOrganizationId();
-      this.dmsUserService.getAllDmsUsers(organizationId!).subscribe({
-        next: (result: any) => { this.dmsUsersForAccess = result || []; },
-        error: () => { this.dmsUsersForAccess = []; }
-      });
-    }
+    this.ensureDmsUsersForAccessLoaded();
     this.modalService.open(content, { centered: true, size: 'lg' });
+  }
+
+  /** Shared by the single-item and bulk share modals — loads the pickable-user list once. */
+  private ensureDmsUsersForAccessLoaded(): void {
+    if (this.dmsUsersForAccess.length > 0) {
+      return;
+    }
+    const organizationId = this.persistenceService.getOrganizationId();
+    this.dmsUserService.getAllDmsUsers(organizationId!).subscribe({
+      next: (result: any) => { this.dmsUsersForAccess = result || []; },
+      error: () => { this.dmsUsersForAccess = []; }
+    });
+  }
+
+  // ====== Bulk Share (checkbox-selected files) ======
+
+  /** Files from the current selection that are actually being shared this round (owned by the current user). */
+  bulkShareItems: any[] = [];
+  /** Selected files that were left out because the current user doesn't own them. */
+  bulkShareSkipped: number = 0;
+  isBulkSharing: boolean = false;
+
+  openBulkShareModal(content: TemplateRef<any>): void {
+    const selected = this.filteredFiles.filter(f => this.isFileSelected(f));
+    const shareable = selected.filter(f => this.isFileOwner(f));
+
+    if (shareable.length === 0) {
+      this.notifier.notify('error', 'You can only share files you own.');
+      return;
+    }
+
+    this.bulkShareItems = shareable;
+    this.bulkShareSkipped = selected.length - shareable.length;
+    this.cancelEditAccess(); // resets grantAccessForm to its default (unfocused) state
+    this.ensureDmsUsersForAccessLoaded();
+    this.modalService.open(content, { centered: true, size: 'md' });
+  }
+
+  submitBulkShare(): void {
+    if (!this.grantAccessForm.valid || this.bulkShareItems.length === 0) {
+      return;
+    }
+    const formValue = this.grantAccessForm.getRawValue();
+    const grantedBy = this.persistenceService.getUserId()!;
+    const requests = this.bulkShareItems.map(file => this.dmsAccessService.grantAccess({
+      itemType: 'File',
+      itemId: file.id,
+      dmsUserId: formValue.dmsUserId,
+      canView: formValue.canView,
+      canEdit: formValue.canEdit,
+      canDelete: formValue.canDelete,
+      grantedBy
+    }));
+
+    this.isBulkSharing = true;
+    forkJoin(requests).subscribe({
+      next: () => {
+        this.notifier.notify('success', `Shared ${this.bulkShareItems.length} file(s) successfully`);
+        this.isBulkSharing = false;
+        this.bulkShareItems = [];
+        this.clearSelection();
+        this.modalService.dismissAll();
+      },
+      error: () => {
+        this.notifier.notify('error', 'Failed to share one or more files');
+        this.isBulkSharing = false;
+      }
+    });
   }
 
   loadAccessList(): void {
@@ -1194,7 +1315,12 @@ export class FileuploadnewComponent implements OnInit {
         if (this.selectedFolderTreeNodeItem) {
           this.getAllFilesbyFolderId(
             this.getFolderRecordId(this.selectedFolderTreeNodeItem),
-            this.getModuleType(this.selectedFolderTreeNodeItem.foldertitle || '')
+            // getModuleType() expects the node's breadcrumb path array (as
+            // selectItem() below passes it) — foldertitle is just this node's
+            // own label (e.g. "Aug2026"), so passing it here made getModuleType
+            // index into a string and return a single stray character instead
+            // of "proedox"/"dms".
+            this.getModuleType(this.selectedFolderTreeNodeItem.path || '')
           );
         }
       },
@@ -1261,7 +1387,14 @@ export class FileuploadnewComponent implements OnInit {
     event.stopPropagation();
 
     const realNode = this.findNodeById(this.treeData, item.id, item.treeType) || item;
+    this.applyNodeSelection(realNode);
+  }
 
+  /**
+   * The actual "open this node" logic, shared by real tree clicks (selectItem)
+   * and programmatic selection (e.g. jumping to a notification's target node).
+   */
+  private applyNodeSelection(realNode: FolderTreeNode): void {
     this.selectedFolderTreeNodeItem = realNode;
     this.buildBreadcrumbPath(realNode);
     this.clearSelection();
@@ -1702,6 +1835,179 @@ export class FileuploadnewComponent implements OnInit {
       }
     }
     return null;
+  }
+
+  // ====== DMS Notification deep-link (click a notification → open its record) ======
+
+  /**
+   * Attempts to resolve+consume a pending "open this record" handoff (from a
+   * notification click). Called from two places, because the header's
+   * router.navigate(['/home' | '/compseqr']) is a no-op when you're already
+   * on that route — no route change, no tree reload, so nothing would ever
+   * retrigger resolution if it only ran after a fresh tree load:
+   *   1. Right after a tree load finishes (the entity/context actually changed).
+   *   2. The moment the header hands off the target (userEntityService.pendingDeepLink$
+   *      subscription below) — covers "already on the right page" clicks.
+   * Both call sites are safe to call redundantly: the target is read fresh
+   * and only acted on (then cleared) once its preconditions are met.
+   */
+  private tryResolvePendingDeepLink(): void {
+    const target = this.userEntityService.pendingDeepLinkValue;
+    if (!target) {
+      return;
+    }
+
+    const isDmsModule = target.sourceModule === 'DMSFile' || target.sourceModule === 'DMSFolder';
+    const expectedContext = isDmsModule ? 'dms' : 'compseqr';
+    if (this.context !== expectedContext) {
+      // Wrong side has loaded first (e.g. still mid route-transition) — leave
+      // the handoff in place for the load/tab that actually matches it.
+      return;
+    }
+
+    // DMSFile has its own by-id endpoint (permission-checked server-side) and
+    // needs neither the tree nor entity-selection to have finished — resolve
+    // it immediately rather than waiting on either.
+    if (target.sourceModule === 'DMSFile') {
+      this.userEntityService.setPendingDeepLink(null);
+      this.openDeepLinkedDmsFile(target);
+      return;
+    }
+
+    // Everything else is located by walking the loaded tree, so it has to
+    // wait until that tree (for the right entity) is actually in memory.
+    if (this.isLoading || this.treeData.length === 0) {
+      return;
+    }
+    if (target.entityId != null && target.entityId !== this.selectedEntityId) {
+      return;
+    }
+
+    this.userEntityService.setPendingDeepLink(null);
+
+    const node = this.findDeepLinkNode(target);
+    if (!node) {
+      this.notifier.notify('info', "Opened the entity, but couldn't pinpoint the exact item — it may have moved or been removed.");
+      return;
+    }
+    this.applyNodeSelection(node);
+    // Confirms the click actually did something — the target folder's list can
+    // legitimately come back empty for the viewer, which otherwise looks
+    // identical to "the click did nothing".
+    this.notifier.notify('success', `Opened "${node.label}"`);
+  }
+
+  /**
+   * GET FileUpload/getFile?fileId=... — the authoritative single-file lookup
+   * (permission-checked server-side; 404s if the viewer can't access it or it
+   * doesn't exist) and displays that one row in the file table. Also tries to
+   * select the file's folder in the sidebar tree for breadcrumb continuity,
+   * but that's best-effort — the row itself doesn't depend on it.
+   */
+  private openDeepLinkedDmsFile(target: DmsDeepLinkTarget): void {
+    const userId = this.persistenceService.getUserId();
+    if (!userId) {
+      return;
+    }
+
+    this.folderService.getFileById(target.sourceRecordId, userId, this.persistenceService.getUserType()).subscribe({
+      next: (file) => {
+        this.clearSelection();
+        this.filesCurrentPage = 1;
+        this.files = [file];
+
+        const folderNode = this.findNodeDeep(this.treeData, n =>
+          n.treeType === 'DMS' && !n.isFile &&
+          (String(n.fileData?.recordId ?? '') === String(file.folderId) || n.id === file.folderId)
+        );
+        if (folderNode) {
+          this.selectedFolderTreeNodeItem = folderNode;
+          this.buildBreadcrumbPath(folderNode);
+        } else {
+          this.selectedFolderTreeNodeItem = null;
+          this.breadcrumbPath = [{ label: file.folderName || 'Folder' }];
+        }
+
+        this.notifier.notify('success', `Opened "${file.fileName || file.fullName}"`);
+      },
+      error: (err: any) => {
+        console.error('Error fetching deep-linked file:', err);
+        this.notifier.notify('info', "Couldn't open that file — it may have been removed, or you may no longer have access.");
+      }
+    });
+  }
+
+  /** Depth-first search across the whole tree for the first node matching `predicate`. */
+  private findNodeDeep(nodes: FolderTreeNode[], predicate: (n: FolderTreeNode) => boolean): FolderTreeNode | null {
+    for (const n of nodes || []) {
+      if (predicate(n)) {
+        return n;
+      }
+      if (n.children?.length) {
+        const found = this.findNodeDeep(n.children, predicate);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  private lastPathSegment(path: string | null): string {
+    if (!path) return '';
+    const parts = path.split('->').map(s => s.trim()).filter(Boolean);
+    return (parts[parts.length - 1] || '').toLowerCase();
+  }
+
+  /**
+   * Maps a notification's (sourceModule, sourceRecordId) to a node in the
+   * already-loaded tree. Not every module has record-level granularity in the
+   * tree — Notices are fetched per-regulation on click rather than being tree
+   * nodes themselves — so those fall back to the nearest containing node
+   * (the regulation) instead of the single record.
+   */
+  private findDeepLinkNode(target: DmsDeepLinkTarget): FolderTreeNode | null {
+    switch (target.sourceModule) {
+      case 'ComplianceTracker':
+        return this.findNodeDeep(this.treeData, n =>
+          String(n.fileData?.complianceTrackerDocumentId ?? '')
+            .split(',')
+            .map(s => s.trim())
+            .includes(String(target.sourceRecordId))
+        );
+
+      case 'Opinions':
+      case 'Audits': {
+        const mtype = target.sourceModule === 'Audits' ? 'audits' : 'opinions';
+        return this.findNodeDeep(this.treeData, n => {
+          const pathLower = (n.path || []).map(s => (s || '').toLowerCase());
+          if (!pathLower.includes(mtype)) return false;
+          const fd = n.fileData || {};
+          if (!(fd.createdByName || fd.createdDate)) return false; // not a document-bearing node
+          const childPayload = this.findChildFilePayload(n);
+          const recordId = childPayload.recordId ?? fd.id ?? n.id;
+          return String(recordId) === String(target.sourceRecordId);
+        });
+      }
+
+      case 'Notices': {
+        const lastSegment = this.lastPathSegment(target.path);
+        if (!lastSegment) return null;
+        return this.findNodeDeep(this.treeData, n =>
+          this.isNoticeRegulationNode(n) && (n.label || '').trim().toLowerCase() === lastSegment
+        );
+      }
+
+      // DMSFile is resolved via openDeepLinkedDmsFile() (FileUpload/getFile by
+      // id) instead of a tree search — see resolvePendingDeepLink().
+
+      case 'DMSFolder':
+        return this.findNodeDeep(this.treeData, n =>
+          n.treeType === 'DMS' && !n.isFile &&
+          (String(n.fileData?.recordId ?? '') === String(target.sourceRecordId) || n.id === target.sourceRecordId)
+        );
+
+      default:
+        return null;
+    }
   }
 
   buildBreadcrumbPath(selectedNode: FolderTreeNode): void {
