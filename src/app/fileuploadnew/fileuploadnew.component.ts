@@ -1593,7 +1593,7 @@ export class FileuploadnewComponent implements OnInit {
     const idsByFolder = this.collectAtomicDocumentIdsByFolder(node);
 
     if (idsByFolder.size === 0) {
-      this.files = this.collectAllFiles(node);
+      this.files = this.complianceRowsOrFallback(node);
       return;
     }
 
@@ -1609,7 +1609,7 @@ export class FileuploadnewComponent implements OnInit {
     });
 
     if (requests.length === 0) {
-      this.files = this.collectAllFiles(node);
+      this.files = this.complianceRowsOrFallback(node);
       return;
     }
 
@@ -1638,14 +1638,87 @@ export class FileuploadnewComponent implements OnInit {
         if (merged.length > 0) {
           this.files = merged;
         } else {
-          this.files = this.collectAllFiles(node);
+          this.files = this.complianceRowsOrFallback(node);
         }
       },
       error: (err) => {
         console.error('Error loading documents for parent:', err);
-        this.files = this.collectAllFiles(node);
+        this.files = this.complianceRowsOrFallback(node);
       }
     });
+  }
+
+  private complianceRowsOrFallback(node: FolderTreeNode): any[] {
+    const rows = this.collectComplianceRowsForToc(node);
+    return rows.length > 0 ? rows : this.collectAllFiles(node);
+  }
+
+  /**
+   * Walks a TOC subtree collecting one row per Location: a real document row
+   * (labelled with its compliance-tracker id + month) when something's been
+   * filed for it, or a placeholder row naming its Regulation -> ... breadcrumb
+   * when nothing has — so an empty leaf still shows up instead of the whole
+   * view going blank.
+   *
+   * Confirmed with the backend: every node in this branch (Regulation down
+   * through the CmpId/compliance-item level) has isFile: false by design —
+   * unlike Opinions/Audits/DMS, there are no isFile:true leaves here at all.
+   * So this walks to genuine tree leaves (no children), not to isFile:true
+   * nodes or any particular nodeType — that's what collectAllFiles() got
+   * wrong, and matching on a specific nodeType string (e.g. "Location")
+   * would just be guessing at the same kind of assumption again.
+   */
+  private collectComplianceRowsForToc(node: FolderTreeNode): any[] {
+    const rows: any[] = [];
+
+    const documentInfoFor = (n: FolderTreeNode): { docId: string; month: string } | null => {
+      const fd: any = n.fileData || {};
+      const cd: any = n.complianceData || {};
+      const docId = fd.complianceTrackerDocumentId || cd.complianceTrackerDocumentId;
+      if (!docId) return null;
+      const month = fd.forTheMonth || cd.forTheMonth || fd.financialYear || cd.financialYear || '';
+      return { docId: String(docId), month: month ? String(month) : '' };
+    };
+
+    const walk = (current: FolderTreeNode) => {
+      const isLeaf = !current.children || current.children.length === 0;
+      if (!isLeaf) {
+        current.children!.forEach(child => walk(child));
+        return;
+      }
+
+      // path includes the leaf's own label as its last segment — drop it so
+      // the breadcrumb reads as "where this lives" (…Regulation -> TOC ->
+      // Location), not a repeat of the fileName shown right next to it.
+      const ancestorPath = (current.path || []).slice(0, -1);
+      const breadcrumb = ancestorPath.join(' -> ') || current.parent?.label || '';
+      const docInfo = documentInfoFor(current);
+
+      if (docInfo) {
+        const label = docInfo.month ? `${docInfo.docId} - ${docInfo.month}` : docInfo.docId;
+        rows.push({
+          id: rows.length + 1,
+          fileName: label,
+          fullName: label,
+          folderName: breadcrumb,
+          complianceTrackerDocumentId: docInfo.docId,
+          fileType: 'compliance'
+        });
+      } else {
+        // Nothing filed for this item yet — still show it, rather than
+        // silently dropping it because there's no document to point to.
+        rows.push({
+          id: rows.length + 1,
+          fileName: current.label,
+          fullName: current.label,
+          folderName: breadcrumb,
+          fileType: 'pending'
+        });
+      }
+    };
+
+    (node.children || []).forEach(child => walk(child));
+    return rows;
   }
 
   /**

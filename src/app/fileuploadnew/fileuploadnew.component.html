@@ -138,137 +138,45 @@
         </div>
 
         <div class="panel-scroll" *ngIf="!sidebarCollapsed">
-          <!-- Flat tree: depth encoded as CSS class on frow -->
+          <!-- Recursive tree: unlimited depth (was hardcoded to 6 nested *ngFor
+               levels, n0..n5 — the Compliance Tracker branch goes deeper than
+               that, down through Location and CmpId, so those never got a row
+               at all). Depth is passed through the template context and drives
+               indentation directly, instead of a fixed frow-lv1..frow-lv5 set. -->
           <ul class="ftree">
-            <ng-container *ngFor="let n0 of filteredTreeData">
-              <li class="fnode" [class.fnode-sel]="isSelected(n0)">
-                <div class="frow" (click)="selectItem(n0, $event)">
-                  <span class="fcaret" *ngIf="n0.children?.length && !n0.isFile" (click)="toggle(n0, $event)">
-                    <i class="bi" [class.bi-chevron-right]="!n0.expanded" [class.bi-chevron-down]="n0.expanded"></i>
-                  </span>
-                  <span class="fcaret" *ngIf="!n0.children?.length || n0.isFile"></span>
-                  <i class="bi ficon" [class.bi-folder-fill]="!n0.isFile" [class.bi-file-earmark-text]="n0.isFile"></i>
-                  <span class="fname">{{ n0.label }}</span>
-                  <span class="fcount" *ngIf="!n0.isFile && getNodeChildCount(n0) > 0">{{ getNodeChildCount(n0) }}</span>
-                  <span class="fnode-actions" *ngIf="context === 'dms' && !n0.isFile">
-                    <i *ngIf="isFolderOwner(n0)" class="bi bi-share faction-icon" title="Share" (click)="openGrantAccessModal(accessModal, 'Folder', getFolderRecordId(n0), n0.label, n0.fileData?.createdByName); $event.stopPropagation()"></i>
-                    <i *ngIf="n0.canEdit" class="bi bi-pencil faction-icon" title="Rename" (click)="renameFolderNode(n0, $event)"></i>
-                    <i *ngIf="n0.canDelete" class="bi bi-trash faction-icon" title="Delete" (click)="deleteFolderNode(n0, $event)"></i>
-                  </span>
-                </div>
-              </li>
-
-              <ng-container *ngIf="n0.expanded && n0.children?.length">
-                <ng-container *ngFor="let n1 of n0.children">
-                  <li class="fnode" [class.fnode-sel]="isSelected(n1)">
-                    <div class="frow frow-lv1" (click)="selectItem(n1, $event)">
-                      <span class="fcaret" *ngIf="n1.children?.length && !n1.isFile" (click)="toggle(n1, $event)">
-                        <i class="bi" [class.bi-chevron-right]="!n1.expanded" [class.bi-chevron-down]="n1.expanded"></i>
-                      </span>
-                      <span class="fcaret" *ngIf="!n1.children?.length || n1.isFile"></span>
-                      <i class="bi ficon" [class.bi-folder-fill]="!n1.isFile" [class.bi-file-earmark-text]="n1.isFile"></i>
-                      <span class="fname">{{ n1.label }}</span>
-                      <span class="fcount" *ngIf="!n1.isFile && getNodeChildCount(n1) > 0">{{ getNodeChildCount(n1) }}</span>
-                      <span class="fnode-actions" *ngIf="context === 'dms' && !n1.isFile">
-                        <i *ngIf="isFolderOwner(n1)" class="bi bi-share faction-icon" title="Share" (click)="openGrantAccessModal(accessModal, 'Folder', getFolderRecordId(n1), n1.label, n1.fileData?.createdByName); $event.stopPropagation()"></i>
-                        <i *ngIf="n1.canEdit" class="bi bi-pencil faction-icon" title="Rename" (click)="renameFolderNode(n1, $event)"></i>
-                        <i *ngIf="n1.canDelete" class="bi bi-trash faction-icon" title="Delete" (click)="deleteFolderNode(n1, $event)"></i>
-                      </span>
-                    </div>
-                  </li>
-
-                  <ng-container *ngIf="n1.expanded && n1.children?.length">
-                    <ng-container *ngFor="let n2 of n1.children">
-                      <li class="fnode" [class.fnode-sel]="isSelected(n2)">
-                        <div class="frow frow-lv2" (click)="selectItem(n2, $event)">
-                          <span class="fcaret" *ngIf="n2.children?.length && !n2.isFile" (click)="toggle(n2, $event)">
-                            <i class="bi" [class.bi-chevron-right]="!n2.expanded" [class.bi-chevron-down]="n2.expanded"></i>
-                          </span>
-                          <span class="fcaret" *ngIf="!n2.children?.length || n2.isFile"></span>
-                          <i class="bi ficon" [class.bi-folder-fill]="!n2.isFile" [class.bi-file-earmark-text]="n2.isFile"></i>
-                          <span class="fname">{{ n2.label }}</span>
-                          <span class="fcount" *ngIf="!n2.isFile && getNodeChildCount(n2) > 0">{{ getNodeChildCount(n2) }}</span>
-                          <span class="fnode-actions" *ngIf="context === 'dms' && !n2.isFile">
-                            <i *ngIf="isFolderOwner(n2)" class="bi bi-share faction-icon" title="Share" (click)="openGrantAccessModal(accessModal, 'Folder', getFolderRecordId(n2), n2.label, n2.fileData?.createdByName); $event.stopPropagation()"></i>
-                            <i *ngIf="n2.canEdit" class="bi bi-pencil faction-icon" title="Rename" (click)="renameFolderNode(n2, $event)"></i>
-                            <i *ngIf="n2.canDelete" class="bi bi-trash faction-icon" title="Delete" (click)="deleteFolderNode(n2, $event)"></i>
-                          </span>
-                        </div>
-                      </li>
-
-                      <ng-container *ngIf="n2.expanded && n2.children?.length">
-                        <ng-container *ngFor="let n3 of n2.children">
-                          <li class="fnode" [class.fnode-sel]="isSelected(n3)">
-                            <div class="frow frow-lv3" (click)="selectItem(n3, $event)">
-                              <span class="fcaret" *ngIf="n3.children?.length && !n3.isFile" (click)="toggle(n3, $event)">
-                                <i class="bi" [class.bi-chevron-right]="!n3.expanded" [class.bi-chevron-down]="n3.expanded"></i>
-                              </span>
-                              <span class="fcaret" *ngIf="!n3.children?.length || n3.isFile"></span>
-                              <i class="bi ficon" [class.bi-folder-fill]="!n3.isFile" [class.bi-file-earmark-text]="n3.isFile"></i>
-                              <span class="fname">{{ n3.label }}</span>
-                              <span class="fcount" *ngIf="!n3.isFile && getNodeChildCount(n3) > 0">{{ getNodeChildCount(n3) }}</span>
-                              <span class="fnode-actions" *ngIf="context === 'dms' && !n3.isFile">
-                                <i *ngIf="isFolderOwner(n3)" class="bi bi-share faction-icon" title="Share" (click)="openGrantAccessModal(accessModal, 'Folder', getFolderRecordId(n3), n3.label, n3.fileData?.createdByName); $event.stopPropagation()"></i>
-                                <i *ngIf="n3.canEdit" class="bi bi-pencil faction-icon" title="Rename" (click)="renameFolderNode(n3, $event)"></i>
-                                <i *ngIf="n3.canDelete" class="bi bi-trash faction-icon" title="Delete" (click)="deleteFolderNode(n3, $event)"></i>
-                              </span>
-                            </div>
-                          </li>
-
-                          <ng-container *ngIf="n3.expanded && n3.children?.length">
-                            <ng-container *ngFor="let n4 of n3.children">
-                              <li class="fnode" [class.fnode-sel]="isSelected(n4)">
-                                <div class="frow frow-lv4" (click)="selectItem(n4, $event)">
-                                  <span class="fcaret" *ngIf="n4.children?.length && !n4.isFile" (click)="toggle(n4, $event)">
-                                    <i class="bi" [class.bi-chevron-right]="!n4.expanded" [class.bi-chevron-down]="n4.expanded"></i>
-                                  </span>
-                                  <span class="fcaret" *ngIf="!n4.children?.length || n4.isFile"></span>
-                                  <i class="bi ficon" [class.bi-folder-fill]="!n4.isFile" [class.bi-file-earmark-text]="n4.isFile"></i>
-                                  <span class="fname">{{ n4.label }}</span>
-                                  <span class="fcount" *ngIf="!n4.isFile && getNodeChildCount(n4) > 0">{{ getNodeChildCount(n4) }}</span>
-                                  <span class="fnode-actions" *ngIf="context === 'dms' && !n4.isFile">
-                                    <i *ngIf="isFolderOwner(n4)" class="bi bi-share faction-icon" title="Share" (click)="openGrantAccessModal(accessModal, 'Folder', getFolderRecordId(n4), n4.label, n4.fileData?.createdByName); $event.stopPropagation()"></i>
-                                    <i *ngIf="n4.canEdit" class="bi bi-pencil faction-icon" title="Rename" (click)="renameFolderNode(n4, $event)"></i>
-                                    <i *ngIf="n4.canDelete" class="bi bi-trash faction-icon" title="Delete" (click)="deleteFolderNode(n4, $event)"></i>
-                                  </span>
-                                </div>
-                              </li>
-
-                              <ng-container *ngIf="n4.expanded && n4.children?.length">
-                                <ng-container *ngFor="let n5 of n4.children">
-                                  <li class="fnode" [class.fnode-sel]="isSelected(n5)">
-                                    <div class="frow frow-lv5" (click)="selectItem(n5, $event)">
-                                      <span class="fcaret" *ngIf="n5.children?.length && !n5.isFile" (click)="toggle(n5, $event)">
-                                        <i class="bi" [class.bi-chevron-right]="!n5.expanded" [class.bi-chevron-down]="n5.expanded"></i>
-                                      </span>
-                                      <span class="fcaret" *ngIf="!n5.children?.length || n5.isFile"></span>
-                                      <i class="bi ficon" [class.bi-folder-fill]="!n5.isFile" [class.bi-file-earmark-text]="n5.isFile"></i>
-                                      <span class="fname">{{ n5.label }}</span>
-                                      <span class="fcount" *ngIf="!n5.isFile && getNodeChildCount(n5) > 0">{{ getNodeChildCount(n5) }}</span>
-                                      <span class="fnode-actions" *ngIf="context === 'dms' && !n5.isFile">
-                                        <i *ngIf="isFolderOwner(n5)" class="bi bi-share faction-icon" title="Share" (click)="openGrantAccessModal(accessModal, 'Folder', getFolderRecordId(n5), n5.label, n5.fileData?.createdByName); $event.stopPropagation()"></i>
-                                        <i *ngIf="n5.canEdit" class="bi bi-pencil faction-icon" title="Rename" (click)="renameFolderNode(n5, $event)"></i>
-                                        <i *ngIf="n5.canDelete" class="bi bi-trash faction-icon" title="Delete" (click)="deleteFolderNode(n5, $event)"></i>
-                                      </span>
-                                    </div>
-                                  </li>
-                                </ng-container>
-                              </ng-container>
-
-                            </ng-container>
-                          </ng-container>
-                        </ng-container>
-                      </ng-container>
-                    </ng-container>
-                  </ng-container>
-                </ng-container>
-              </ng-container>
+            <ng-container *ngFor="let node of filteredTreeData">
+              <ng-container *ngTemplateOutlet="treeNodeTpl; context: { $implicit: node, depth: 0 }"></ng-container>
             </ng-container>
           </ul>
           <p class="folder-no-results" *ngIf="folderSearchText && filteredTreeData.length === 0">
             No folders match "{{ folderSearchText }}"
           </p>
         </div>
+
+        <ng-template #treeNodeTpl let-node let-depth="depth">
+          <li class="fnode" [class.fnode-sel]="isSelected(node)">
+            <div class="frow" [style.padding-left.px]="12 + depth * 16" (click)="selectItem(node, $event)">
+              <span class="fcaret" *ngIf="node.children?.length && !node.isFile" (click)="toggle(node, $event)">
+                <i class="bi" [class.bi-chevron-right]="!node.expanded" [class.bi-chevron-down]="node.expanded"></i>
+              </span>
+              <span class="fcaret" *ngIf="!node.children?.length || node.isFile"></span>
+              <i class="bi ficon" [class.bi-folder-fill]="!node.isFile" [class.bi-file-earmark-text]="node.isFile"></i>
+              <span class="fname">{{ node.label }}</span>
+              <span class="fcount" *ngIf="!node.isFile && getNodeChildCount(node) > 0">{{ getNodeChildCount(node) }}</span>
+              <span class="fnode-actions" *ngIf="context === 'dms' && !node.isFile">
+                <i *ngIf="isFolderOwner(node)" class="bi bi-share faction-icon" title="Share" (click)="openGrantAccessModal(accessModal, 'Folder', getFolderRecordId(node), node.label, node.fileData?.createdByName); $event.stopPropagation()"></i>
+                <i *ngIf="node.canEdit" class="bi bi-pencil faction-icon" title="Rename" (click)="renameFolderNode(node, $event)"></i>
+                <i *ngIf="node.canDelete" class="bi bi-trash faction-icon" title="Delete" (click)="deleteFolderNode(node, $event)"></i>
+              </span>
+            </div>
+          </li>
+
+          <ng-container *ngIf="node.expanded && node.children?.length">
+            <ng-container *ngFor="let child of node.children">
+              <ng-container *ngTemplateOutlet="treeNodeTpl; context: { $implicit: child, depth: depth + 1 }"></ng-container>
+            </ng-container>
+          </ng-container>
+        </ng-template>
 
         <div class="panel-ft" *ngIf="context === 'dms'">
           <button class="btn-add-primary" (click)="openSm(primaryFolder, 'primary')">
