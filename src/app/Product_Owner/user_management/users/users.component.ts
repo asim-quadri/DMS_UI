@@ -16,6 +16,7 @@ import { PersistenceService } from 'src/app/Services/persistence.service';
 import { MenuOptionModel } from 'src/app/Models/Users';
 import { any } from 'underscore';
 import { UserApprovalComponent } from '../user-approval/user-approval.component';
+import { DmsUserManagementService } from 'src/app/Services/dms-user-management.service';
 
 const defaultColumnDef = {
   editable: false,
@@ -145,13 +146,12 @@ export class UsersComponent implements OnInit {
   }
 
   deleteUser(uid: any) {
-    this.apiService.delteUserByUID(uid).subscribe((result: UsersModel) => {
-      if (result.responseCode == 1) {
-        this.reload(result);
-        this.notifier.notify('error', 'Deleted Successfully');
-      } else {
-        this.notifier.notify('error', result.responseMessage);
-      }
+    this.dmsUserService.deleteDmsUser(uid).subscribe({
+      next: () => {
+        this.reload(null);
+        this.notifier.notify('success', 'Deleted Successfully');
+      },
+      error: () => this.notifier.notify('error', 'Failed to delete user')
     });
   }
 
@@ -168,7 +168,8 @@ export class UsersComponent implements OnInit {
     public model: users,
     public apiService: ApiService,
     private notifier: NotifierService,
-    private persistenceService: PersistenceService
+    private persistenceService: PersistenceService,
+    private dmsUserService: DmsUserManagementService
   ) { }
 
   ngOnInit(): void {
@@ -225,16 +226,48 @@ export class UsersComponent implements OnInit {
 
   getAllUser() {
     this.rowData = [];
-    // const roleId = this.persistenceService.getRoleId();
-    // console.log('Role ID:', roleId);
-    this.apiService.getAllUsers().subscribe((result: any) => {
-      result.forEach((element: any) => {
-        element.dummystatus = element.status == 1 ? 'Active' : 'InActive';
-        element.Control = 'control';
-        element.Edit = 'edit';
-      });
-      this.rowData = result;
+    const userId = this.persistenceService.getUserId();
+    if (!userId) {
+      this.notifier.notify('error', 'Not signed in — cannot load users.');
+      return;
+    }
+    this.dmsUserService.getAllDmsUsers(userId).subscribe((result: any) => {
+      this.rowData = (result || []).map((u: any) => this.normalizeDmsUser(u));
     });
+  }
+
+  /** DMS API responses may come back PascalCase (per its spec doc) — normalize to the
+   *  camelCase shape this grid/edit form already expects everywhere else in the app. */
+  private normalizeDmsUser(u: any): any {
+    const status = u.status ?? u.Status;
+    return {
+      id: u.id ?? u.Id,
+      uid: u.uid ?? u.UID,
+      empId: u.empId ?? u.EmpId,
+      fullName: u.fullName ?? u.FullName,
+      firstName: u.firstName ?? u.FirstName,
+      lastName: u.lastName ?? u.LastName,
+      email: u.email ?? u.Email,
+      mobile: u.mobile ?? u.Mobile,
+      status,
+      dummystatus: status == 1 ? 'Active' : 'InActive',
+      startDate: u.startDate ?? u.StartDate,
+      endDate: u.endDate ?? u.EndDate,
+      managerId: u.managerId ?? u.ManagerId,
+      createdOn: u.createdOn ?? u.CreatedOn,
+      createdBy: u.createdBy ?? u.CreatedBy,
+      modifiedOn: u.modifiedOn ?? u.ModifiedOn,
+      modifiedBy: u.modifiedBy ?? u.ModifiedBy,
+      roleDisplayName: u.roleDisplayName ?? u.RoleDisplayName,
+      roleName: u.roleName ?? u.RoleName,
+      roleId: u.roleId ?? u.RoleId,
+      organizationId: u.organizationId ?? u.OrganizationId,
+      designation: u.designation ?? u.Designation,
+      dateOfBirth: u.dateOfBirth ?? u.DateOfBirth,
+      gender: u.gender ?? u.Gender,
+      Control: 'control',
+      Edit: 'edit'
+    };
   }
 
   reloadPage(event: any) {

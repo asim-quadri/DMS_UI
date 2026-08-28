@@ -17,6 +17,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTreeModule } from '@angular/material/tree';
 import { ExpandableTextComponent } from './expandable-text/expandable-text.component';
+import { DmsManageAccessComponent } from './dms-manage-access/dms-manage-access.component';
 
 
 @NgModule({
@@ -31,6 +32,7 @@ import { ExpandableTextComponent } from './expandable-text/expandable-text.compo
     InputMultiselectComponent,
     TreeviewComponent,
     ExpandableTextComponent,
+    DmsManageAccessComponent,
   ],
   exports: [
     InputTextComponent,
@@ -42,7 +44,8 @@ import { ExpandableTextComponent } from './expandable-text/expandable-text.compo
     AgLinkButtonComponent,
     InputPasswordComponent,
     InputMultiselectComponent,
-    TreeviewComponent
+    TreeviewComponent,
+    DmsManageAccessComponent,
   ],
   imports: [
     CommonModule,

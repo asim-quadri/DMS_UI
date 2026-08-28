@@ -1,0 +1,278 @@
+$green: #2a4a7f;
+$green-dark: #1c3a68;
+$green-light: #e6ebf4;
+$border: #e1e7ee;
+$radius-btn: 10px;
+
+.access-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: $green;
+  color: #fff;
+  padding: 16px 20px;
+}
+
+.access-modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.access-modal-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+}
+
+.access-modal-subtitle {
+  color: rgba(255, 255, 255, .78);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.access-modal-body {
+  padding: 20px 22px 22px;
+}
+
+.bulk-file-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+  max-height: 110px;
+  overflow-y: auto;
+}
+
+.bulk-file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: $green-light;
+  color: $green;
+  font-size: 12px;
+  font-weight: 600;
+
+  i { font-size: 12px; }
+}
+
+.access-form-label-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.access-form-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #4f5f72;
+}
+
+.access-grant-form {
+  padding-bottom: 18px;
+  border-bottom: 1px solid $border;
+  margin-bottom: 18px;
+}
+
+.access-grant-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.access-user-select {
+  flex: 1 1 200px;
+  min-width: 180px;
+  height: 40px;
+  border-radius: $radius-btn;
+  border: 1px solid $border;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.access-perm-toggles {
+  display: flex;
+  gap: 6px;
+}
+
+.perm-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  border-radius: $radius-btn;
+  border: 1px solid $border;
+  background: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #6c7a8c;
+  cursor: pointer;
+  transition: all .15s;
+
+  input { position: absolute; opacity: 0; pointer-events: none; }
+  i { opacity: .55; }
+}
+
+.perm-toggle-view.perm-toggle-active  { background: $green; border-color: $green; color: #fff; i { opacity: 1; } }
+.perm-toggle-edit.perm-toggle-active  { background: #f5a623; border-color: #f5a623; color: #fff; i { opacity: 1; } }
+.perm-toggle-delete.perm-toggle-active{ background: #e74c3c; border-color: #e74c3c; color: #fff; i { opacity: 1; } }
+
+.btn-access-grant {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: $radius-btn;
+  border: none;
+  background: $green;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { background: $green-dark; }
+  &:disabled { opacity: .55; cursor: default; }
+}
+
+.access-list-hd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #4f5f72;
+  margin-bottom: 10px;
+}
+
+.access-count-badge {
+  background: $green-light;
+  color: $green;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.access-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.access-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: $radius-btn;
+  border: 1px solid $border;
+  background: #fff;
+}
+
+.access-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #4470b9, #2a4a7f);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.access-person {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.access-person-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #253343;
+}
+
+.access-person-email {
+  font-size: 11.5px;
+  color: #7c8ba0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.access-perm-badges {
+  display: flex;
+  gap: 4px;
+}
+
+.perm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+
+  i { font-size: 9px; }
+}
+
+.perm-badge-view  { background: $green-light; color: $green; }
+.perm-badge-edit  { background: #fff3cd; color: #8a6300; }
+.perm-badge-delete{ background: #fdecea; color: #c0392b; }
+
+.access-revoke-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  border: 1px solid $border;
+  background: #fff;
+  color: #c0392b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover { background: #fdecea; border-color: #f5c6cb; }
+}
+
+.access-empty {
+  text-align: center;
+  padding: 30px 10px;
+  color: #9aa7b6;
+
+  i { font-size: 28px; }
+  p { margin: 8px 0 0; font-size: 13px; }
+}
+
+.access-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+  color: #7c8ba0;
+  font-size: 13px;
+}

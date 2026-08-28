@@ -10,6 +10,7 @@ import { MenuOptionModel } from 'src/app/Models/Users';
 import { pendingApproval } from '../../../../Models/pendingapproval';
 import { PersistenceService } from 'src/app/Services/persistence.service';
 import { RoleApprovalComponent } from '../role-approval/role-approval.component';
+import { DmsUserManagementService } from 'src/app/Services/dms-user-management.service';
 
 const defaultColumnDef = {
 	editable: false,
@@ -101,7 +102,7 @@ export class RolesComponent implements OnInit {
 	}
 
 	closeResult = '';
-	constructor(private modalService: NgbModal, public model: roles, public apiService: ApiService, private persistance: PersistenceService,) { }
+	constructor(private modalService: NgbModal, public model: roles, public apiService: ApiService, private persistance: PersistenceService, private dmsUserService: DmsUserManagementService) { }
 
 	ngOnInit(): void {
 		this.getAllRoles();
@@ -165,13 +166,32 @@ export class RolesComponent implements OnInit {
 
 	getAllRoles() {
 		this.rowData = [];
-		this.apiService.getAllRoles().subscribe((result: any) => {
-			result.forEach((element: any) => {
-				element.dummystatus = element.status == 1 ? 'Active' : 'InActive'
-				element.Edit = "edit";
-			});
-			this.rowData = result;
+
+		this.dmsUserService.getAllDmsRoles().subscribe((result: any) => {
+			this.rowData = (result || []).map((r: any) => this.normalizeDmsRole(r));
 		});
+	}
+
+	/** DMS API responses may come back PascalCase (per its spec doc) — normalize to the
+	 *  camelCase shape this grid/edit form already expects everywhere else in the app. */
+	private normalizeDmsRole(r: any): any {
+		const status = r.status ?? r.Status;
+		return {
+			id: r.id ?? r.Id,
+			uid: r.uid ?? r.UID,
+			roleName: r.roleName ?? r.RoleName,
+			roleDisplayName: r.roleDisplayName ?? r.RoleDisplayName,
+			description: r.description ?? r.Description,
+			managerId: r.managerId ?? r.ManagerId,
+			managerName: r.managerName ?? r.ManagerName,
+			status,
+			dummystatus: status == 1 ? 'Active' : 'InActive',
+			createdOn: r.createdOn ?? r.CreatedOn,
+			createdBy: r.createdBy ?? r.CreatedBy,
+			modifiedOn: r.modifiedOn ?? r.ModifiedOn,
+			modifiedBy: r.modifiedBy ?? r.ModifiedBy,
+			Edit: 'edit'
+		};
 	}
 
 	onFilterTextBoxChanged(event: any) {

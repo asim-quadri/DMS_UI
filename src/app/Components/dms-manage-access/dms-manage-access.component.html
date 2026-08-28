@@ -1,0 +1,90 @@
+<div class="modal-header access-modal-header">
+  <div class="access-modal-title-wrap">
+    <span class="access-modal-icon">
+      <i class="bi" [class.bi-folder-fill]="itemType === 'Folder' && !isBulk" [class.bi-file-earmark-text-fill]="itemType === 'File' && !isBulk" [class.bi-people-fill]="isBulk"></i>
+    </span>
+    <div class="access-modal-title-text">
+      <h5 class="modal-title mb-0">{{ modalTitle }}</h5>
+      <span class="access-modal-subtitle" *ngIf="!isBulk">{{ itemLabel }}</span>
+    </div>
+  </div>
+  <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
+</div>
+
+<div class="modal-body access-modal-body">
+
+  <div class="bulk-file-list" *ngIf="isBulk">
+    <span class="bulk-file-chip" *ngFor="let t of bulkItems">
+      <i class="bi" [ngClass]="t.itemType === 'Folder' ? 'bi-folder-fill' : 'bi-file-earmark-text'"></i>{{ t.label }}
+    </span>
+  </div>
+
+  <form [formGroup]="grantForm" (ngSubmit)="submitGrant()" class="access-grant-form">
+    <div class="access-form-label-row">
+      <label class="access-form-label">
+        <i class="bi bi-person-plus-fill"></i>
+        Share with
+      </label>
+    </div>
+    <div class="access-grant-row">
+      <select class="form-select access-user-select" formControlName="dmsUserId">
+        <option value="" disabled>Select a person…</option>
+        <option *ngFor="let u of recipients" [value]="u.id ?? u.Id">{{ u.fullName ?? u.FullName }}<ng-container *ngIf="u.email ?? u.Email"> ({{ u.email ?? u.Email }})</ng-container></option>
+      </select>
+
+      <div class="access-perm-toggles">
+        <label class="perm-toggle perm-toggle-view" [class.perm-toggle-active]="grantForm.value.canView">
+          <input type="checkbox" formControlName="canView"><i class="bi bi-eye-fill"></i><span>View</span>
+        </label>
+        <label class="perm-toggle perm-toggle-edit" [class.perm-toggle-active]="grantForm.value.canEdit">
+          <input type="checkbox" formControlName="canEdit"><i class="bi bi-pencil-fill"></i><span>Edit</span>
+        </label>
+        <label class="perm-toggle perm-toggle-delete" [class.perm-toggle-active]="grantForm.value.canDelete">
+          <input type="checkbox" formControlName="canDelete"><i class="bi bi-trash-fill"></i><span>Delete</span>
+        </label>
+      </div>
+
+      <button type="submit" class="btn-access-grant" [disabled]="!grantForm.valid || isSubmitting">
+        <i class="bi bi-plus-lg"></i>
+        {{ isSubmitting ? 'Sharing…' : 'Share' }}
+      </button>
+    </div>
+  </form>
+
+  <div class="access-list-section" *ngIf="!isBulk">
+    <div class="access-list-hd">
+      <i class="bi bi-people-fill"></i>
+      <span>People with access</span>
+      <span class="access-count-badge" *ngIf="accessList.length">{{ accessList.length }}</span>
+    </div>
+
+    <div class="access-list">
+      <div class="access-row" *ngFor="let row of accessList">
+        <div class="access-avatar">{{ (row.dmsUserName || '?').charAt(0).toUpperCase() }}</div>
+        <div class="access-person">
+          <span class="access-person-name">{{ row.dmsUserName }}</span>
+          <span class="access-person-email">{{ row.dmsUserEmail }}</span>
+        </div>
+        <div class="access-perm-badges">
+          <span class="perm-badge perm-badge-view" *ngIf="row.canView"><i class="bi bi-eye-fill"></i>View</span>
+          <span class="perm-badge perm-badge-edit" *ngIf="row.canEdit"><i class="bi bi-pencil-fill"></i>Edit</span>
+          <span class="perm-badge perm-badge-delete" *ngIf="row.canDelete"><i class="bi bi-trash-fill"></i>Delete</span>
+        </div>
+        <button type="button" class="access-revoke-btn" title="Revoke access" (click)="revoke(row)">
+          <i class="bi bi-trash3"></i>
+        </button>
+      </div>
+
+      <div class="access-empty" *ngIf="!isLoadingAccessList && accessList.length === 0">
+        <i class="bi bi-people"></i>
+        <p>No one has been granted access yet.</p>
+      </div>
+
+      <div class="access-loading" *ngIf="isLoadingAccessList">
+        <div class="spinner-border spinner-border-sm" role="status"></div>
+        <span>Loading…</span>
+      </div>
+    </div>
+  </div>
+
+</div>

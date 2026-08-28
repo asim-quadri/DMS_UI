@@ -83,8 +83,14 @@
         >
           <i class="bi bi-download"></i> Download<span *ngIf="selectedCount > 0">&nbsp;({{ selectedCount }})</span>
         </button>
-        <button class="btn-action btn-ghost-action" disabled title="Coming soon">
-          <i class="bi bi-share"></i> Share
+        <button
+          *ngIf="context === 'dms'"
+          class="btn-action btn-ghost-action"
+          [disabled]="selectedCount === 0"
+          [title]="selectedCount > 0 ? 'Share ' + selectedCount + ' selected file(s)' : 'Select files to share'"
+          (click)="openBulkShare()"
+        >
+          <i class="bi bi-share"></i> Share<span *ngIf="selectedCount > 0">&nbsp;({{ selectedCount }})</span>
         </button>
         <div class="dms-search">
           <i class="bi bi-search dms-search-icon"></i>
@@ -249,6 +255,15 @@
             <span class="files-badge">{{ filteredFiles.length }} items</span>
           </div>
           <div class="files-hd-right">
+            <button
+              *ngIf="context === 'dms' && selectedFolderTreeNodeItem && !selectedFolderTreeNodeItem.isFile"
+              class="filter-action-btn"
+              type="button"
+              title="Manage who can access this folder"
+              (click)="openFolderShare()"
+            >
+              <i class="bi bi-share"></i>&nbsp;Share folder
+            </button>
             <button class="filter-action-btn" type="button">
               <i class="bi bi-funnel-fill"></i>&nbsp;Filter&nbsp;<i class="bi bi-chevron-down"></i>
             </button>
@@ -322,6 +337,11 @@
                               [title]="canAccessFile(file) ? 'Download' : 'No file available'"
                               (click)="downloadFileContent(file, $event)">
                         <i class="bi bi-download"></i>
+                      </button>
+                      <button *ngIf="context === 'dms'" class="act-btn share-act"
+                              title="Manage access"
+                              (click)="openManageAccess('File', file.id, file.fullName || file.fileName); $event.stopPropagation()">
+                        <i class="bi bi-share"></i>
                       </button>
                       <button *ngIf="context === 'dms'" class="act-btn del-act"
                               title="Delete"

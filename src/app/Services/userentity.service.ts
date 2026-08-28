@@ -5,6 +5,23 @@ import { clientEntitesLocation, EntitiesCityCoordinate } from '../Models/userEnt
 import { forkJoin, BehaviorSubject, of, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { accessModel } from '../Models/pendingapproval';
+import { DmsSourceModule } from '../Models/dmsNotification.model';
+
+/** What a DMS notification click needs the destination page to locate and open. */
+export interface DmsDeepLinkTarget {
+  sourceModule: DmsSourceModule;
+  sourceRecordId: number;
+  entityId: number | null;
+  path: string | null;
+  // Carried straight from the notification so a DMSFile target can be shown
+  // in the file list immediately, without depending on the folder-listing
+  // API to include it (a shared-but-not-owned file may not come back from
+  // a plain "files in this folder" call).
+  fileName?: string | null;
+  filePath?: string | null;
+  actionByName?: string | null;
+  createdOn?: string | null;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -30,6 +47,22 @@ export class UserEntityService {
 
   setSelectedEntity(entity: any): void {
     this.selectedEntitySource.next(entity);
+  }
+
+  /**
+   * One-shot handoff for "open this exact record" navigation (from a DMS
+   * notification click) across a route change. The destination page reads
+   * and clears it once its tree has loaded — see FileuploadnewComponent.
+   */
+  private pendingDeepLinkSource = new BehaviorSubject<DmsDeepLinkTarget | null>(null);
+  pendingDeepLink$: Observable<DmsDeepLinkTarget | null> = this.pendingDeepLinkSource.asObservable();
+
+  get pendingDeepLinkValue(): DmsDeepLinkTarget | null {
+    return this.pendingDeepLinkSource.value;
+  }
+
+  setPendingDeepLink(target: DmsDeepLinkTarget | null): void {
+    this.pendingDeepLinkSource.next(target);
   }
 
   /** Idempotent per organization: repeated calls reuse the already-loaded list instead of refetching. */

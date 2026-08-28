@@ -31,44 +31,73 @@
     <div class="hd-notification-wrap">
       <button type="button" class="hd-icon-btn" title="Notifications" (click)="toggleNotificationPopup()">
         <i class="bi bi-bell"></i>
-        <span class="notification-count" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+        <span class="notification-count" *ngIf="dmsUnreadCount > 0">{{ dmsUnreadCount }}</span>
       </button>
 
       <div class="notification-popup" *ngIf="showNotificationPopup">
         <div class="popup-header d-flex justify-content-between align-items-center notification-list">
           <h4 class="mb-0">Notifications</h4>
-          <button class="custom-close" (click)="closeNotificationPopup()" aria-label="Close">&times;</button>
-        </div>
-        <div *ngIf="notifications.length > 0; else noNotifications">
-          <div
-            *ngFor="let notification of notifications"
-            [ngClass]="{ unread: !notification.markAsRead }"
-            class="notification-item d-flex align-items-center mb-2 mt-2"
-          >
+          <div class="d-flex align-items-center gap-2">
             <button
-              class="single-notification inline-notification d-flex align-items-center w-100 text-start"
-              [ngClass]="{ unread: !notification.markAsRead }"
-              (click)="onNotificationClick(notification)"
+              type="button"
+              class="mark-all-read-btn"
+              *ngIf="dmsUnreadCount > 0"
+              [disabled]="isMarkingAllDmsRead"
+              (click)="markAllDmsNotificationsRead($event)"
             >
-              <div class="notificatoin-avatar me-2">
-                <img src="./assets/images/icons/avstsr.svg" class="img-fluid mt-0" alt="notification" />
-              </div>
-              <div class="notificatoin-content flex-grow-1">
-                <p class="notification mb-0">
-                  <span [innerHTML]="notification.notificationTitle"></span><br />
-                  <span>{{ formatNotificationDate(notification.createdDate.toString()) }}</span>
-                </p>
-              </div>
-              <div class="clearfix"></div>
+              Mark all as read
             </button>
+            <button class="custom-close" (click)="closeNotificationPopup()" aria-label="Close">&times;</button>
           </div>
         </div>
-        <div class="text-center mt-3">
-          <button class="btn btn-link p-0 view-all-btn" (click)="openAllNotifications()">View All</button>
-        </div>
-        <ng-template #noNotifications>
-          <p class="mb-0 p-3">No notifications available.</p>
-        </ng-template>
+
+        <div *ngIf="isLoadingDmsNotifications" class="dms-notification-state">Loading...</div>
+
+        <ng-container *ngIf="!isLoadingDmsNotifications">
+          <div *ngIf="dmsNotifications.length > 0; else noDmsNotifications">
+            <div
+              role="button"
+              tabindex="0"
+              class="single-notification dms-notification-item d-flex align-items-start w-100 text-start"
+              *ngFor="let notification of dmsNotifications"
+              [ngClass]="{ unread: !notification.isRead }"
+              (click)="onDmsNotificationClick(notification)"
+              (keydown.enter)="onDmsNotificationClick(notification)"
+              (keydown.space)="$event.preventDefault(); onDmsNotificationClick(notification)"
+            >
+              <div
+                class="dms-notification-icon"
+                [ngClass]="notification.notificationType === 'Share' ? 'is-share' : 'is-upload'"
+              >
+                <i class="bi" [ngClass]="notification.notificationType === 'Share' ? 'bi-share-fill' : 'bi-cloud-arrow-up-fill'"></i>
+              </div>
+              <div class="dms-notification-content flex-grow-1">
+                <p class="notification mb-0">
+                  <strong>{{ notification.actionByName || 'Someone' }}</strong>
+                  {{ dmsNotificationVerb(notification) }}
+                  <strong>{{ notification.fileName || 'a file' }}</strong>
+                </p>
+                <p class="dms-notification-path mb-0" *ngIf="notification.path">{{ notification.path }}</p>
+                <div class="dms-notification-meta">
+                  <span class="dms-notification-time">{{ dmsRelativeTime(notification.createdOn) }}</span>
+                  <button
+                    type="button"
+                    class="dms-view-btn"
+                    *ngIf="notification.notificationType === 'Share' && notification.canView"
+                    title="Open this file"
+                    (click)="viewSharedNotificationFile(notification, $event)"
+                  >
+                    <i class="bi bi-eye"></i> View
+                  </button>
+                </div>
+              </div>
+              <span class="dms-unread-dot" *ngIf="!notification.isRead"></span>
+            </div>
+          </div>
+          <ng-template #noDmsNotifications>
+            <p class="mb-0 dms-notification-state">No notifications</p>
+          </ng-template>
+        </ng-container>
       </div>
     </div>
 

@@ -15,6 +15,8 @@ import { map } from 'rxjs/operators';
 import { AppConfig } from '../app.config';
 import { UserEntityService } from '../Services/userentity.service';
 import { EntitiesCityCoordinate } from '../Models/userEntityModel';
+import { DmsManageAccessComponent, DmsShareTarget } from '../Components/dms-manage-access/dms-manage-access.component';
+import { DmsItemType } from '../Models/dmsNotification.model';
 
 // Interface for the Unified Tree API response
 interface UnifiedTreeResponse {
@@ -1227,6 +1229,48 @@ export class FileuploadnewComponent implements OnInit {
 
   clearSelection(): void {
     this.selectedFileKeys.clear();
+  }
+
+  // ====== DMS Access (Manage Access / Share) ======
+  // Only offered in the ProEDox (dms) context — CompSeqr rows (compliance
+  // tracker/notice/opinion/audit records) aren't DMS FileUpload/Folder rows,
+  // so itemId here wouldn't mean anything to api/DmsAccess for them.
+
+  /** Single file or folder — opens the same dialog GrantAccess/RevokeAccess/GetAccessList operate on. */
+  openManageAccess(itemType: DmsItemType, itemId: number, label: string): void {
+    const modalRef = this.modalService.open(DmsManageAccessComponent, { centered: true, size: 'lg' });
+    modalRef.componentInstance.itemType = itemType;
+    modalRef.componentInstance.itemId = itemId;
+    modalRef.componentInstance.itemLabel = label;
+  }
+
+  /** Currently selected folder in the sidebar tree. */
+  openFolderShare(): void {
+    const node = this.selectedFolderTreeNodeItem;
+    if (!node || node.isFile) {
+      return;
+    }
+    this.openManageAccess('Folder', node.id, node.label);
+  }
+
+  /** Checkbox-selected files — one grant per file, same recipient/permissions for all. */
+  openBulkShare(): void {
+    const selected = this.filteredFiles.filter(f => this.isFileSelected(f));
+    if (selected.length === 0) {
+      return;
+    }
+    const targets: DmsShareTarget[] = selected.map(f => ({
+      itemType: 'File',
+      itemId: f.id,
+      label: f.fullName || f.fileName || 'file'
+    }));
+
+    const modalRef = this.modalService.open(DmsManageAccessComponent, { centered: true, size: 'md' });
+    modalRef.componentInstance.bulkItems = targets;
+    modalRef.result.then(
+      () => this.clearSelection(),
+      () => { /* dismissed — leave selection as-is */ }
+    );
   }
 
   // ====== Search / pagination (real data only) ======

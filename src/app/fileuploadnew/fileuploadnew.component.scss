@@ -784,6 +784,11 @@ th.col-check input[type="checkbox"] {
     &:hover:not(:disabled) { background: #fdecea; }
   }
 
+  &.share-act {
+    color: #1f9254;
+    &:hover:not(:disabled) { background: #eafaf0; }
+  }
+
   &:disabled {
     color: #ccc;
     cursor: not-allowed;

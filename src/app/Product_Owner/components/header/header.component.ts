@@ -34,6 +34,8 @@ import { ParameterApprovalComponent } from '../../product-setup/parameter-setup/
 import { ApproveRegulationComponent } from '../../product-setup/regulation-grouping-setup/approve-regulation/approve-regulation.component';
 import { RegulationApprovalComponent } from '../../product-setup/regulation-setup/regulation-approval/regulation-approval.component';
 import { OrganizationApprovalComponent } from '../../organization-setup/organization-approval/organization-approval.component';
+import { DmsNotificationService } from 'src/app/Services/dms-notification.service';
+import { DmsNotificationResponse } from 'src/app/Models/dmsNotification.model';
 
 @Component({
   selector: 'app-header',
@@ -70,12 +72,24 @@ export class HeaderComponent implements OnInit {
   showNotificationPopup: boolean = false;
   allNotifications: AppNotification[] = [];
   private modalRef?: NgbModalRef;
+
+  // DMS notifications (uploads under Regulation Setup / Announcements /
+  // Organization, plus DMS file/folder shares). This is the only feed the
+  // header bell shows — the admin approval-notifications fields above
+  // (notifications/unreadCount/etc.) are kept for their own modal but aren't
+  // wired into the bell/popup.
+  dmsNotifications: DmsNotificationResponse[] = [];
+  dmsUnreadCount: number = 0;
+  isLoadingDmsNotifications: boolean = false;
+  isMarkingAllDmsRead: boolean = false;
+
   constructor(
     private persistance: PersistenceService,
     public complianceTrackerService: CompliancetrackerService,
     public regulationSetupService: RegulationSetupService,
     public countryService: CountryService,
     public notificationService: NotificationService,
+    public dmsNotificationService: DmsNotificationService,
     private modalService: NgbModal,
     private router: Router,
     private eRef: ElementRef,
@@ -90,6 +104,9 @@ export class HeaderComponent implements OnInit {
     // this.getEntities();
     // this.fetchNotificationData();
     this.loadHeaderEntities();
+    // Badge refreshes on load, then every 60s (DmsNotificationService.startPolling).
+    this.dmsNotificationService.unreadCount$.subscribe(count => this.dmsUnreadCount = count);
+    this.dmsNotificationService.startPolling();
   }
 
   isNavActive(item: { title: string; route: string }): boolean {
@@ -224,6 +241,21 @@ export class HeaderComponent implements OnInit {
 
   toggleNotificationPopup() {
     this.showNotificationPopup = !this.showNotificationPopup;
+    if (this.showNotificationPopup) {
+      this.isLoadingDmsNotifications = true;
+      this.dmsNotificationService.getNotifications(false).subscribe({
+        next: (summary) => {
+          this.dmsNotifications = summary.notifications || [];
+          this.dmsUnreadCount = summary.unreadCount || 0;
+          this.isLoadingDmsNotifications = false;
+        },
+        error: (err: any) => {
+          console.error('Failed to load DMS notifications', err);
+          this.dmsNotifications = [];
+          this.isLoadingDmsNotifications = false;
+        }
+      });
+    }
   }
 
   async fetchNotificationData() {
@@ -445,5 +477,130 @@ export class HeaderComponent implements OnInit {
       size: 'lg',
       centered: true,
     });
+  }
+
+  // ---------------------------------------------------------------------
+  // DMS notifications (api/DmsNotification) — upload notifications under
+  // Regulation Setup / Announcements / Organization, and DMS file/folder
+  // share notifications. Badge polls every 60s (DmsNotificationService);
+  // the list itself refreshes when the popup opens and updates locally
+  // after mark-read/mark-all-read.
+  // ---------------------------------------------------------------------
+
+  dmsNotificationVerb(notification: DmsNotificationResponse): string {
+    return notification.notificationType === 'Share' ? 'shared' : 'uploaded';
+  }
+
+  /** Compact relative time, e.g. "2h ago" — matches the popup's list-row format. */
+  dmsRelativeTime(iso: string | null): string {
+    if (!iso) {
+      return '';
+    }
+    const then = new Date(iso).getTime();
+    if (isNaN(then)) {
+      return '';
+    }
+    const diffSec = Math.max(0, Math.floor((Date.now() - then) / 1000));
+    if (diffSec < 60) return 'just now';
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr}h ago`;
+    const diffDay = Math.floor(diffHr / 24);
+    if (diffDay < 30) return `${diffDay}d ago`;
+    const diffMon = Math.floor(diffDay / 30);
+    if (diffMon < 12) return `${diffMon}mo ago`;
+    return `${Math.floor(diffMon / 12)}y ago`;
+  }
+
+  /** Marks a DMS notification read (local unread-count update, no re-fetch) — shared by row-click and the View action. */
+  private markDmsNotificationReadLocally(notification: DmsNotificationResponse): void {
+    if (notification.isRead) {
+      return;
+    }
+    this.dmsNotificationService.markAsRead(notification.id).subscribe({
+      next: (result) => {
+        if (result?.success !== false) {
+          notification.isRead = true;
+          this.dmsUnreadCount = Math.max(0, this.dmsUnreadCount - 1);
+        }
+      },
+      error: (err: any) => {
+        console.error('Failed to mark DMS notification as read', err);
+      },
+    });
+  }
+
+  /**
+   * "View" on a Share notification — same effect as clicking the row itself
+   * (navigate to where the file lives and show it in the file list there).
+   * A separate button mainly so it reads as an obvious call to action; kept
+   * as its own handler (rather than removing it) so it can stopPropagation
+   * cleanly instead of double-firing the row's own click.
+   */
+  viewSharedNotificationFile(notification: DmsNotificationResponse, event: Event): void {
+    event.stopPropagation();
+    this.onDmsNotificationClick(notification);
+  }
+
+  onDmsNotificationClick(notification: DmsNotificationResponse): void {
+    this.markDmsNotificationReadLocally(notification);
+    this.closeNotificationPopup();
+    this.navigateForDmsNotification(notification);
+  }
+
+  markAllDmsNotificationsRead(event: Event): void {
+    event.stopPropagation();
+    if (this.dmsUnreadCount === 0 || this.isMarkingAllDmsRead) {
+      return;
+    }
+    this.isMarkingAllDmsRead = true;
+    this.dmsNotificationService.markAllAsRead().subscribe({
+      next: (result) => {
+        if (result?.success !== false) {
+          this.dmsNotifications = this.dmsNotifications.map((n) => ({ ...n, isRead: true, readOn: n.readOn ?? new Date().toISOString() }));
+          this.dmsUnreadCount = 0;
+        }
+        this.isMarkingAllDmsRead = false;
+      },
+      error: (err: any) => {
+        console.error('Failed to mark all DMS notifications as read', err);
+        this.isMarkingAllDmsRead = false;
+      },
+    });
+  }
+
+  /**
+   * No routed URL identifies a single record (/compseqr and /home only ever
+   * open at their entity root and build the tree client-side), so the actual
+   * record is located client-side instead: switch to the right entity, hand
+   * the target off via UserEntityService.setPendingDeepLink(), and land on
+   * the module's tab. FileuploadnewComponent picks the pending target up
+   * once its tree has loaded and opens the matching node — see
+   * resolvePendingDeepLink()/tryResolvePendingDeepLink() there.
+   */
+  private navigateForDmsNotification(notification: DmsNotificationResponse): void {
+    const isDmsSide = notification.sourceModule === 'DMSFile' || notification.sourceModule === 'DMSFolder';
+    const targetRoute = isDmsSide ? '/home' : '/compseqr';
+
+    if (notification.entityId != null) {
+      const entity = this.userEntityService.entitiesValue.find((e: any) => e.id === notification.entityId);
+      if (entity) {
+        this.userEntityService.setSelectedEntity(entity);
+      }
+    }
+
+    this.userEntityService.setPendingDeepLink({
+      sourceModule: notification.sourceModule,
+      sourceRecordId: notification.sourceRecordId,
+      entityId: notification.entityId,
+      path: notification.path,
+      fileName: notification.fileName,
+      filePath: notification.filePath,
+      actionByName: notification.actionByName,
+      createdOn: notification.createdOn
+    });
+
+    this.router.navigate([targetRoute]);
   }
 }

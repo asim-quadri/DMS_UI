@@ -25,6 +25,8 @@ import { da } from 'date-fns/locale';
 import { Observable, of } from 'rxjs';
 import { filter } from 'underscore';
 import { duplicateMobileValidator } from 'src/app/Validators/duplicateMobile';
+import { DmsUserManagementService } from 'src/app/Services/dms-user-management.service';
+import { PostDmsUser } from 'src/app/Models/dms.models';
 
 export interface IUniqueValidatorService {
   getCurrentValue(fieldName: string, formData: any): any;
@@ -119,8 +121,13 @@ export class UpdateUserComponent implements OnChanges {
         RxwebValidators.required({ message: 'Start Date is required' }),
       ],
       endDate: [null],
+      // Defaults "Reporting To" to the logged-in (admin) user for a new DMS
+      // user — the common case, and just a starting point they can change.
+      // Editing an existing user overrides this via patchValue() below. Same
+      // id source as getActiveUsers()'s injected "me" option, so this value
+      // always has a matching, visible entry in the dropdown.
       managerId: [
-        '',
+        this.getLoggedInUserOption()?.id ?? '',
         RxwebValidators.required({ message: 'Select the Manger' }),
       ],
       dateOfBirth: [
@@ -138,7 +145,8 @@ export class UpdateUserComponent implements OnChanges {
     private fb: FormBuilder,
     public apiService: ApiService,
     private notifier: NotifierService,
-    private persistance: PersistenceService
+    private persistance: PersistenceService,
+    private dmsUserService: DmsUserManagementService
   ) {
     this.getAllRoles();
   }
@@ -149,42 +157,78 @@ export class UpdateUserComponent implements OnChanges {
   }
 
   onSubmit() {
-    if (this.formgroup.valid) {
-      var user: UsersModel = { ...this.formgroup.value };
-      if (user.id == 0 || user.id == null) {
-        user.id = 0;
-        user.uid = null;
-      }
-      user.endDate = user.endDate == '' ? null : user.endDate;
-      user.createdBy = this.persistance.getUserId()!;
-      user.approvalManagerId = this.persistance.getManagerId();
-      this.apiService.postUser(user).subscribe(
-        (result: UsersModel) => {
-          if (result.responseCode == 1) {
-            this.notifier.notify('success', result.responseMessage);
-            this.reloaddata.emit('reload');
-            this.isEditAction = false;
-            this.formgroup.reset();
-          } else {
-            this.notifier.notify('error', result.responseMessage);
-          }
-        },
-        (error) => {
-          this.notifier.notify('error', 'Some thing went wrong');
-        }
-      );
+    if (!this.formgroup.valid) {
+      return;
     }
-    return;
+    var user: UsersModel = { ...this.formgroup.value };
+    if (user.id == 0 || user.id == null) {
+      user.id = 0;
+      user.uid = null;
+    }
+    user.endDate = user.endDate == '' ? null : user.endDate;
+    user.createdBy = this.persistance.getUserId()!;
+    user.approvalManagerId = this.persistance.getManagerId();
+
+    this.submitDmsUser(user);
+  }
+
+  private submitDmsUser(user: UsersModel): void {
+    const payload: PostDmsUser = {
+      Id: user.id || undefined,
+      EmpId: user.empId,
+      FullName: user.fullName,
+      Email: user.email,
+      Mobile: user.mobile,
+      RoleId: user.roleId,
+      StartDate: user.startDate,
+      EndDate: user.endDate || undefined,
+      ManagerId: user.managerId,
+      ApprovalManagerId: user.approvalManagerId,
+      CreatedBy: user.createdBy,
+      ModifiedBy: this.isEditAction ? this.persistance.getUserId()! : undefined,
+      DateOfBirth: user.dateOfBirth || undefined,
+      Gender: user.gender as any,
+      OrganizationId: this.persistance.getOrganizationId(),
+      Status: 1
+    };
+
+    const request$ = this.isEditAction
+      ? this.dmsUserService.updateDmsUser(payload)
+      : this.dmsUserService.addDmsUser(payload);
+
+    request$.subscribe({
+      next: () => {
+        this.notifier.notify('success', this.isEditAction ? 'User updated successfully' : 'User created successfully');
+        this.reloaddata.emit('reload');
+        this.isEditAction = false;
+        this.resetFormToAddDefaults();
+      },
+      error: () => this.notifier.notify('error', 'Something went wrong')
+    });
   }
   reset() {
-    this.formgroup.reset();
+    this.resetFormToAddDefaults();
     this.isEditAction = false;
   }
 
+  /** FormGroup.reset() without a value map clears every control to null — this
+   *  restores the "Reporting To" default (the logged-in user) each time the
+   *  form goes back to "Add" mode, not just on first component creation. */
+  private resetFormToAddDefaults(): void {
+    this.formgroup.reset({ managerId: this.getLoggedInUserOption()?.id ?? '' });
+  }
+
   getAllRoles() {
-    this.apiService.getAllRoles().subscribe((result: RolesModels[]) => {
-      this.rolesData = result;
-      //this.rolesData = result.filter(f => f.roleName != UserRole.SuperAdmin && f.roleName != UserRole.ITSupportAdmin);
+    this.dmsUserService.getAllDmsRoles().subscribe((result: any) => {
+      this.rolesData = (result || []).map((r: any) => ({
+        id: r.id ?? r.Id,
+        roleId: r.id ?? r.Id,
+        roleName: r.roleName ?? r.RoleName,
+        roleDisplayName: r.roleDisplayName ?? r.RoleDisplayName,
+        description: r.description ?? r.Description,
+        status: r.status ?? r.Status,
+        uid: r.uid ?? r.UID
+      }));
     });
   }
 
@@ -250,6 +294,41 @@ export class UpdateUserComponent implements OnChanges {
   }
 
   getActiveUsers() {
-    return this.users.filter((f) => f.status == 1 && f.roleName != 'User');
+    const active = this.users.filter((f) => f.status == 1 && f.roleName != 'User');
+    const me = this.getLoggedInUserOption();
+    // The fetched DMS-users list may not include the admin who's logged in
+    // right now (they can be a core Users-table account, not a DmsUser) — the
+    // "Reporting To" dropdown would then have no option to show against the
+    // id it's defaulted to. Make sure they're always a visible, selectable entry.
+    if (me && !active.some((u) => String(u.id) === String(me.id))) {
+      return [me, ...active];
+    }
+    return active;
+  }
+
+  /** Reads the logged-in user's id/name straight off the stored session — checks
+   *  localStorage first (what most of this app's services already key off for
+   *  auth), falling back to sessionStorage (what PersistenceService/login actually
+   *  populate today), so this keeps working either way this app ends up storing it. */
+  private getLoggedInUserOption(): { id: any; fullName: string } | null {
+    const raw = localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser');
+    if (!raw) {
+      return null;
+    }
+    let parsed: any;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+    if (!parsed) {
+      return null;
+    }
+    const id = parsed.id ?? parsed.Id ?? parsed.userId ?? parsed.UserId;
+    const fullName = parsed.fullName ?? parsed.FullName ?? parsed.name ?? parsed.Name;
+    if (id == null || !fullName) {
+      return null;
+    }
+    return { id, fullName };
   }
 }
