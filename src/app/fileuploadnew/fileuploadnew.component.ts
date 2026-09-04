@@ -1021,7 +1021,15 @@ export class FileuploadnewComponent implements OnInit {
   }) {
     this.files = [];
     this.folderService.getFilesbyFolderId(folderId, type, filters, this.persistenceService.getUserId()!, this.persistenceService.getUserType()).subscribe((result: any) => {
-      this.files = result || [];
+      // This DMS endpoint reuses `fullName` for the uploader's display name,
+      // not the file name (every other source in this app sets fullName ===
+      // fileName) — normalize it here so the table/view/download logic that
+      // reads `fullName` as "the file's name" stays correct everywhere.
+      this.files = (result || []).map((file: any) => ({
+        ...file,
+        createdByName: file.createdByName || file.fullName,
+        fullName: file.fileName || file.fullName
+      }));
     }, (error: any) => {
       console.error("Error fetching files:", error);
       this.files = [];
