@@ -15,10 +15,10 @@ interface TopNavItem {
 export class SidemenuComponent implements OnInit {
   // Flat, top-level product navigation. (Previously an API-driven multi-item
   // vertical menu; simplified to these 3 fixed tabs per product decision.)
+  // User Management tab hidden per product decision.
   menuItems: TopNavItem[] = [
     { id: 1, title: 'CompSeqr', route: '/client-setup/compliance-tracker' },
     { id: 2, title: 'ProEDox', route: '/home' },
-    { id: 3, title: 'User Management', route: '/users' },
   ];
 
   constructor(private router: Router) {}

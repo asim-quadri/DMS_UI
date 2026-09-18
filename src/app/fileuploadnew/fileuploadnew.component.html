@@ -425,7 +425,7 @@
       <div class="access-grant-row">
         <select class="form-select access-user-select" formControlName="dmsUserId">
           <option value="" disabled>Select a user…</option>
-          <option *ngFor="let u of dmsUsersForAccess" [value]="u.id ?? u.Id">{{ u.fullName ?? u.FullName }}</option>
+          <option *ngFor="let u of selectableUsersForAccess" [value]="u.id ?? u.Id">{{ u.fullName ?? u.FullName }}</option>
         </select>
 
         <div class="access-perm-toggles">
@@ -529,7 +529,7 @@
       <div class="access-grant-row">
         <select class="form-select access-user-select" formControlName="dmsUserId">
           <option value="" disabled>Select a user…</option>
-          <option *ngFor="let u of dmsUsersForAccess" [value]="u.id ?? u.Id">{{ u.fullName ?? u.FullName }}</option>
+          <option *ngFor="let u of selectableUsersForAccess" [value]="u.id ?? u.Id">{{ u.fullName ?? u.FullName }}</option>
         </select>
 
         <div class="access-perm-toggles">

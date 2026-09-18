@@ -16,7 +16,7 @@ import { AppConfig } from '../app.config';
 import { UserEntityService, DmsDeepLinkTarget } from '../Services/userentity.service';
 import { EntitiesCityCoordinate } from '../Models/userEntityModel';
 import { DmsAccessService } from '../Services/dms-access.service';
-import { DmsUserManagementService } from '../Services/dms-user-management.service';
+import { ApiService } from '../Services/api.service';
 import { DmsAccessListItem, DmsItemType, GrantAccessRequest } from '../Models/dms.models';
 
 // Interface for the Unified Tree API response
@@ -187,7 +187,7 @@ export class FileuploadnewComponent implements OnInit {
     private config: AppConfig,
     private userEntityService: UserEntityService,
     private dmsAccessService: DmsAccessService,
-    private dmsUserService: DmsUserManagementService
+    private apiService: ApiService
   ) {
     this.dmsTreeApiUrl = `${this.config.ServiceUrl}/UnifiedTree/dms-tree`;
     this.entityTreeApiUrl = `${this.config.ServiceUrl}/UnifiedTree/entity-tree`;
@@ -461,19 +461,19 @@ export class FileuploadnewComponent implements OnInit {
 
   // ====== File Operations ======
 
-  /** Template-friendly view — handles opinions/audits API, base64, and filePath */
+  /** Template-friendly view — handles opinions/audits API, compliance tracker documents, base64, and filePath */
   viewFileContent(file: any, event?: Event): void {
     event?.stopPropagation();
     if (file?.mtype === 'opinions' || file?.mtype === 'audits') {
       this.streamOpinionAuditFile(file, false);
       return;
     }
-    if (file?.fileContent) {
+    if (file?.mtype === 'compliance' && file?.filePath) {
+      this.streamComplianceDocumentByPath(file, false);
+    } else if (file?.fileContent) {
       this.viewBase64File(file.fileContent, file.fileName || 'document');
-    } else if (file?.filePath && this.context === 'compseqr') {
-      this.streamFileByPath(file, false);
     } else if (file?.filePath) {
-      window.open(file.filePath, '_blank');
+      this.streamFileByPath(file, false);
     } else {
       this.notifier.notify('warning', 'No viewable content available');
     }
@@ -486,22 +486,46 @@ export class FileuploadnewComponent implements OnInit {
       this.streamOpinionAuditFile(file, true);
       return;
     }
-    if (file?.fileContent) {
+    if (file?.mtype === 'compliance' && file?.filePath) {
+      this.streamComplianceDocumentByPath(file, true);
+    } else if (file?.fileContent) {
       this.downloadBase64File(file.fileContent, file.fileName || 'document');
-    } else if (file?.filePath && this.context === 'compseqr') {
-      this.streamFileByPath(file, true);
     } else if (file?.filePath) {
-      const link = document.createElement('a');
-      link.href = file.filePath;
-      link.download = file.fileName || 'document';
-      link.click();
+      this.streamFileByPath(file, true);
     } else {
       this.notifier.notify('warning', 'No downloadable content available');
     }
   }
 
-  /** CompSeqr files store a server filePath — fetch it (with auth) via FileUpload/GetFileByPath
-   *  rather than navigating the browser straight to it, since that route requires the auth header. */
+  /** Compliance tracker documents: `filePath` here is actually the DMS storage path
+   *  GetComplianceTrackerDocuments returns as `fileName` (e.g.
+   *  "ComplianceTrackerDocuments/10036/<guid>_oexam.jpg"). Stream the real file via
+   *  ComplianceTracker/GetComplianceTrackerDocumentFileByPath instead of decoding the
+   *  base64 fileContent that endpoint also returns. */
+  private streamComplianceDocumentByPath(file: any, download: boolean): void {
+    const fileName = file.fileName || file.fullName || 'document';
+    this.clientComplianceService.getComplianceTrackerDocumentFileByPath(file.filePath).subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        if (download) {
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = fileName;
+          link.click();
+          setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+        } else {
+          const win = window.open(url, '_blank');
+          if (!win) this.notifier.notify('warning', 'Popup blocked — please allow popups');
+          setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+        }
+      },
+      error: () => this.notifier.notify('error', 'Failed to load document')
+    });
+  }
+
+  /** Files store a server filePath (DMS/ProEDox and CompSeqr alike) — fetch it (with auth) via
+   *  FileUpload/GetFileByPath rather than navigating the browser straight to it, since that
+   *  route requires the auth header. */
   private streamFileByPath(file: any, download: boolean): void {
     const fileName = file.fileName || file.fullName || 'document';
     this.folderService.getFileByPath(file.filePath, fileName).subscribe({
@@ -763,7 +787,7 @@ export class FileuploadnewComponent implements OnInit {
         this.selectedFileKeys.delete(this.fileKey(file));
         if (this.selectedFolderTreeNodeItem) {
           this.getAllFilesbyFolderId(
-            this.getFolderRecordId(this.selectedFolderTreeNodeItem),
+            this.getFetchFolderId(this.selectedFolderTreeNodeItem),
             // getModuleType() expects the node's breadcrumb path array (as
             // selectItem() below passes it) — foldertitle is just this node's
             // own label (e.g. "Aug2026"), so passing it here made getModuleType
@@ -804,7 +828,7 @@ export class FileuploadnewComponent implements OnInit {
         this.clearSelection();
         if (this.selectedFolderTreeNodeItem) {
           this.getAllFilesbyFolderId(
-            this.getFolderRecordId(this.selectedFolderTreeNodeItem),
+            this.getFetchFolderId(this.selectedFolderTreeNodeItem),
             // getModuleType() expects the node's breadcrumb path array (as
             // selectItem() below passes it) — foldertitle is just this node's
             // own label (e.g. "Aug2026"), so passing it here made getModuleType
@@ -971,7 +995,7 @@ export class FileuploadnewComponent implements OnInit {
       (result: any) => {
         if (this.selectedFolderTreeNodeItem) {
           this.getAllFilesbyFolderId(
-            this.getFolderRecordId(this.selectedFolderTreeNodeItem),
+            this.getFetchFolderId(this.selectedFolderTreeNodeItem),
             // getModuleType() expects the node's breadcrumb path array (as
             // selectItem() below passes it) — foldertitle is just this node's
             // own label (e.g. "Aug2026"), so passing it here made getModuleType
@@ -995,6 +1019,20 @@ export class FileuploadnewComponent implements OnInit {
     return node.fileData?.recordId ?? node.id;
   }
 
+  /**
+   * Primary folders (created via createPrimaryFolder(), e.g. "Policies",
+   * "SOPs" — isParent = true) are containers, not folders with files of
+   * their own, so fetching by their id returns nothing useful. Subfolders
+   * (isParent = false, e.g. "NPF Policies", "PF Policies", "sub") always
+   * carry folderId when fetched, even when they themselves have children.
+   * "Has children" isn't the right signal — a subfolder can have children
+   * too — so this checks the node's own isParent/IsParent flag instead.
+   */
+  getFetchFolderId(node: FolderTreeNode): number | undefined {
+    const isParent = node.fileData?.isParent ?? node.fileData?.IsParent;
+    return isParent === true ? undefined : this.getFolderRecordId(node);
+  }
+
   /** Only the file's owner can manage its access grants. Prefer the backend's own
    *  isOwner flag when present; fall back to comparing userId for older responses. */
   isFileOwner(file: any): boolean {
@@ -1014,7 +1052,7 @@ export class FileuploadnewComponent implements OnInit {
     return (node.fileData?.userId ?? node.fileData?.UserId) === this.persistenceService.getUserId();
   }
 
-  getAllFilesbyFolderId(folderId: number, type: any = 'proedox', filters?: {
+  getAllFilesbyFolderId(folderId: number | undefined, type: any = 'proedox', filters?: {
     regulationId?: number;
     auditType?: string;
     financialYear?: string;
@@ -1140,6 +1178,15 @@ export class FileuploadnewComponent implements OnInit {
   accessList: DmsAccessListItem[] = [];
   isLoadingAccessList = false;
   dmsUsersForAccess: any[] = [];
+
+  /** dmsUsersForAccess minus the current user — you can't share with (or grant access to) yourself. */
+  get selectableUsersForAccess(): any[] {
+    const currentUserId = this.persistenceService.getUserId();
+    if (currentUserId == null) {
+      return this.dmsUsersForAccess;
+    }
+    return this.dmsUsersForAccess.filter(u => (u.id ?? u.Id) !== currentUserId);
+  }
   grantAccessForm: FormGroup = this.formBuilder.group({
     dmsUserId: ['', Validators.required],
     canView: [true],
@@ -1157,13 +1204,17 @@ export class FileuploadnewComponent implements OnInit {
     this.modalService.open(content, { centered: true, size: 'lg' });
   }
 
-  /** Shared by the single-item and bulk share modals — loads the pickable-user list once. */
+  /**
+   * Shared by the single-item and bulk share modals — loads the pickable-user list once.
+   * Shares with this organization's users (UserManagement/GetAllUsers/{organizationId}),
+   * not DMS-only users.
+   */
   private ensureDmsUsersForAccessLoaded(): void {
     if (this.dmsUsersForAccess.length > 0) {
       return;
     }
     const organizationId = this.persistenceService.getOrganizationId();
-    this.dmsUserService.getAllDmsUsers(organizationId!).subscribe({
+    this.apiService.getAllUsersByOrganizationId(organizationId!).subscribe({
       next: (result: any) => { this.dmsUsersForAccess = result || []; },
       error: () => { this.dmsUsersForAccess = []; }
     });
@@ -1211,9 +1262,21 @@ export class FileuploadnewComponent implements OnInit {
 
     this.isBulkSharing = true;
     forkJoin(requests).subscribe({
-      next: () => {
-        this.notifier.notify('success', `Shared ${this.bulkShareItems.length} file(s) successfully`);
+      next: (results) => {
         this.isBulkSharing = false;
+        // dmsUserId is now a core Users.Id, resolved server-side to a DmsUser via email
+        // match — that resolution can fail (no matching DmsUser account), in which case
+        // the API still returns 200 with success:false rather than an HTTP error.
+        const failed = results.filter(r => r && r.success === false);
+        if (failed.length === results.length) {
+          this.notifier.notify('error', failed[0]?.message || 'Failed to share the selected file(s)');
+          return;
+        }
+        if (failed.length > 0) {
+          this.notifier.notify('warning', `Shared ${results.length - failed.length} of ${results.length} file(s) — ${failed[0]?.message || 'some failed'}`);
+        } else {
+          this.notifier.notify('success', `Shared ${this.bulkShareItems.length} file(s) successfully`);
+        }
         this.bulkShareItems = [];
         this.clearSelection();
         this.modalService.dismissAll();
@@ -1243,8 +1306,13 @@ export class FileuploadnewComponent implements OnInit {
   /** Clicking an existing grant loads it into the form above for editing, with the user locked. */
   selectAccessRow(row: DmsAccessListItem): void {
     this.editingAccessRow = row;
+    // row.dmsUserId is a DmsUser.Id, but the <select> options (and the id submitGrantAccess
+    // must send) are keyed by the org's core Users.Id — match on email to bridge the two.
+    const matchedUser = this.dmsUsersForAccess.find(u =>
+      (u.email ?? u.Email)?.toLowerCase() === (row.dmsUserEmail || '').toLowerCase()
+    );
     this.grantAccessForm.patchValue({
-      dmsUserId: row.dmsUserId,
+      dmsUserId: matchedUser ? (matchedUser.id ?? matchedUser.Id) : row.dmsUserId,
       canView: row.canView,
       canEdit: row.canEdit,
       canDelete: row.canDelete
@@ -1274,7 +1342,14 @@ export class FileuploadnewComponent implements OnInit {
       grantedBy: this.persistenceService.getUserId()!
     };
     this.dmsAccessService.grantAccess(payload).subscribe({
-      next: () => {
+      next: (result) => {
+        // dmsUserId is now a core Users.Id, resolved server-side to a DmsUser via email
+        // match — that resolution can fail (no matching DmsUser account), in which case
+        // the API still returns 200 with success:false rather than an HTTP error.
+        if (result && result.success === false) {
+          this.notifier.notify('error', result.message || (isEditing ? 'Failed to update access' : 'Failed to grant access'));
+          return;
+        }
         this.notifier.notify('success', isEditing ? 'Access updated successfully' : 'Access granted successfully');
         this.cancelEditAccess();
         this.loadAccessList();
@@ -1293,7 +1368,11 @@ export class FileuploadnewComponent implements OnInit {
       itemId: this.accessModalItem.itemId,
       dmsUserId: row.dmsUserId
     }).subscribe({
-      next: () => {
+      next: (result) => {
+        if (result && result.success === false) {
+          this.notifier.notify('error', result.message || 'Failed to revoke access');
+          return;
+        }
         this.notifier.notify('success', 'Access revoked successfully');
         if (this.editingAccessRow?.dmsUserId === row.dmsUserId) {
           this.cancelEditAccess();
@@ -1322,7 +1401,7 @@ export class FileuploadnewComponent implements OnInit {
         this.notifier.notify('success', result?.message || 'File renamed successfully');
         if (this.selectedFolderTreeNodeItem) {
           this.getAllFilesbyFolderId(
-            this.getFolderRecordId(this.selectedFolderTreeNodeItem),
+            this.getFetchFolderId(this.selectedFolderTreeNodeItem),
             // getModuleType() expects the node's breadcrumb path array (as
             // selectItem() below passes it) — foldertitle is just this node's
             // own label (e.g. "Aug2026"), so passing it here made getModuleType
@@ -1435,7 +1514,7 @@ export class FileuploadnewComponent implements OnInit {
     if (realNode.treeType === 'COMPSEQR360') {
       this.handleComplianceTrackerSelection(realNode);
     } else {
-      this.getAllFilesbyFolderId(this.getFolderRecordId(realNode), this.getModuleType(realNode.path || ''));
+      this.getAllFilesbyFolderId(this.getFetchFolderId(realNode), this.getModuleType(realNode.path || ''));
     }
   }
 
@@ -1495,7 +1574,7 @@ export class FileuploadnewComponent implements OnInit {
       // be a real folder on the backend (e.g. a plain sub-folder someone
       // filed a document into). Fetch its contents the same way DMS nodes
       // do instead of just echoing the node back as a fake row.
-      this.getAllFilesbyFolderId(this.getFolderRecordId(node), this.getModuleType(node.path || ''));
+      this.getAllFilesbyFolderId(this.getFetchFolderId(node), this.getModuleType(node.path || ''));
     }
   }
 
@@ -1565,8 +1644,10 @@ export class FileuploadnewComponent implements OnInit {
             fullName: doc.fileName,
             folderName: folderNameForDocs,
             compId: doc.compId,
-            fileContent: doc.fileContent,
-            filePath: doc.fileName,
+            mtype: 'compliance',
+            // dmsPath is the storage path — view/download stream it via
+            // GetComplianceTrackerDocumentFileByPath instead of decoding fileContent.
+            filePath: doc.dmsPath,
             createdBy: doc.createdBy,
             createdByName: doc.createdByName,
             isDelete: doc.isDelete,
@@ -1632,8 +1713,9 @@ export class FileuploadnewComponent implements OnInit {
               fullName: doc.fileName,
               folderName,
               compId: doc.compId,
-              fileContent: doc.fileContent,
-              filePath: doc.fileName,
+              mtype: 'compliance',
+              // dmsPath is the storage path — see loadComplianceDocuments().
+              filePath: doc.dmsPath,
               createdBy: doc.createdBy,
               createdByName: doc.createdByName,
               isDelete: doc.isDelete,
@@ -2128,7 +2210,7 @@ export class FileuploadnewComponent implements OnInit {
       if (dmsRoot) {
         this.selectedFolderTreeNodeItem = dmsRoot;
         this.buildBreadcrumbPath(dmsRoot);
-        this.getAllFilesbyFolderId(dmsRoot.id, 'Dms');
+        this.getAllFilesbyFolderId(this.getFetchFolderId(dmsRoot), 'Dms');
       }
       return;
     }
@@ -2138,7 +2220,7 @@ export class FileuploadnewComponent implements OnInit {
     this.selectedFolderTreeNodeItem = actualNode;
     this.buildBreadcrumbPath(actualNode);
     this.getAllFilesbyFolderId(
-      actualNode.id,
+      this.getFetchFolderId(actualNode),
       this.getModuleType(actualNode.foldertitle || '')
     );
   }

@@ -109,6 +109,23 @@ export class ClientComplianceTrackerService {
   }
 
   /**
+   * Stream a compliance tracker document's actual file content (correct
+   * Content-Type/Content-Disposition) by its DMS storage path — the same
+   * path GetComplianceTrackerDocuments returns as `fileName` (e.g.
+   * "ComplianceTrackerDocuments/10036/<guid>_oexam.jpg"). Lets the frontend
+   * just window.open()/download the blob instead of decoding the base64
+   * fileContent GetComplianceTrackerDocuments returns.
+   * API: /ComplianceTracker/GetComplianceTrackerDocumentFileByPath?dmsPath={dmsPath}
+   */
+  getComplianceTrackerDocumentFileByPath(dmsPath: string): Observable<Blob> {
+    const auth = this.getAuthHeaders();
+    return this.http.get(
+      `${this.CLIENT_API_URL}/ComplianceTracker/GetComplianceTrackerDocumentFileByPath?dmsPath=${encodeURIComponent(dmsPath)}`,
+      { headers: auth.headers as any, responseType: 'blob' }
+    );
+  }
+
+  /**
    * Get regulations list with type of compliance (TOC) by entity ID
    * API: /Questionnaires/GetRegulationListByEntityId?entityId={entityId}
    */

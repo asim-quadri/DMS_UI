@@ -76,6 +76,11 @@ export class ApiService {
     return this.http.get<Array<UsersModel>>(this.BASEURL + '/UserManagement/GetAllUsers', this.getAuthHeadersJSON());
   }
 
+  /** Users scoped to the given organization. */
+  getAllUsersByOrganizationId(organizationId: number) {
+    return this.http.get<Array<UsersModel>>(this.BASEURL + '/UserManagement/GetAllUsers/' + organizationId, this.getAuthHeadersJSON());
+  }
+
   getUserByUID(uid: any) {
     return this.http.get<UsersModel>(this.BASEURL + '/UserManagement/GetUsers/' + uid, this.getAuthHeadersJSON());
   }

@@ -55,9 +55,11 @@ export class HeaderComponent implements OnInit {
 
   /** DMS-only logins (persistance.isDmsUser()) never see CompSeqr — that data belongs to COMPSEQR360 users. */
   get navItems() {
-    return this.persistance.isDmsUser()
+    const items = this.persistance.isDmsUser()
       ? this.allNavItems.filter(item => item.title !== 'CompSeqr')
       : this.allNavItems;
+    // User Management tab hidden per product decision.
+    return items.filter(item => item.title !== 'User Management');
   }
   @ViewChild(OrganizationVerticalnavComponent)
   orgVerticalNav!: OrganizationVerticalnavComponent;

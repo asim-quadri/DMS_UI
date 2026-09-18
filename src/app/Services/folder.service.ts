@@ -91,7 +91,11 @@ export class FolderService {
     auditType?: string;
     financialYear?: string;
   }, userId?: number, userType: 'User' | 'DmsUser' = 'User') {
-    let url = `${this.BASEURL}/FileUpload/getFiles?folderId=${id}&mtype=${type}`;
+    // Parent/category folders (e.g. Policies, SOPs) aren't real backend folders —
+    // id is undefined/null for them, so folderId is left off the query string
+    // entirely rather than sent as "undefined"/"null".
+    let url = `${this.BASEURL}/FileUpload/getFiles?mtype=${type}`;
+    if (id != null) url += `&folderId=${id}`;
     if (filters?.regulationId != null) url += `&regulationId=${filters.regulationId}`;
     if (filters?.auditType)            url += `&auditType=${encodeURIComponent(filters.auditType)}`;
     if (filters?.financialYear)        url += `&financialYear=${encodeURIComponent(filters.financialYear)}`;
